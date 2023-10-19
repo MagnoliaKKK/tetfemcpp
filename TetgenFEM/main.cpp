@@ -3,6 +3,7 @@
 #include <cstring>  // for std::strcpy
 #include "tetgen.h"  // Include the TetGen header file
 #include <fstream>
+#include "GLFW/glfw3.h"
 // Function to read STL file
 void readSTL(const std::string& filename, tetgenio& in) {
 	std::ifstream file(filename, std::ios::binary);
@@ -57,6 +58,21 @@ void readSTL(const std::string& filename, tetgenio& in) {
 
 
 int main() {
+	// Initialize the GLFW library
+	if (!glfwInit()) {
+		return -1;
+	}
+
+	// Create a windowed mode window and its OpenGL context
+	GLFWwindow* window = glfwCreateWindow(1920, 1080, "Tetrahedral Mesh Visualization", NULL, NULL);
+	if (!window) {
+		glfwTerminate();
+		return -1;
+	}
+
+	// Make the window's context current
+	glfwMakeContextCurrent(window);
+
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
@@ -70,7 +86,50 @@ int main() {
 	// Call TetGen to tetrahedralize the geometry
 	tetrahedralize(&behavior, &in, &out);
 
-	// ... rest of your code ...
+	while (!glfwWindowShouldClose(window)) {
+		// Render here
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		// Draw vertices
+		glPointSize(5.0f);  // Set point size
+		glBegin(GL_POINTS);
+		for (int i = 0; i < out.numberofpoints; ++i) {
+			glVertex3f(
+				out.pointlist[i * 3],
+				out.pointlist[i * 3 + 1],
+				out.pointlist[i * 3 + 2]
+			);
+		}
+		glEnd();
+
+		// Draw edges
+		glBegin(GL_LINES);
+		for (int i = 0; i < out.numberoftrifaces; ++i) {
+			for (int j = 0; j < 3; ++j) {
+				int vertexIndex1 = out.trifacelist[i * 3 + j] - 1;
+				int vertexIndex2 = out.trifacelist[i * 3 + (j + 1) % 3] - 1;
+				glVertex3f(
+					out.pointlist[vertexIndex1 * 3],
+					out.pointlist[vertexIndex1 * 3 + 1],
+					out.pointlist[vertexIndex1 * 3 + 2]
+				);
+				glVertex3f(
+					out.pointlist[vertexIndex2 * 3],
+					out.pointlist[vertexIndex2 * 3 + 1],
+					out.pointlist[vertexIndex2 * 3 + 2]
+				);
+			}
+		}
+		glEnd();
+
+		// Swap front and back buffers
+		glfwSwapBuffers(window);
+
+		// Poll for and process events
+		glfwPollEvents();
+	}
+
+	glfwTerminate();
 
 	return 0;
 }
