@@ -7,6 +7,7 @@
 #include <cmath>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include <unordered_set>
 
 // Global variables to hold rotation state
 Eigen::Quaternionf rotation = Eigen::Quaternionf::Identity();
@@ -37,6 +38,41 @@ void cursorPosCallback(GLFWwindow* window, double xpos, double ypos) {
 		lastX = xpos;
 		lastY = ypos;
 	}
+}
+float zoomFactor = 1.0f;
+Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
+float aspectRatio = 1.0f;
+
+void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+	glViewport(0, 0, width, height);
+	aspectRatio = static_cast<float>(width) / static_cast<float>(height ? height : 1);  // Avoid division by zero
+}
+
+// Global variables to store zoom factor and transformation matrix
+
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+	zoomFactor *= (1.0f + 0.1f * yoffset);  // Adjust zoom factor
+
+	// Update projection matrix
+	float left = -zoomFactor * aspectRatio;
+	float right = zoomFactor * aspectRatio;
+	float bottom = -zoomFactor;
+	float top = zoomFactor;
+	float nearVal = -1.0f;
+	float farVal = 1.0f;
+
+	Eigen::Matrix4f projectionMatrix;
+	projectionMatrix <<
+		2.0f / (right - left), 0.0f, 0.0f, -(right + left) / (right - left),
+		0.0f, 2.0f / (top - bottom), 0.0f, -(top + bottom) / (top - bottom),
+		0.0f, 0.0f, -2.0f / (farVal - nearVal), -(farVal + nearVal) / (farVal - nearVal),
+		0.0f, 0.0f, 0.0f, 1.0f;
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glMultMatrixf(projectionMatrix.data());
+	glMatrixMode(GL_MODELVIEW);
 }
 
 // Function to read STL file
@@ -91,7 +127,16 @@ void readSTL(const std::string& filename, tetgenio& in) {
 	file.close();
 }
 
-void drawEdge(tetgenio& out, int vertexIndex1, int vertexIndex2) {
+// Function to create a unique identifier for an edge
+std::string createEdgeId(int vertexIndex1, int vertexIndex2) {
+	return vertexIndex1 < vertexIndex2 ?
+		std::to_string(vertexIndex1) + "_" + std::to_string(vertexIndex2) :
+		std::to_string(vertexIndex2) + "_" + std::to_string(vertexIndex1);
+}
+
+// Function to draw a line between two vertices with a specified color
+void drawEdge(tetgenio& out, int vertexIndex1, int vertexIndex2, float r, float g, float b) {
+	glColor3f(r, g, b);
 	glVertex3f(
 		out.pointlist[vertexIndex1 * 3],
 		out.pointlist[vertexIndex1 * 3 + 1],
@@ -103,6 +148,9 @@ void drawEdge(tetgenio& out, int vertexIndex1, int vertexIndex2) {
 		out.pointlist[vertexIndex2 * 3 + 2]
 	);
 }
+
+
+
 
 
 int main() {
@@ -121,13 +169,15 @@ int main() {
 
 	// Make the window's context current
 	glfwMakeContextCurrent(window);
-
+	// Set scroll callback
+	glfwSetScrollCallback(window, scroll_callback);
+	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	glfwSetMouseButtonCallback(window, mouseButtonCallback);
 	glfwSetCursorPosCallback(window, cursorPosCallback);
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("C:/Users/XYX/Documents/VSProgramming/cylinder.stl", in);
+	readSTL("C:/Users/XYX/Documents/VSProgramming/bunny.stl", in);
 
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
@@ -137,10 +187,24 @@ int main() {
 	// Call TetGen to tetrahedralize the geometry
 	tetrahedralize(&behavior, &in, &out);
 
+
+	// Inside your main function and before the render loop:
+	std::unordered_set<std::string> surfaceEdges;
+	for (int i = 0; i < out.numberoftrifaces; ++i) {
+		for (int j = 0; j < 3; ++j) {
+			int vertexIndex1 = out.trifacelist[i * 3 + j] - 1;
+			int vertexIndex2 = out.trifacelist[i * 3 + (j + 1) % 3] - 1;
+			surfaceEdges.insert(createEdgeId(vertexIndex1, vertexIndex2));
+		}
+	}
+
 	while (!glfwWindowShouldClose(window)) {
 
 		// Render here
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		
+
 
 		// Enable wireframe mode
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -153,6 +217,8 @@ int main() {
 
 		// Draw vertices
 		glPointSize(5.0f);  // Set point size
+		glPushMatrix();
+		glMultMatrixf(transformationMatrix.data());
 		glBegin(GL_POINTS);
 		for (int i = 0; i < out.numberofpoints; ++i) {
 			glVertex3f(
@@ -171,14 +237,16 @@ int main() {
 				vertexIndices[j] = out.tetrahedronlist[i * 4 + j] - 1;  // Indices in TetGen start from 1
 			}
 			// Draw all 6 edges of the tetrahedron
-			drawEdge(out, vertexIndices[0], vertexIndices[1]);
-			drawEdge(out, vertexIndices[0], vertexIndices[2]);
-			drawEdge(out, vertexIndices[0], vertexIndices[3]);
-			drawEdge(out, vertexIndices[1], vertexIndices[2]);
-			drawEdge(out, vertexIndices[1], vertexIndices[3]);
-			drawEdge(out, vertexIndices[2], vertexIndices[3]);
+			for (int j = 0; j < 4; ++j) {
+				for (int k = j + 1; k < 4; ++k) {
+					bool isSurfaceEdge = surfaceEdges.count(createEdgeId(vertexIndices[j], vertexIndices[k])) > 0;
+					drawEdge(out, vertexIndices[j], vertexIndices[k], isSurfaceEdge ? 1.0f : 1.0f, isSurfaceEdge ? 1.0f : 0.0f, isSurfaceEdge ? 1.0f : 0.0f);
+				}
+			}
 		}
 		glEnd();
+
+		glPopMatrix();
 
 		// Swap front and back buffers
 		glfwSwapBuffers(window);
