@@ -1,0 +1,83 @@
+#include "VisualOpenGL.h"
+
+double lastX, lastY;
+bool mousePressed = false;
+// Global variables to hold rotation state
+Eigen::Quaternionf rotation = Eigen::Quaternionf::Identity();
+// Callback to handle mouse button events
+void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+	if (button == GLFW_MOUSE_BUTTON_LEFT) {
+		if (action == GLFW_PRESS) {
+			mousePressed = true;
+			glfwGetCursorPos(window, &lastX, &lastY);
+		}
+		else if (action == GLFW_RELEASE) {
+			mousePressed = false;
+		}
+	}
+}
+
+
+// Callback to handle mouse motion events
+void cursorPosCallback(GLFWwindow* window, double xpos, double ypos) {
+	if (mousePressed) {
+		float dx = (xpos - lastX) * 0.005f;
+		float dy = (ypos - lastY) * 0.005f;
+		Eigen::AngleAxisf aaX(dy, Eigen::Vector3f::UnitX());
+		Eigen::AngleAxisf aaY(dx, Eigen::Vector3f::UnitY());
+		rotation = aaY * aaX * rotation;
+		lastX = xpos;
+		lastY = ypos;
+	}
+}
+
+float aspectRatio = 1.0f;
+float zoomFactor = 1.0f;
+
+void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+	glViewport(0, 0, width, height);
+	aspectRatio = static_cast<float>(width) / static_cast<float>(height ? height : 1);  // Avoid division by zero
+}
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+	zoomFactor *= (1.0f + 0.1f * yoffset);  // Adjust zoom factor
+
+	// Update projection matrix
+	float left = -zoomFactor * aspectRatio;
+	float right = zoomFactor * aspectRatio;
+	float bottom = -zoomFactor;
+	float top = zoomFactor;
+	float nearVal = -1.0f;
+	float farVal = 1.0f;
+
+	Eigen::Matrix4f projectionMatrix;
+	projectionMatrix <<
+		2.0f / (right - left), 0.0f, 0.0f, -(right + left) / (right - left),
+		0.0f, 2.0f / (top - bottom), 0.0f, -(top + bottom) / (top - bottom),
+		0.0f, 0.0f, -2.0f / (farVal - nearVal), -(farVal + nearVal) / (farVal - nearVal),
+		0.0f, 0.0f, 0.0f, 1.0f;
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glMultMatrixf(projectionMatrix.data());
+	glMatrixMode(GL_MODELVIEW);
+}
+std::string createEdgeId(int vertexIndex1, int vertexIndex2) {
+	return vertexIndex1 < vertexIndex2 ?
+		std::to_string(vertexIndex1) + "_" + std::to_string(vertexIndex2) :
+		std::to_string(vertexIndex2) + "_" + std::to_string(vertexIndex1);
+}
+
+// Function to draw a line between two vertices with a specified color
+void drawEdge(tetgenio& out, int vertexIndex1, int vertexIndex2, float r, float g, float b) {
+	glColor3f(r, g, b);
+	glVertex3f(
+		out.pointlist[vertexIndex1 * 3],
+		out.pointlist[vertexIndex1 * 3 + 1],
+		out.pointlist[vertexIndex1 * 3 + 2]
+	);
+	glVertex3f(
+		out.pointlist[vertexIndex2 * 3],
+		out.pointlist[vertexIndex2 * 3 + 1],
+		out.pointlist[vertexIndex2 * 3 + 2]
+	);
+}
