@@ -1,5 +1,6 @@
 #include "VisualOpenGL.h"
 
+
 double lastX, lastY;
 bool mousePressed = false;
 // Global variables to hold rotation state
@@ -61,23 +62,24 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
 	glMultMatrixf(projectionMatrix.data());
 	glMatrixMode(GL_MODELVIEW);
 }
-std::string createEdgeId(int vertexIndex1, int vertexIndex2) {
-	return vertexIndex1 < vertexIndex2 ?
-		std::to_string(vertexIndex1) + "_" + std::to_string(vertexIndex2) :
-		std::to_string(vertexIndex2) + "_" + std::to_string(vertexIndex1);
+std::string createEdgeId(Vertex* vertex1, Vertex* vertex2) {
+	std::string id1 = std::to_string(vertex1->x) + "_" + std::to_string(vertex1->y) + "_" + std::to_string(vertex1->z);
+	std::string id2 = std::to_string(vertex2->x) + "_" + std::to_string(vertex2->y) + "_" + std::to_string(vertex2->z);
+	return id1 < id2 ? id1 + "_" + id2 : id2 + "_" + id1;
 }
 
+
 // Function to draw a line between two vertices with a specified color
-void drawEdge(tetgenio& out, int vertexIndex1, int vertexIndex2, float r, float g, float b) {
+void drawEdge(Vertex* vertex1, Vertex* vertex2, float r, float g, float b) {
 	glColor3f(r, g, b);
 	glVertex3f(
-		out.pointlist[vertexIndex1 * 3],
-		out.pointlist[vertexIndex1 * 3 + 1],
-		out.pointlist[vertexIndex1 * 3 + 2]
+		vertex1->x,
+		vertex1->y,
+		vertex1->z
 	);
 	glVertex3f(
-		out.pointlist[vertexIndex2 * 3],
-		out.pointlist[vertexIndex2 * 3 + 1],
-		out.pointlist[vertexIndex2 * 3 + 2]
+		vertex2->x,
+		vertex2->y,
+		vertex2->z
 	);
 }

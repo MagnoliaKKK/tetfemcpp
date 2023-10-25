@@ -10,13 +10,6 @@
 #include "ReadSTL.h"
 
 
-class Vertex {
-public:
-	double x, y, z, id;
-
-	Vertex(double x, double y, double z, double id) : x(x), y(y), z(z), id(id) {}
-};
-
 class Tetrahedron {
 public:
 	Vertex* vertices[4];
@@ -96,12 +89,12 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("D:/docs/tetfemcpp/cubeLarge.stl", in);
+	readSTL("D:/docs/tetfemcpp/cube.stl", in);
 
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
-	char args[] = "pq1.414a0.1";
-	//char args[] = "pq1.1/15a0.0005"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003'
+	//char args[] = "pq1.414a0.1";
+	char args[] = "pq1.1/15a0.0005"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003'
 	behavior.parse_commandline(args);
 
 	// Call TetGen to tetrahedralize the geometry
@@ -148,16 +141,23 @@ int main() {
 	glfwSetCursorPosCallback(window, cursorPosCallback);
 
 	std::unordered_set<std::string> surfaceEdges;
-	for (int i = 0; i < out.numberoftrifaces; ++i) {
-		for (int j = 0; j < 3; ++j) {
-			int vertexIndex1 = out.trifacelist[i * 3 + j] - 1;
-			int vertexIndex2 = out.trifacelist[i * 3 + (j + 1) % 3] - 1;
-			surfaceEdges.insert(createEdgeId(vertexIndex1, vertexIndex2));
+
+	// Iterate through all groups and tetrahedra to collect surface edges
+	for (int groupIdx = 0; groupIdx < 3; ++groupIdx) {
+		Group& group = object.getGroup(groupIdx);
+		for (Tetrahedron* tet : group.tetrahedra) {
+			for (int vertexIdx1 = 0; vertexIdx1 < 4; ++vertexIdx1) {
+				for (int vertexIdx2 = vertexIdx1 + 1; vertexIdx2 < 4; ++vertexIdx2) {
+					Vertex* vertex1 = tet->vertices[vertexIdx1];
+					Vertex* vertex2 = tet->vertices[vertexIdx2];
+					surfaceEdges.insert(createEdgeId(vertex1, vertex2));
+				}
+			}
 		}
 	}
 
 	while (!glfwWindowShouldClose(window)) {
-
+		object.getGroup(0).tetrahedra[0]->vertices[0]->x += 0.01;
 		// Render here
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -174,31 +174,30 @@ int main() {
 		glMultMatrixf(mat.data());
 
 		// Draw vertices
-		glPointSize(5.0f);  // Set point size
-		glPushMatrix();
-		glMultMatrixf(transformationMatrix.data());
 		glBegin(GL_POINTS);
-		for (int i = 0; i < out.numberofpoints; ++i) {
-			glVertex3f(
-				out.pointlist[i * 3],
-				out.pointlist[i * 3 + 1],
-				out.pointlist[i * 3 + 2]
-			);
+		for (int groupIdx = 0; groupIdx < 3; ++groupIdx) {
+			Group& group = object.getGroup(groupIdx);
+			for (Tetrahedron* tet : group.tetrahedra) {
+				for (int vertexIdx = 0; vertexIdx < 4; ++vertexIdx) {
+					Vertex* vertex = tet->vertices[vertexIdx];
+					glVertex3f(vertex->x, vertex->y, vertex->z);
+				}
+			}
 		}
 		glEnd();
 
 		// Draw edges
 		glBegin(GL_LINES);
-		for (int i = 0; i < out.numberoftetrahedra; ++i) {
-			int vertexIndices[4];
-			for (int j = 0; j < 4; ++j) {
-				vertexIndices[j] = out.tetrahedronlist[i * 4 + j] - 1;  // Indices in TetGen start from 1
-			}
-			// Draw all 6 edges of the tetrahedron
-			for (int j = 0; j < 4; ++j) {
-				for (int k = j + 1; k < 4; ++k) {
-					bool isSurfaceEdge = surfaceEdges.count(createEdgeId(vertexIndices[j], vertexIndices[k])) > 0;
-					drawEdge(out, vertexIndices[j], vertexIndices[k], isSurfaceEdge ? 1.0f : 1.0f, isSurfaceEdge ? 1.0f : 0.0f, isSurfaceEdge ? 1.0f : 0.0f);
+		for (int groupIdx = 0; groupIdx < 3; ++groupIdx) {
+			Group& group = object.getGroup(groupIdx);
+			for (Tetrahedron* tet : group.tetrahedra) {
+				for (int vertexIdx1 = 0; vertexIdx1 < 4; ++vertexIdx1) {
+					for (int vertexIdx2 = vertexIdx1 + 1; vertexIdx2 < 4; ++vertexIdx2) {
+						Vertex* vertex1 = tet->vertices[vertexIdx1];
+						Vertex* vertex2 = tet->vertices[vertexIdx2];
+						bool isSurfaceEdge = surfaceEdges.count(createEdgeId(vertex1, vertex2)) > 0;
+						drawEdge(vertex1, vertex2, isSurfaceEdge ? 1.0f : 1.0f, isSurfaceEdge ? 1.0f : 0.0f, isSurfaceEdge ? 1.0f : 0.0f);
+					}
 				}
 			}
 		}
