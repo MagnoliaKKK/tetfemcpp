@@ -10,15 +10,122 @@
 #include "ReadSTL.h"
 
 
-// Global variables to store zoom factor and transformation matrix
+class Vertex {
+public:
+	double x, y, z, id;
 
+	Vertex(double x, double y, double z, double id) : x(x), y(y), z(z), id(id) {}
+};
+
+class Tetrahedron {
+public:
+	Vertex* vertices[4];
+
+	Tetrahedron(Vertex* v1, Vertex* v2, Vertex* v3, Vertex* v4) {
+		vertices[0] = v1;
+		vertices[1] = v2;
+		vertices[2] = v3;
+		vertices[3] = v4;
+	}
+};
+
+class Group {
+public:
+	std::vector<Tetrahedron*> tetrahedra;
+
+	void addTetrahedron(Tetrahedron* tet) {
+		tetrahedra.push_back(tet);
+	}
+};
+
+class Object {
+public:
+	Group groups[3];
+
+	Group& getGroup(int index) {
+		return groups[index];
+	}
+};
+
+void divideIntoGroups(tetgenio& out, Object& object) {
+	double minX = out.pointlist[0];
+	double maxX = out.pointlist[0];
+
+	// Find min and max X coordinates
+	for (int i = 0; i < out.numberofpoints; ++i) {
+		double x = out.pointlist[i * 3];
+		if (x < minX) minX = x;
+		if (x > maxX) maxX = x;
+	}
+
+	double range = maxX - minX;
+	double groupRange = range / 3;
+
+	// Create vertices
+	std::vector<Vertex*> vertices;
+	for (int i = 0; i < out.numberofpoints; ++i) {
+		double x = out.pointlist[i * 3];
+		double y = out.pointlist[i * 3 + 1];
+		double z = out.pointlist[i * 3 + 2];
+		vertices.push_back(new Vertex(x, y, z, i));
+	}
+
+	// Create tetrahedra and assign to groups
+	for (int i = 0; i < out.numberoftetrahedra; ++i) {
+		Vertex* v1 = vertices[out.tetrahedronlist[i * 4] - 1];
+		Vertex* v2 = vertices[out.tetrahedronlist[i * 4 + 1] - 1];
+		Vertex* v3 = vertices[out.tetrahedronlist[i * 4 + 2] - 1];
+		Vertex* v4 = vertices[out.tetrahedronlist[i * 4 + 3] - 1];
+
+		Tetrahedron* tet = new Tetrahedron(v1, v2, v3, v4);
+
+		// Determine group based on average X coordinate
+		double avgX = (v1->x + v2->x + v3->x + v4->x) / 4;
+		int groupIndex = (avgX - minX) / groupRange;
+		if (groupIndex > 2) groupIndex = 2;  // Ensure groupIndex is within bounds
+
+		object.getGroup(groupIndex).addTetrahedron(tet);
+	}
+}
+
+// Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 
-
-// Function to create a unique identifier for an edge
-
-
 int main() {
+
+
+	tetgenio in, out;
+	in.firstnumber = 1;  // All indices start from 1
+	readSTL("D:/docs/tetfemcpp/cubeLarge.stl", in);
+
+	// Configure TetGen behavior
+	tetgenbehavior behavior;
+	char args[] = "pq1.414a0.1";
+	//char args[] = "pq1.1/15a0.0005"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003'
+	behavior.parse_commandline(args);
+
+	// Call TetGen to tetrahedralize the geometry
+	tetrahedralize(&behavior, &in, &out);
+
+	Object object;
+	divideIntoGroups(out, object);
+
+	// Accessing and printing the groups and their tetrahedra
+	for (int i = 0; i < 3; ++i) {  // Loop over the groups
+		Group& group = object.getGroup(i);
+		std::cout << "Group " << i << " has " << group.tetrahedra.size() << " tetrahedra." << std::endl;
+
+		for (size_t j = 0; j < group.tetrahedra.size(); ++j) {  // Loop over the tetrahedra in each group
+			Tetrahedron* tet = group.tetrahedra[j];
+			//std::cout << "  Tetrahedron " << j << " vertices:" << std::endl;
+
+			for (int k = 0; k < 4; ++k) {  // Loop over the vertices in each tetrahedron
+				Vertex* vertex = tet->vertices[k];
+				//std::cout << "    Vertex " << k << ": (" << vertex->x << ", " << vertex->y << ", " << vertex->z << ")" << std::endl;
+			}
+		}
+	}
+
 
 	// Initialize the GLFW library
 	if (!glfwInit()) {
@@ -40,20 +147,6 @@ int main() {
 	glfwSetMouseButtonCallback(window, mouseButtonCallback);
 	glfwSetCursorPosCallback(window, cursorPosCallback);
 
-	tetgenio in, out;
-	in.firstnumber = 1;  // All indices start from 1
-	readSTL("C:/tetFEMCpp/bunny.stl", in);
-
-	// Configure TetGen behavior
-	tetgenbehavior behavior;
-	char args[] = "pq1.1/15a0.0005"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003'
-	behavior.parse_commandline(args);
-
-	// Call TetGen to tetrahedralize the geometry
-	tetrahedralize(&behavior, &in, &out);
-
-
-	// Inside your main function and before the render loop:
 	std::unordered_set<std::string> surfaceEdges;
 	for (int i = 0; i < out.numberoftrifaces; ++i) {
 		for (int j = 0; j < 3; ++j) {
