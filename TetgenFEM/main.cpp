@@ -205,7 +205,7 @@ int main() {
 
 	
 	
-
+	Eigen::Matrix4f mat;
 	while (!glfwWindowShouldClose(window)) {
 		//object.getGroup(1).tetrahedra[0]->vertices[0]->y += 0.01;
 		// Render here
@@ -219,8 +219,8 @@ int main() {
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
 
-		Eigen::Matrix4f mat = Eigen::Matrix4f::Identity();
-		mat.block<3, 3>(0, 0) = rotation.toRotationMatrix();
+		mat = Eigen::Matrix4f::Identity();
+		mat.block<3, 3>(0, 0) = rotation.toRotationMatrix(); 
 		glMultMatrixf(mat.data());
 
 		// Draw vertices
