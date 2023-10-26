@@ -62,11 +62,18 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
 	glMultMatrixf(projectionMatrix.data());
 	glMatrixMode(GL_MODELVIEW);
 }
+
 std::string createEdgeId(Vertex* vertex1, Vertex* vertex2) {
-	std::string id1 = std::to_string(vertex1->x) + "_" + std::to_string(vertex1->y) + "_" + std::to_string(vertex1->z);
-	std::string id2 = std::to_string(vertex2->x) + "_" + std::to_string(vertex2->y) + "_" + std::to_string(vertex2->z);
-	return id1 < id2 ? id1 + "_" + id2 : id2 + "_" + id1;
+	std::ostringstream idStream;
+	if (vertex1 < vertex2) {
+		idStream << vertex1 << "_" << vertex2;
+	}
+	else {
+		idStream << vertex2 << "_" << vertex1;
+	}
+	return idStream.str();
 }
+
 
 
 // Function to draw a line between two vertices with a specified color

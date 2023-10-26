@@ -6,9 +6,10 @@
 
 class Vertex {
 public:
-    double x, y, z, id;
+    double x, y, z;
+    int index;  // Add an index field to help identify vertices
 
-    Vertex(double x, double y, double z, double id) : x(x), y(y), z(z), id(id) {}
+    Vertex(double x, double y, double z, int index) : x(x), y(y), z(z), index(index) {}
 };
 
 extern Eigen::Quaternionf rotation;

@@ -10,9 +10,21 @@
 #include "ReadSTL.h"
 
 
+class Edge {
+public:
+	Vertex* vertices[2];
+	bool isBoundary;
+
+	Edge(Vertex* v1, Vertex* v2) : isBoundary(false) {
+		vertices[0] = v1;
+		vertices[1] = v2;
+	}
+};
+
 class Tetrahedron {
 public:
 	Vertex* vertices[4];
+	Edge* edges[6];  // Each tetrahedron has six edges
 
 	Tetrahedron(Vertex* v1, Vertex* v2, Vertex* v3, Vertex* v4) {
 		vertices[0] = v1;
@@ -40,7 +52,26 @@ public:
 	}
 };
 
+std::unordered_set<std::string> boundaryEdgesSet;  // Set to store boundary edges
+
+void findBoundaryEdges(tetgenio& out) {
+	int indexOffset = out.firstnumber;  // Get the index offset (0 or 1)
+	for (int i = 0; i < out.numberoftrifaces; ++i) {
+		for (int j = 0; j < 3; ++j) {
+			int vertexIndex1 = out.trifacelist[i * 3 + j] - indexOffset;
+			int vertexIndex2 = out.trifacelist[i * 3 + ((j + 1) % 3)] - indexOffset;
+			std::string edgeKey = vertexIndex1 < vertexIndex2 ?
+				std::to_string(vertexIndex1) + "-" + std::to_string(vertexIndex2) :
+				std::to_string(vertexIndex2) + "-" + std::to_string(vertexIndex1);
+			boundaryEdgesSet.insert(edgeKey);
+		}
+	}
+}
+
 void divideIntoGroups(tetgenio& out, Object& object) {
+
+	findBoundaryEdges(out);  // Populate the boundaryEdgesSet
+
 	double minX = out.pointlist[0];
 	double maxX = out.pointlist[0];
 
@@ -78,6 +109,21 @@ void divideIntoGroups(tetgenio& out, Object& object) {
 		if (groupIndex > 2) groupIndex = 2;  // Ensure groupIndex is within bounds
 
 		object.getGroup(groupIndex).addTetrahedron(tet);
+
+		// Set up edges for each tetrahedron
+		static int edgeIndices[6][2] = { {0, 1}, {1, 2}, {2, 0}, {0, 3}, {1, 3}, {2, 3} };
+		for (int j = 0; j < 6; ++j) {
+			Vertex* vertex1 = tet->vertices[edgeIndices[j][0]];
+			Vertex* vertex2 = tet->vertices[edgeIndices[j][1]];
+			Edge* edge = new Edge(vertex1, vertex2);
+
+			std::string edgeKey = vertex1->index < vertex2->index ?
+				std::to_string(vertex1->index) + "-" + std::to_string(vertex2->index) :
+				std::to_string(vertex2->index) + "-" + std::to_string(vertex1->index);
+
+			edge->isBoundary = boundaryEdgesSet.count(edgeKey) > 0;
+			tet->edges[j] = edge;
+		}
 	}
 }
 
@@ -89,7 +135,7 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("D:/docs/tetfemcpp/cube.stl", in);
+	readSTL("D:/docs/tetfemcpp/ring.stl", in);
 
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
@@ -140,24 +186,9 @@ int main() {
 	glfwSetMouseButtonCallback(window, mouseButtonCallback);
 	glfwSetCursorPosCallback(window, cursorPosCallback);
 
-	std::unordered_set<std::string> surfaceEdges;
-
-	// Iterate through all groups and tetrahedra to collect surface edges
-	for (int groupIdx = 0; groupIdx < 3; ++groupIdx) {
-		Group& group = object.getGroup(groupIdx);
-		for (Tetrahedron* tet : group.tetrahedra) {
-			for (int vertexIdx1 = 0; vertexIdx1 < 4; ++vertexIdx1) {
-				for (int vertexIdx2 = vertexIdx1 + 1; vertexIdx2 < 4; ++vertexIdx2) {
-					Vertex* vertex1 = tet->vertices[vertexIdx1];
-					Vertex* vertex2 = tet->vertices[vertexIdx2];
-					surfaceEdges.insert(createEdgeId(vertex1, vertex2));
-				}
-			}
-		}
-	}
 
 	while (!glfwWindowShouldClose(window)) {
-		object.getGroup(0).tetrahedra[0]->vertices[0]->x += 0.01;
+		//object.getGroup(1).tetrahedra[0]->vertices[0]->y += 0.01;
 		// Render here
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -188,19 +219,60 @@ int main() {
 
 		// Draw edges
 		glBegin(GL_LINES);
+
+
+
+		////显示里外两种颜色
+		//for (int groupIdx = 0; groupIdx < 3; ++groupIdx) {
+		//	Group& group = object.getGroup(groupIdx);
+		//	for (Tetrahedron* tet : group.tetrahedra) {
+		//		for (int edgeIdx = 0; edgeIdx < 6; ++edgeIdx) {  // Loop through each edge in the tetrahedron
+		//			Edge* edge = tet->edges[edgeIdx];
+		//			Vertex* vertex1 = edge->vertices[0];
+		//			Vertex* vertex2 = edge->vertices[1];
+		//			bool isSurfaceEdge = edge->isBoundary;
+		//			drawEdge(vertex1, vertex2, isSurfaceEdge ? 1.0f : 1.0f, isSurfaceEdge ? 1.0f : 0.0f, isSurfaceEdge ? 1.0f : 0.0f);
+		//		}
+		//	}
+		//}
+
+		//分组显示
 		for (int groupIdx = 0; groupIdx < 3; ++groupIdx) {
 			Group& group = object.getGroup(groupIdx);
 			for (Tetrahedron* tet : group.tetrahedra) {
-				for (int vertexIdx1 = 0; vertexIdx1 < 4; ++vertexIdx1) {
-					for (int vertexIdx2 = vertexIdx1 + 1; vertexIdx2 < 4; ++vertexIdx2) {
-						Vertex* vertex1 = tet->vertices[vertexIdx1];
-						Vertex* vertex2 = tet->vertices[vertexIdx2];
-						bool isSurfaceEdge = surfaceEdges.count(createEdgeId(vertex1, vertex2)) > 0;
-						drawEdge(vertex1, vertex2, isSurfaceEdge ? 1.0f : 1.0f, isSurfaceEdge ? 1.0f : 0.0f, isSurfaceEdge ? 1.0f : 0.0f);
+				for (int edgeIdx = 0; edgeIdx < 6; ++edgeIdx) {  // Loop through each edge in the tetrahedron
+					Edge* edge = tet->edges[edgeIdx];
+					Vertex* vertex1 = edge->vertices[0];
+					Vertex* vertex2 = edge->vertices[1];
+					bool isSurfaceEdge = edge->isBoundary;
+
+					float red = 0.0f, green = 0.0f, blue = 0.0f;
+
+					// Assign color based on groupIdx
+					if (groupIdx == 0) {
+						red = 1.0f;  // Red for group 0
 					}
+					else if (groupIdx == 1) {
+						green = 1.0f;  // Green for group 1
+					}
+					else if (groupIdx == 2) {
+						blue = 1.0f;  // Blue for group 2
+					}
+
+					// If it's a boundary edge, you may want to adjust the color or keep as is
+					// For example, make the color brighter if it's a boundary edge
+					if (isSurfaceEdge) {
+						red = std::min(1.0f, red + 0.5f);
+						green = std::min(1.0f, green + 0.5f);
+						blue = std::min(1.0f, blue + 0.5f);
+					}
+
+					drawEdge(vertex1, vertex2, red, green, blue);
 				}
 			}
 		}
+
+
 		glEnd();
 
 		glPopMatrix();
