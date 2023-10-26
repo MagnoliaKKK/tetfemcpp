@@ -143,6 +143,31 @@ void divideIntoGroups(tetgenio& out, Object& object, int numGroups) {
 	}
 }
 
+
+
+void drawAxis(float length) {
+	glPushMatrix();  // 保存当前的模型视图矩阵
+	glTranslatef(-length * 3, -length * 3, 0);  // 将坐标轴原点移动到窗口的右下角
+
+	glBegin(GL_LINES);
+	// X axis in red
+	glColor3f(1.0f, 0.0f, 0.0f);
+	glVertex3f(0.0f, 0.0f, 0.0f);
+	glVertex3f(length, 0.0f, 0.0f);
+	// Y axis in green
+	glColor3f(0.0f, 1.0f, 0.0f);
+	glVertex3f(0.0f, 0.0f, 0.0f);
+	glVertex3f(0.0f, length, 0.0f);
+	// Z axis in blue
+	glColor3f(0.0f, 0.0f, 1.0f);
+	glVertex3f(0.0f, 0.0f, 0.0f);
+	glVertex3f(0.0f, 0.0f, length);
+	glEnd();
+
+	glPopMatrix();  // 恢复之前保存的模型视图矩阵
+}
+
+
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 
@@ -151,7 +176,7 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/cubeLong.stl", in);
+	readSTL("stls/cubelong.stl", in);
 
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
@@ -207,12 +232,13 @@ int main() {
 	
 	Eigen::Matrix4f mat;
 	while (!glfwWindowShouldClose(window)) {
-		//object.getGroup(1).tetrahedra[0]->vertices[0]->y += 0.01;
+		//object.getGroup(1).tetrahedra[0]->vertices[0]->x += 0.01;
 		// Render here
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		
-
+		// 绘制坐标轴
+		drawAxis(0.3f);
 
 		// Enable wireframe mode
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
