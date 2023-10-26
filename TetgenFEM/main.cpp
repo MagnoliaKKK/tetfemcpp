@@ -8,6 +8,7 @@
 #include <unordered_set>
 #include "VisualOpenGL.h"
 #include "ReadSTL.h"
+#include <unordered_map>
 
 
 class Edge {
@@ -37,10 +38,24 @@ public:
 class Group {
 public:
 	std::vector<Tetrahedron*> tetrahedra;
+	std::unordered_map<int, Vertex*> verticesMap;  // Map to store unique vertices by index 哈希映射 同时也保证没有重复的点
 
 	void addTetrahedron(Tetrahedron* tet) {
 		tetrahedra.push_back(tet);
+		for (int i = 0; i < 4; ++i) {
+			verticesMap[tet->vertices[i]->index] = tet->vertices[i]; 
+		}
 	}
+
+	std::vector<Vertex*> getUniqueVertices() {
+		std::vector<Vertex*> uniqueVertices;
+		for (auto& pair : verticesMap) {
+			uniqueVertices.push_back(pair.second);
+		}
+		return uniqueVertices;
+	}
+	//用法 auto aaa = object.getGroup(0).getUniqueVertices();
+
 };
 
 class Object {
@@ -68,7 +83,7 @@ void findBoundaryEdges(tetgenio& out) {
 	}
 }
 
-void divideIntoGroups(tetgenio& out, Object& object) {
+void divideIntoGroups(tetgenio& out, Object& object, int numGroups) {
 
 	findBoundaryEdges(out);  // Populate the boundaryEdgesSet
 
@@ -83,7 +98,7 @@ void divideIntoGroups(tetgenio& out, Object& object) {
 	}
 
 	double range = maxX - minX;
-	double groupRange = range / 3;
+	double groupRange = range / numGroups;
 
 	// Create vertices
 	std::vector<Vertex*> vertices;
@@ -103,10 +118,11 @@ void divideIntoGroups(tetgenio& out, Object& object) {
 
 		Tetrahedron* tet = new Tetrahedron(v1, v2, v3, v4);
 
+
 		// Determine group based on average X coordinate
 		double avgX = (v1->x + v2->x + v3->x + v4->x) / 4;
 		int groupIndex = (avgX - minX) / groupRange;
-		if (groupIndex > 2) groupIndex = 2;  // Ensure groupIndex is within bounds
+		if (groupIndex >= numGroups) groupIndex = numGroups - 1;  // Update here
 
 		object.getGroup(groupIndex).addTetrahedron(tet);
 
@@ -135,7 +151,7 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("D:/docs/tetfemcpp/ring.stl", in);
+	readSTL("stls/cubeLong.stl", in);
 
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
@@ -146,11 +162,12 @@ int main() {
 	// Call TetGen to tetrahedralize the geometry
 	tetrahedralize(&behavior, &in, &out);
 
+	int groupNum = 3; //分几组 目前先最多3组 Object类和颜色都写死了
 	Object object;
-	divideIntoGroups(out, object);
+	divideIntoGroups(out, object, groupNum);
 
 	// Accessing and printing the groups and their tetrahedra
-	for (int i = 0; i < 3; ++i) {  // Loop over the groups
+	for (int i = 0; i < groupNum; ++i) {  // Loop over the groups
 		Group& group = object.getGroup(i);
 		std::cout << "Group " << i << " has " << group.tetrahedra.size() << " tetrahedra." << std::endl;
 
@@ -186,6 +203,8 @@ int main() {
 	glfwSetMouseButtonCallback(window, mouseButtonCallback);
 	glfwSetCursorPosCallback(window, cursorPosCallback);
 
+	
+	
 
 	while (!glfwWindowShouldClose(window)) {
 		//object.getGroup(1).tetrahedra[0]->vertices[0]->y += 0.01;
@@ -222,19 +241,6 @@ int main() {
 
 
 
-		////显示里外两种颜色
-		//for (int groupIdx = 0; groupIdx < 3; ++groupIdx) {
-		//	Group& group = object.getGroup(groupIdx);
-		//	for (Tetrahedron* tet : group.tetrahedra) {
-		//		for (int edgeIdx = 0; edgeIdx < 6; ++edgeIdx) {  // Loop through each edge in the tetrahedron
-		//			Edge* edge = tet->edges[edgeIdx];
-		//			Vertex* vertex1 = edge->vertices[0];
-		//			Vertex* vertex2 = edge->vertices[1];
-		//			bool isSurfaceEdge = edge->isBoundary;
-		//			drawEdge(vertex1, vertex2, isSurfaceEdge ? 1.0f : 1.0f, isSurfaceEdge ? 1.0f : 0.0f, isSurfaceEdge ? 1.0f : 0.0f);
-		//		}
-		//	}
-		//}
 
 		//分组显示
 		for (int groupIdx = 0; groupIdx < 3; ++groupIdx) {
