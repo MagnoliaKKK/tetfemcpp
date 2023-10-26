@@ -224,17 +224,20 @@ int main() {
 		glMultMatrixf(mat.data());
 
 		// Draw vertices
+		// 设置点的大小为10像素
+		glPointSize(5.0f);
+		// 绘制白色点
+		glColor3f(1.0f, 1.0f, 1.0f);
 		glBegin(GL_POINTS);
 		for (int groupIdx = 0; groupIdx < 3; ++groupIdx) {
 			Group& group = object.getGroup(groupIdx);
-			for (Tetrahedron* tet : group.tetrahedra) {
-				for (int vertexIdx = 0; vertexIdx < 4; ++vertexIdx) {
-					Vertex* vertex = tet->vertices[vertexIdx];
-					glVertex3f(vertex->x, vertex->y, vertex->z);
-				}
+			std::vector<Vertex*> uniqueVertices = group.getUniqueVertices();
+			for (Vertex* vertex : uniqueVertices) {
+				glVertex3f(vertex->x, vertex->y, vertex->z);
 			}
 		}
 		glEnd();
+
 
 		// Draw edges
 		glBegin(GL_LINES);
