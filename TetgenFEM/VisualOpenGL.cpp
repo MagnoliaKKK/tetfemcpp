@@ -90,3 +90,25 @@ void drawEdge(Vertex* vertex1, Vertex* vertex2, float r, float g, float b) {
 		vertex2->z
 	);
 }
+
+void drawAxis(float length) {
+	glPushMatrix();  // 保存当前的模型视图矩阵
+	glTranslatef(-length * 3, -length * 3, 0);  // 将坐标轴原点移动到窗口的右下角
+
+	glBegin(GL_LINES);
+	// X axis in red
+	glColor3f(1.0f, 0.0f, 0.0f);
+	glVertex3f(0.0f, 0.0f, 0.0f);
+	glVertex3f(length, 0.0f, 0.0f);
+	// Y axis in green
+	glColor3f(0.0f, 1.0f, 0.0f);
+	glVertex3f(0.0f, 0.0f, 0.0f);
+	glVertex3f(0.0f, length, 0.0f);
+	// Z axis in blue
+	glColor3f(0.0f, 0.0f, 1.0f);
+	glVertex3f(0.0f, 0.0f, 0.0f);
+	glVertex3f(0.0f, 0.0f, length);
+	glEnd();
+
+	glPopMatrix();  // 恢复之前保存的模型视图矩阵
+}

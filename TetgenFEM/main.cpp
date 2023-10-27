@@ -5,178 +5,20 @@
 #include <fstream>
 #include "GLFW/glfw3.h"
 #include <cmath>
-#include <unordered_set>
 #include "VisualOpenGL.h"
 #include "ReadSTL.h"
-#include <unordered_map>
-
-
-class Edge {
-public:
-	Vertex* vertices[2];
-	bool isBoundary;
-
-	Edge(Vertex* v1, Vertex* v2) : isBoundary(false) {
-		vertices[0] = v1;
-		vertices[1] = v2;
-	}
-};
-
-class Tetrahedron {
-public:
-	Vertex* vertices[4];
-	Edge* edges[6];  // Each tetrahedron has six edges
-
-	Tetrahedron(Vertex* v1, Vertex* v2, Vertex* v3, Vertex* v4) {
-		vertices[0] = v1;
-		vertices[1] = v2;
-		vertices[2] = v3;
-		vertices[3] = v4;
-	}
-};
-
-class Group {
-public:
-	std::vector<Tetrahedron*> tetrahedra;
-	std::unordered_map<int, Vertex*> verticesMap;  // Map to store unique vertices by index 哈希映射 同时也保证没有重复的点
-
-	void addTetrahedron(Tetrahedron* tet) {
-		tetrahedra.push_back(tet);
-		for (int i = 0; i < 4; ++i) {
-			verticesMap[tet->vertices[i]->index] = tet->vertices[i]; 
-		}
-	}
-
-	std::vector<Vertex*> getUniqueVertices() {
-		std::vector<Vertex*> uniqueVertices;
-		for (auto& pair : verticesMap) {
-			uniqueVertices.push_back(pair.second);
-		}
-		return uniqueVertices;
-	}
-	//用法 auto aaa = object.getGroup(0).getUniqueVertices();
-
-};
-
-class Object {
-public:
-	Group groups[3];
-
-	Group& getGroup(int index) {
-		return groups[index];
-	}
-};
-
-std::unordered_set<std::string> boundaryEdgesSet;  // Set to store boundary edges
-
-void findBoundaryEdges(tetgenio& out) {
-	int indexOffset = out.firstnumber;  // Get the index offset (0 or 1)
-	for (int i = 0; i < out.numberoftrifaces; ++i) {
-		for (int j = 0; j < 3; ++j) {
-			int vertexIndex1 = out.trifacelist[i * 3 + j] - indexOffset;
-			int vertexIndex2 = out.trifacelist[i * 3 + ((j + 1) % 3)] - indexOffset;
-			std::string edgeKey = vertexIndex1 < vertexIndex2 ?
-				std::to_string(vertexIndex1) + "-" + std::to_string(vertexIndex2) :
-				std::to_string(vertexIndex2) + "-" + std::to_string(vertexIndex1);
-			boundaryEdgesSet.insert(edgeKey);
-		}
-	}
-}
-
-void divideIntoGroups(tetgenio& out, Object& object, int numGroups) {
-
-	findBoundaryEdges(out);  // Populate the boundaryEdgesSet
-
-	double minX = out.pointlist[0];
-	double maxX = out.pointlist[0];
-
-	// Find min and max X coordinates
-	for (int i = 0; i < out.numberofpoints; ++i) {
-		double x = out.pointlist[i * 3];
-		if (x < minX) minX = x;
-		if (x > maxX) maxX = x;
-	}
-
-	double range = maxX - minX;
-	double groupRange = range / numGroups;
-
-	// Create vertices
-	std::vector<Vertex*> vertices;
-	for (int i = 0; i < out.numberofpoints; ++i) {
-		double x = out.pointlist[i * 3];
-		double y = out.pointlist[i * 3 + 1];
-		double z = out.pointlist[i * 3 + 2];
-		vertices.push_back(new Vertex(x, y, z, i));
-	}
-
-	// Create tetrahedra and assign to groups
-	for (int i = 0; i < out.numberoftetrahedra; ++i) {
-		Vertex* v1 = vertices[out.tetrahedronlist[i * 4] - 1];
-		Vertex* v2 = vertices[out.tetrahedronlist[i * 4 + 1] - 1];
-		Vertex* v3 = vertices[out.tetrahedronlist[i * 4 + 2] - 1];
-		Vertex* v4 = vertices[out.tetrahedronlist[i * 4 + 3] - 1];
-
-		Tetrahedron* tet = new Tetrahedron(v1, v2, v3, v4);
-
-
-		// Determine group based on average X coordinate
-		double avgX = (v1->x + v2->x + v3->x + v4->x) / 4;
-		int groupIndex = (avgX - minX) / groupRange;
-		if (groupIndex >= numGroups) groupIndex = numGroups - 1;  // Update here
-
-		object.getGroup(groupIndex).addTetrahedron(tet);
-
-		// Set up edges for each tetrahedron
-		static int edgeIndices[6][2] = { {0, 1}, {1, 2}, {2, 0}, {0, 3}, {1, 3}, {2, 3} };
-		for (int j = 0; j < 6; ++j) {
-			Vertex* vertex1 = tet->vertices[edgeIndices[j][0]];
-			Vertex* vertex2 = tet->vertices[edgeIndices[j][1]];
-			Edge* edge = new Edge(vertex1, vertex2);
-
-			std::string edgeKey = vertex1->index < vertex2->index ?
-				std::to_string(vertex1->index) + "-" + std::to_string(vertex2->index) :
-				std::to_string(vertex2->index) + "-" + std::to_string(vertex1->index);
-
-			edge->isBoundary = boundaryEdgesSet.count(edgeKey) > 0;
-			tet->edges[j] = edge;
-		}
-	}
-}
-
-
-
-void drawAxis(float length) {
-	glPushMatrix();  // 保存当前的模型视图矩阵
-	glTranslatef(-length * 3, -length * 3, 0);  // 将坐标轴原点移动到窗口的右下角
-
-	glBegin(GL_LINES);
-	// X axis in red
-	glColor3f(1.0f, 0.0f, 0.0f);
-	glVertex3f(0.0f, 0.0f, 0.0f);
-	glVertex3f(length, 0.0f, 0.0f);
-	// Y axis in green
-	glColor3f(0.0f, 1.0f, 0.0f);
-	glVertex3f(0.0f, 0.0f, 0.0f);
-	glVertex3f(0.0f, length, 0.0f);
-	// Z axis in blue
-	glColor3f(0.0f, 0.0f, 1.0f);
-	glVertex3f(0.0f, 0.0f, 0.0f);
-	glVertex3f(0.0f, 0.0f, length);
-	glEnd();
-
-	glPopMatrix();  // 恢复之前保存的模型视图矩阵
-}
-
 
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
+double youngs = 10000000;
+double poisson = 0.49;
 
 int main() {
 
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/cubelong.stl", in);
+	readSTL("stls/bunny.stl", in);
 
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
@@ -228,10 +70,15 @@ int main() {
 	glfwSetMouseButtonCallback(window, mouseButtonCallback);
 	glfwSetCursorPosCallback(window, cursorPosCallback);
 
-	
+	Eigen::MatrixXd Ke;
+	Ke = object.groups[1].tetrahedra[0]->createElementK(youngs, poisson);
 	
 	Eigen::Matrix4f mat;
 	while (!glfwWindowShouldClose(window)) {
+
+		object.groups[0].tetrahedra[1]->vertices[2]->x += 0.01;
+		object.groups[1].getUniqueVertices()[3]->y += 0.001;
+
 		//object.getGroup(1).tetrahedra[0]->vertices[0]->x += 0.01;
 		// Render here
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

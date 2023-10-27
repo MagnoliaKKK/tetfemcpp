@@ -139,14 +139,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="GroupDivision.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ReadSTL.cpp" />
     <ClCompile Include="VisualOpenGL.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="GroupDivision.h" />
     <ClInclude Include="ReadSTL.h" />
     <ClInclude Include="tetgen.h" />
     <ClInclude Include="VisualOpenGL.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="eigen-3.4.0\Eigen.natvis" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
