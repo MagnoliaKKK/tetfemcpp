@@ -92,8 +92,8 @@ void drawEdge(Vertex* vertex1, Vertex* vertex2, float r, float g, float b) {
 }
 
 void drawAxis(float length) {
-	glPushMatrix();  // ±£´æµ±Ç°µÄÄ£ĞÍÊÓÍ¼¾ØÕó
-	glTranslatef(-length * 3, -length * 3, 0);  // ½«×ø±êÖáÔ­µãÒÆ¶¯µ½´°¿ÚµÄÓÒÏÂ½Ç
+	glPushMatrix();  // ±£´æµ±Ç°µÄÄ£ĞÍÊÓÍ¼¾ØÕE
+	glTranslatef(-length * 3, -length * 3, 0);  // ½«×ø±EáÔ­µãÒÆ¶¯µ½´°¿ÚµÄÓÒÏÂ½Ç
 
 	glBegin(GL_LINES);
 	// X axis in red
@@ -110,5 +110,5 @@ void drawAxis(float length) {
 	glVertex3f(0.0f, 0.0f, length);
 	glEnd();
 
-	glPopMatrix();  // »Ö¸´Ö®Ç°±£´æµÄÄ£ĞÍÊÓÍ¼¾ØÕó
+	glPopMatrix();  // »Ö¸´Ö®Ç°±£´æµÄÄ£ĞÍÊÓÍ¼¾ØÕE
 }

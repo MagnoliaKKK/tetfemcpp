@@ -12,6 +12,7 @@
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 double youngs = 10000000;
 double poisson = 0.49;
+double density = 1000;
 
 int main() {
 
@@ -29,7 +30,7 @@ int main() {
 	// Call TetGen to tetrahedralize the geometry
 	tetrahedralize(&behavior, &in, &out);
 
-	int groupNum = 3; //分几组 目前先最多3组 Object类和颜色都写死了
+	int groupNum = 3; //分几讈E目前先襾E讈EObject类和颜色都写死了
 	Object object;
 	divideIntoGroups(out, object, groupNum);
 
@@ -84,7 +85,7 @@ int main() {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		
-		// 绘制坐标轴
+		// 绘制坐眮E丒
 		drawAxis(0.3f);
 
 		// Enable wireframe mode
@@ -99,7 +100,7 @@ int main() {
 		// Draw vertices
 		// 设置点的大小为10像素
 		glPointSize(5.0f);
-		// 绘制白色点
+		// 绘制白色祦E
 		glColor3f(1.0f, 1.0f, 1.0f);
 		glBegin(GL_POINTS);
 		for (int groupIdx = 0; groupIdx < 3; ++groupIdx) {

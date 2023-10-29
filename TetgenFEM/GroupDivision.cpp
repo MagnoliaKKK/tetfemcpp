@@ -1,4 +1,4 @@
-#include "GroupDivision.h"
+﻿#include "GroupDivision.h"
 
 
 void Group::addTetrahedron(Tetrahedron* tet) {
@@ -6,6 +6,11 @@ void Group::addTetrahedron(Tetrahedron* tet) {
 	for (int i = 0; i < 4; ++i) {
 		verticesMap[tet->vertices[i]->index] = tet->vertices[i];
 	}
+}
+
+void Group::calCenterofMass()
+{
+
 }
 
 Eigen::MatrixXd Tetrahedron::createElementK(double E, double nu) {
@@ -98,6 +103,33 @@ std::vector<Vertex*> Group::getUniqueVertices() {
 	return uniqueVertices;
 }
 
+void Group::calMassGroup() {
+	groupMass = 0.0; // 初始化组的质量为0
+	for (auto& tet : tetrahedra) { // 遍历每一个四面体
+		groupMass += tet->massTetra; // 累加每一个四面体的质量到组的质量
+	}
+}
+
+Eigen::MatrixXd Group::calMassMatrix(double den) {
+	int N = verticesMap.size();  // Number of unique vertices
+	Eigen::MatrixXd M = Eigen::MatrixXd::Zero(3 * N, 3 * N);  // Initialize mass matrix
+
+	for (auto& tet : tetrahedra) {
+		double tetMass = tet->calMassTetra(den);
+		double vertexMass = tetMass / 4.0;  // Assume uniform distribution of mass among vertices
+
+		for (int i = 0; i < 4; i++) {
+			int idx = tet->vertices[i]->index;
+			M(3 * idx, 3 * idx) += vertexMass;     // x-direction
+			M(3 * idx + 1, 3 * idx + 1) += vertexMass; // y-direction
+			M(3 * idx + 2, 3 * idx + 2) += vertexMass; // z-direction
+		}
+	}
+
+	return M;
+}
+
+
 Group& Object::getGroup(int index) {
 	return groups[index];
 }
@@ -176,4 +208,26 @@ void divideIntoGroups(tetgenio& out, Object& object, int numGroups) {
 			tet->edges[j] = edge;
 		}
 	}
+}
+
+double Tetrahedron::calMassTetra(double den) {
+	double determinant;
+	double volume;
+	determinant = std::abs (vertices[0]->x * (vertices[1]->y * (vertices[2]->z * vertices[3]->z - vertices[3]->z * vertices[2]->z)
+		- vertices[1]->z * (vertices[2]->y * vertices[3]->z - vertices[3]->y * vertices[2]->z)
+		+ vertices[1]->z * (vertices[2]->y * vertices[3]->y - vertices[3]->y * vertices[2]->y))
+		- vertices[0]->y * (vertices[1]->x * (vertices[2]->z * vertices[3]->z - vertices[3]->z * vertices[2]->z)
+			- vertices[1]->z * (vertices[2]->x * vertices[3]->z - vertices[3]->x * vertices[2]->z)
+			+ vertices[1]->z * (vertices[2]->x * vertices[3]->x - vertices[3]->x * vertices[2]->x))
+		+ vertices[0]->z * (vertices[1]->x * (vertices[2]->y * vertices[3]->z - vertices[3]->y * vertices[2]->z)
+			- vertices[1]->y * (vertices[2]->x * vertices[3]->z - vertices[3]->x * vertices[2]->z)
+			+ vertices[1]->y * (vertices[2]->x * vertices[3]->y - vertices[3]->x * vertices[2]->y))
+		- vertices[0]->x * (vertices[1]->x * (vertices[2]->y * vertices[3]->y - vertices[3]->y * vertices[2]->y)
+			- vertices[1]->y * (vertices[2]->x * vertices[3]->y - vertices[3]->x * vertices[2]->y)
+			+ vertices[1]->x * (vertices[2]->x * vertices[3]->x - vertices[3]->x * vertices[2]->x)));
+	volume = determinant / 6;
+	massTetra = volume * den;
+	return massTetra;
+
+	
 }

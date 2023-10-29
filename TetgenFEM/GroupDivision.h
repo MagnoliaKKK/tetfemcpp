@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
@@ -32,6 +32,7 @@ class Tetrahedron {
 public:
 	Vertex* vertices[4];
 	Edge* edges[6];  // Each tetrahedron has six edges
+	double massTetra;
 
 	Tetrahedron(Vertex* v1, Vertex* v2, Vertex* v3, Vertex* v4) {
 		vertices[0] = v1;
@@ -40,6 +41,8 @@ public:
 		vertices[3] = v4;
 	}
 	Eigen::MatrixXd createElementK(double E, double nu);
+	double calMassTetra(double den);
+
 };
 
 
@@ -47,9 +50,14 @@ class Group {
 public:
 	std::vector<Tetrahedron*> tetrahedra;
 	std::unordered_map<int, Vertex*> verticesMap;
+	Eigen::Vector3d centerofMass;
+	double groupMass;//每组的质量
 
 	void addTetrahedron(Tetrahedron* tet);
 	std::vector<Vertex*> getUniqueVertices();
+	void calCenterofMass();
+	void calMassGroup();
+	Eigen::MatrixXd calMassMatrix(double den);
 };
 
 class Object {
