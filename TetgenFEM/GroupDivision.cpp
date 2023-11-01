@@ -144,6 +144,31 @@ Eigen::MatrixXd Group::calMassMatrix(double den) {
 	massMatrix = M;
 	return M;
 }
+
+void Group::calMassDistributionMatrix() {
+
+	massDistribution = Eigen::MatrixXd::Zero(3 * verticesMap.size(), 3 * verticesMap.size());
+	Eigen::MatrixXd SUMsub_M_Matrix = Eigen::MatrixXd::Zero(3, 3 * verticesMap.size());
+	for (const auto& vertexEntry : verticesMap) {
+		Vertex* vertex = vertexEntry.second;
+		int vertexIndex = vertex->index;
+
+		// Create a 3x3 identity matrix scaled by the vertex's mass
+		SUMsub_M_Matrix.block(0, 3 * vertexIndex, 3, 3) = (vertex->vertexMass / groupMass) * Eigen::Matrix3d::Identity();
+	}
+	
+	for (const auto& vertexEntry : verticesMap) {
+		Vertex* vertex = vertexEntry.second;
+		int vertexIndex = vertex->index;
+
+		massDistribution.block(3 * vertexIndex, 0, 3, 3 * vertexIndex) = SUMsub_M_Matrix;
+	}
+	// Reset SUM_M to a sparse view
+	//massDistributionSparse.setZero();
+	//massDistributionSparse = massDistribution.sparseView();
+
+	
+}
 void Group::setVertexMassesFromMassMatrix() {
 	int N = verticesMap.size();  // Number of unique vertices
 

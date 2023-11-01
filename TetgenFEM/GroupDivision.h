@@ -57,6 +57,7 @@ public:
 	Eigen::Vector3d centerofMass;
 	double groupMass;//每组的质量
 	Eigen::MatrixXd massMatrix;//group mass matrix
+	Eigen::MatrixXd massDistribution;
 
 	void addTetrahedron(Tetrahedron* tet);
 	std::vector<Vertex*> getUniqueVertices();
@@ -64,6 +65,7 @@ public:
 	void calMassGroup();
 	Eigen::MatrixXd calMassMatrix(double den);
 	void setVertexMassesFromMassMatrix();
+	void calMassDistributionMatrix();
 };
 
 class Object {
