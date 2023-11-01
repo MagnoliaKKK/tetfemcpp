@@ -7,81 +7,102 @@ void Group::addTetrahedron(Tetrahedron* tet) {
 		verticesMap[tet->vertices[i]->index] = tet->vertices[i];
 	}
 }
-
-void Group::calCenterofMass()
-{
-
+std::vector<Vertex*> Group::getUniqueVertices() {
+	std::vector<Vertex*> uniqueVertices;
+	for (auto& pair : verticesMap) {
+		uniqueVertices.push_back(pair.second);
+	}
+	return uniqueVertices;
 }
 
-Eigen::MatrixXd Tetrahedron::createElementK(double E, double nu) {
+void Group::calCenterofMass() {
+	double totalMass = 0.0;
+	Eigen::Vector3d weightedSum(0.0, 0.0, 0.0);
+
+	for (const auto& vertexPair : verticesMap) {
+		Vertex* vertex = vertexPair.second;
+		totalMass += vertex->vertexMass;
+		weightedSum += vertex->vertexMass * Eigen::Vector3d(vertex->x, vertex->y, vertex->z);
+	}
+
+	if (totalMass > 0.0) {
+		centerofMass = weightedSum / totalMass;
+	}
+	else {
+		// Handle the case where totalMass is zero to avoid division by zero.
+		// You can set centerofMass to a default value or handle it according to your requirements.
+		centerofMass = Eigen::Vector3d(0.0, 0.0, 0.0);
+	}
+}
+
+
+//
+Eigen::MatrixXd Tetrahedron::createElementK(double E, double nu, const Eigen::Vector3d& groupCenterOfMass) {
+	// Calculate the volume of the tetrahedron using the formula
+	//double volume = calculateTetrahedronVolume(groupCenterOfMass);
+
+	// Calculate the Jacobian matrix J
 	Eigen::MatrixXd J(3, 3);
-	Eigen::MatrixXd K(12, 12);
-	J(0, 0) = vertices[0]->x - vertices[3]->x;
-	J(0, 1) = vertices[1]->x - vertices[3]->x;
-	J(0, 2) = vertices[2]->x - vertices[3]->x;
+	J(0, 0) = (vertices[1]->x - groupCenterOfMass[0]) - (vertices[0]->x - groupCenterOfMass[0]);
+	J(0, 1) = (vertices[2]->x - groupCenterOfMass[0]) - (vertices[0]->x - groupCenterOfMass[0]);
+	J(0, 2) = (vertices[3]->x - groupCenterOfMass[0]) - (vertices[0]->x - groupCenterOfMass[0]);
+	J(1, 0) = (vertices[1]->y - groupCenterOfMass[1]) - (vertices[0]->y - groupCenterOfMass[1]);
+	J(1, 1) = (vertices[2]->y - groupCenterOfMass[1]) - (vertices[0]->y - groupCenterOfMass[1]);
+	J(1, 2) = (vertices[3]->y - groupCenterOfMass[1]) - (vertices[0]->y - groupCenterOfMass[1]);
+	J(2, 0) = (vertices[1]->z - groupCenterOfMass[2]) - (vertices[0]->z - groupCenterOfMass[2]);
+	J(2, 1) = (vertices[2]->z - groupCenterOfMass[2]) - (vertices[0]->z - groupCenterOfMass[2]);
+	J(2, 2) = (vertices[3]->z - groupCenterOfMass[2]) - (vertices[0]->z - groupCenterOfMass[2]);
 
-	J(1, 0) = vertices[0]->y - vertices[3]->y;
-	J(1, 1) = vertices[1]->y - vertices[3]->y;
-	J(1, 2) = vertices[2]->y - vertices[3]->y;
-
-	J(2, 0) = vertices[0]->z - vertices[3]->z;
-	J(2, 1) = vertices[1]->z - vertices[3]->z;
-	J(2, 2) = vertices[2]->z - vertices[3]->z;
+	// Calculate the inverse of J
 	Eigen::MatrixXd J_inv = J.inverse();
 
+	// Initialize the B matrix
 	Eigen::MatrixXd B(6, 12);
 	B.setZero();
-	// Node 0
-	Eigen::Vector3d dN0_dxieta(1, 0, 0);
-	Eigen::Vector3d dN0_dx = J_inv * dN0_dxieta;
-	B(0, 0) = dN0_dx(0);
-	B(1, 1) = dN0_dx(1);
-	B(2, 2) = dN0_dx(2);
-	B(3, 0) = dN0_dx(1);
-	B(3, 1) = dN0_dx(0);
-	B(4, 1) = dN0_dx(2);
-	B(4, 2) = dN0_dx(1);
-	B(5, 0) = dN0_dx(2);
-	B(5, 2) = dN0_dx(0);
 
-	// Node 1
-	Eigen::Vector3d dN1_dxieta(0, 1, 0);
-	Eigen::Vector3d dN1_dx = J_inv * dN1_dxieta;
-	B(0, 3) = dN1_dx(0);
-	B(1, 4) = dN1_dx(1);
-	B(2, 5) = dN1_dx(2);
-	B(3, 3) = dN1_dx(1);
-	B(3, 4) = dN1_dx(0);
-	B(4, 4) = dN1_dx(2);
-	B(4, 5) = dN1_dx(1);
-	B(5, 3) = dN1_dx(2);
-	B(5, 5) = dN1_dx(0);
+	double N_x[4], N_y[4], N_z[4];
 
-	// Node 2
-	Eigen::Vector3d dN2_dxieta(0, 0, 1);
-	Eigen::Vector3d dN2_dx = J_inv * dN2_dxieta;
-	B(0, 6) = dN2_dx(0);
-	B(1, 7) = dN2_dx(1);
-	B(2, 8) = dN2_dx(2);
-	B(3, 6) = dN2_dx(1);
-	B(3, 7) = dN2_dx(0);
-	B(4, 7) = dN2_dx(2);
-	B(4, 8) = dN2_dx(1);
-	B(5, 6) = dN2_dx(2);
-	B(5, 8) = dN2_dx(0);
+	double p1x = vertices[0]->x;
+	double p1y = vertices[0]->y;
+	double p1z = vertices[0]->z;
+	double p2x = vertices[1]->x;
+	double p2y = vertices[1]->y;
+	double p2z = vertices[1]->z;
+	double p3x = vertices[2]->x;
+	double p3y = vertices[2]->y;
+	double p3z = vertices[2]->z;
+	double p4x = vertices[3]->x;
+	double p4y = vertices[3]->y;
+	double p4z = vertices[3]->z;
 
-	// Node 3
-	Eigen::Vector3d dN3_dxieta(-1, -1, -1);
-	Eigen::Vector3d dN3_dx = J_inv * dN3_dxieta;
-	B(0, 9) = dN3_dx(0);
-	B(1, 10) = dN3_dx(1);
-	B(2, 11) = dN3_dx(2);
-	B(3, 9) = dN3_dx(1);
-	B(3, 10) = dN3_dx(0);
-	B(4, 10) = dN3_dx(2);
-	B(4, 11) = dN3_dx(1);
-	B(5, 9) = dN3_dx(2);
-	B(5, 11) = dN3_dx(0);
+	N_x[0] = (-p3y * p4z + p3z * p4y + p2y * p4z - p2y * p3z - p2z * p4y + p2z * p3y);
+	N_y[0] = (p3x * p4z - p3z * p4x - p2x * p4z + p2x * p3z + p2z * p4x - p2z * p3x);
+	N_z[0] = (-p3x * p4y + p3y * p4x + p2x * p4y - p2x * p3y - p2y * p4x + p2y * p3x);
+
+	N_x[1] = (p3y * p4z - p3z * p4y - p1y * p4z + p1y * p3z + p1z * p4y - p1z * p3y);
+	N_y[1] = (-p3x * p4z + p3z * p4x + p1x * p4z - p1x * p3z - p1z * p4x + p1z * p3x);
+	N_z[1] = (p3x * p4y - p3y * p4x - p1x * p4y + p1x * p3y + p1y * p4x - p1y * p3x);
+
+	N_x[2] = (-p2y * p4z + p2z * p4y + p1y * p4z - p1y * p2z - p1z * p4y + p1z * p2y);
+	N_y[2] = (p2x * p4z - p2z * p4x - p1x * p4z + p1x * p2z + p1z * p4x - p1z * p2x);
+	N_z[2] = (-p2x * p4y + p2y * p4x + p1x * p4y - p1x * p2y - p1y * p4x + p1y * p2x);
+
+	N_x[3] = (p2y * p3z - p2z * p3y - p1y * p3z + p1y * p2z + p1z * p3y - p1z * p2y);
+	N_y[3] = (-p2x * p3z + p2z * p3x + p1x * p3z - p1x * p2z - p1z * p3x + p1z * p2x);
+	N_z[3] = (p2x * p3y - p2y * p3x - p1x * p3y + p1x * p2y + p1y * p3x - p1y * p2x);
+
+	for (unsigned int i = 0; i < 4; i++) {
+		B(0, 3 * i) = N_x[i];
+		B(1, 3 * i + 1) = N_y[i];
+		B(2, 3 * i + 2) = N_z[i];
+		B(3, 3 * i) = N_y[i]; 
+		B(3, 3 * i + 1) = N_x[i];
+		B(4, 3 * i) = N_z[i]; 
+		B(4, 3 * i + 2) = N_x[i];
+		B(5, 3 * i + 1) = N_z[i]; 
+		B(5, 3 * i + 2) = N_y[i];
+	}
+	// Calculate the material's elasticity matrix D
 	Eigen::MatrixXd D(6, 6);
 	double factor = E / ((1 + nu) * (1 - 2 * nu));
 	D <<
@@ -91,17 +112,12 @@ Eigen::MatrixXd Tetrahedron::createElementK(double E, double nu) {
 		0, 0, 0, ((1 - 2 * nu) / 2)* factor, 0, 0,
 		0, 0, 0, 0, ((1 - 2 * nu) / 2)* factor, 0,
 		0, 0, 0, 0, 0, ((1 - 2 * nu) / 2)* factor;
-	K = B.transpose() * D * B;
+
+	// Calculate the element stiffness matrix K
+	Eigen::MatrixXd K = (B / (6 * volumeTetra)).transpose() * D * (B/(6 * volumeTetra)) * volumeTetra;
 	return K;
 }
 
-std::vector<Vertex*> Group::getUniqueVertices() {
-	std::vector<Vertex*> uniqueVertices;
-	for (auto& pair : verticesMap) {
-		uniqueVertices.push_back(pair.second);
-	}
-	return uniqueVertices;
-}
 
 void Group::calMassGroup() {
 	groupMass = 0.0; // 初始化组的质量为0
@@ -125,8 +141,18 @@ Eigen::MatrixXd Group::calMassMatrix(double den) {
 			M(3 * idx + 2, 3 * idx + 2) += vertexMass; // z-direction
 		}
 	}
-
+	massMatrix = M;
 	return M;
+}
+void Group::setVertexMassesFromMassMatrix() {
+	int N = verticesMap.size();  // Number of unique vertices
+
+	for (int i = 0; i < N; i++) {
+		double mass = massMatrix(3 * i, 3 * i);
+		// Assuming that the vertices are stored sequentially in the verticesMap
+		// And the index in the massMatrix corresponds to the index in the Vertex object
+		verticesMap[i]->vertexMass = mass;
+	}
 }
 
 
@@ -212,7 +238,7 @@ void divideIntoGroups(tetgenio& out, Object& object, int numGroups) {
 
 double Tetrahedron::calMassTetra(double den) {
 	double determinant;
-	double volume;
+	//double volume;
 	determinant = std::abs (vertices[0]->x * (vertices[1]->y * (vertices[2]->z * vertices[3]->z - vertices[3]->z * vertices[2]->z)
 		- vertices[1]->z * (vertices[2]->y * vertices[3]->z - vertices[3]->y * vertices[2]->z)
 		+ vertices[1]->z * (vertices[2]->y * vertices[3]->y - vertices[3]->y * vertices[2]->y))
@@ -225,8 +251,8 @@ double Tetrahedron::calMassTetra(double den) {
 		- vertices[0]->x * (vertices[1]->x * (vertices[2]->y * vertices[3]->y - vertices[3]->y * vertices[2]->y)
 			- vertices[1]->y * (vertices[2]->x * vertices[3]->y - vertices[3]->x * vertices[2]->y)
 			+ vertices[1]->x * (vertices[2]->x * vertices[3]->x - vertices[3]->x * vertices[2]->x)));
-	volume = determinant / 6;
-	massTetra = volume * den;
+	volumeTetra = determinant / 6;
+	massTetra = volumeTetra * den;
 	return massTetra;
 
 	

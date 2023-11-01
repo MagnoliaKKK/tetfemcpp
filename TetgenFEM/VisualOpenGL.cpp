@@ -93,7 +93,7 @@ void drawEdge(Vertex* vertex1, Vertex* vertex2, float r, float g, float b) {
 
 void drawAxis(float length) {
 	glPushMatrix();  // ±£´æµ±Ç°µÄÄ£ĞÍÊÓÍ¼¾ØÕE
-	glTranslatef(-length * 3, -length * 3, 0);  // ½«×ø±EáÔ­µãÒÆ¶¯µ½´°¿ÚµÄÓÒÏÂ½Ç
+	glTranslatef(-length * 3, -length * 3, 0);  // ½«×ø±EáÔ­µãÒÆ¶¯µ½´°¿ÚµÄÓÒÏÂ½?
 
 	glBegin(GL_LINES);
 	// X axis in red

@@ -7,6 +7,7 @@
 #include <cmath>
 #include "VisualOpenGL.h"
 #include "ReadSTL.h"
+#include "GroupDivision.h"
 
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
@@ -72,13 +73,13 @@ int main() {
 	glfwSetCursorPosCallback(window, cursorPosCallback);
 
 	Eigen::MatrixXd Ke;
-	Ke = object.groups[1].tetrahedra[0]->createElementK(youngs, poisson);
+	//Ke = object.groups[1].tetrahedra[0]->createElementK(youngs, poisson, );
 	
 	Eigen::Matrix4f mat;
 	while (!glfwWindowShouldClose(window)) {
 
-		object.groups[0].tetrahedra[1]->vertices[2]->x += 0.01;
-		object.groups[1].getUniqueVertices()[3]->y += 0.001;
+		/*object.groups[0].tetrahedra[1]->vertices[2]->x += 0.01;
+		object.groups[1].getUniqueVertices()[3]->y += 0.001;*/
 
 		//object.getGroup(1).tetrahedra[0]->vertices[0]->x += 0.01;
 		// Render here
