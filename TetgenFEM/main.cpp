@@ -81,6 +81,8 @@ int main() {
 		object.groups[0].calMassMatrix(density);
 		object.groups[0].calMassGroup();
 		object.groups[0].calCenterofMass();
+		Eigen::Vector3d groupCOM = object.groups[0].centerofMass;
+		Ke = object.groups[0].tetrahedra[0]->createElementK(youngs, poisson, groupCOM);
 		object.groups[0].calGroupK(youngs, poisson);
 		object.groups[0].setVertexMassesFromMassMatrix();
 		

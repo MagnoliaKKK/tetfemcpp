@@ -38,23 +38,6 @@ void Group::calCenterofMass() {
 
 //
 Eigen::MatrixXd Tetrahedron::createElementK(double E, double nu, const Eigen::Vector3d& groupCenterOfMass) {
-	// Calculate the volume of the tetrahedron using the formula
-	//double volume = calculateTetrahedronVolume(groupCenterOfMass);
-
-	// Calculate the Jacobian matrix J
-	//Eigen::MatrixXd J(3, 3);
-	//J(0, 0) = (vertices[1]->x - groupCenterOfMass[0]) - (vertices[0]->x - groupCenterOfMass[0]);
-	//J(0, 1) = (vertices[2]->x - groupCenterOfMass[0]) - (vertices[0]->x - groupCenterOfMass[0]);
-	//J(0, 2) = (vertices[3]->x - groupCenterOfMass[0]) - (vertices[0]->x - groupCenterOfMass[0]);
-	//J(1, 0) = (vertices[1]->y - groupCenterOfMass[1]) - (vertices[0]->y - groupCenterOfMass[1]);
-	//J(1, 1) = (vertices[2]->y - groupCenterOfMass[1]) - (vertices[0]->y - groupCenterOfMass[1]);
-	//J(1, 2) = (vertices[3]->y - groupCenterOfMass[1]) - (vertices[0]->y - groupCenterOfMass[1]);
-	//J(2, 0) = (vertices[1]->z - groupCenterOfMass[2]) - (vertices[0]->z - groupCenterOfMass[2]);
-	//J(2, 1) = (vertices[2]->z - groupCenterOfMass[2]) - (vertices[0]->z - groupCenterOfMass[2]);
-	//J(2, 2) = (vertices[3]->z - groupCenterOfMass[2]) - (vertices[0]->z - groupCenterOfMass[2]);
-
-	//// Calculate the inverse of J
-	//Eigen::MatrixXd J_inv = J.inverse();
 
 	// Initialize the B matrix
 	Eigen::MatrixXd B(6, 12);
