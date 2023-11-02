@@ -42,19 +42,19 @@ Eigen::MatrixXd Tetrahedron::createElementK(double E, double nu, const Eigen::Ve
 	//double volume = calculateTetrahedronVolume(groupCenterOfMass);
 
 	// Calculate the Jacobian matrix J
-	Eigen::MatrixXd J(3, 3);
-	J(0, 0) = (vertices[1]->x - groupCenterOfMass[0]) - (vertices[0]->x - groupCenterOfMass[0]);
-	J(0, 1) = (vertices[2]->x - groupCenterOfMass[0]) - (vertices[0]->x - groupCenterOfMass[0]);
-	J(0, 2) = (vertices[3]->x - groupCenterOfMass[0]) - (vertices[0]->x - groupCenterOfMass[0]);
-	J(1, 0) = (vertices[1]->y - groupCenterOfMass[1]) - (vertices[0]->y - groupCenterOfMass[1]);
-	J(1, 1) = (vertices[2]->y - groupCenterOfMass[1]) - (vertices[0]->y - groupCenterOfMass[1]);
-	J(1, 2) = (vertices[3]->y - groupCenterOfMass[1]) - (vertices[0]->y - groupCenterOfMass[1]);
-	J(2, 0) = (vertices[1]->z - groupCenterOfMass[2]) - (vertices[0]->z - groupCenterOfMass[2]);
-	J(2, 1) = (vertices[2]->z - groupCenterOfMass[2]) - (vertices[0]->z - groupCenterOfMass[2]);
-	J(2, 2) = (vertices[3]->z - groupCenterOfMass[2]) - (vertices[0]->z - groupCenterOfMass[2]);
+	//Eigen::MatrixXd J(3, 3);
+	//J(0, 0) = (vertices[1]->x - groupCenterOfMass[0]) - (vertices[0]->x - groupCenterOfMass[0]);
+	//J(0, 1) = (vertices[2]->x - groupCenterOfMass[0]) - (vertices[0]->x - groupCenterOfMass[0]);
+	//J(0, 2) = (vertices[3]->x - groupCenterOfMass[0]) - (vertices[0]->x - groupCenterOfMass[0]);
+	//J(1, 0) = (vertices[1]->y - groupCenterOfMass[1]) - (vertices[0]->y - groupCenterOfMass[1]);
+	//J(1, 1) = (vertices[2]->y - groupCenterOfMass[1]) - (vertices[0]->y - groupCenterOfMass[1]);
+	//J(1, 2) = (vertices[3]->y - groupCenterOfMass[1]) - (vertices[0]->y - groupCenterOfMass[1]);
+	//J(2, 0) = (vertices[1]->z - groupCenterOfMass[2]) - (vertices[0]->z - groupCenterOfMass[2]);
+	//J(2, 1) = (vertices[2]->z - groupCenterOfMass[2]) - (vertices[0]->z - groupCenterOfMass[2]);
+	//J(2, 2) = (vertices[3]->z - groupCenterOfMass[2]) - (vertices[0]->z - groupCenterOfMass[2]);
 
-	// Calculate the inverse of J
-	Eigen::MatrixXd J_inv = J.inverse();
+	//// Calculate the inverse of J
+	//Eigen::MatrixXd J_inv = J.inverse();
 
 	// Initialize the B matrix
 	Eigen::MatrixXd B(6, 12);
@@ -116,6 +116,32 @@ Eigen::MatrixXd Tetrahedron::createElementK(double E, double nu, const Eigen::Ve
 	// Calculate the element stiffness matrix K
 	Eigen::MatrixXd K = (B / (6 * volumeTetra)).transpose() * D * (B/(6 * volumeTetra)) * volumeTetra;
 	return K;
+}
+void Group::calGroupK(double E, double nu) {
+	// Initialize groupK to the right size. Assuming 3 degrees of freedom per vertex
+	int dof = verticesMap.size() * 3;
+	groupK.resize(dof, dof);
+	groupK.setZero();
+
+	// Iterate over each tetrahedron to assemble the global stiffness matrix
+	for (auto& tetra : tetrahedra) {
+		// Get the local stiffness matrix for the current tetrahedron
+		Eigen::MatrixXd localK = tetra->createElementK(E, nu, centerofMass);
+
+		// Determine where to add the local stiffness matrix in the global stiffness matrix
+		for (int i = 0; i < 4; ++i) { // Each tetrahedron has 4 vertices
+			Vertex* vertex = tetra->vertices[i];
+			int globalIndex = vertex->index * 3; // Assuming the index is set up correctly in verticesMap
+
+			for (int j = 0; j < 4; ++j) {
+				Vertex* otherVertex = tetra->vertices[j];
+				int otherGlobalIndex = otherVertex->index * 3;
+
+				// Add the 3x3 submatrix of localK to the correct place in groupK
+				groupK.block<3, 3>(globalIndex, otherGlobalIndex) += localK.block<3, 3>(i * 3, j * 3);
+			}
+		}
+	}
 }
 
 
@@ -262,21 +288,15 @@ void divideIntoGroups(tetgenio& out, Object& object, int numGroups) {
 }
 
 double Tetrahedron::calMassTetra(double den) {
-	double determinant;
+	
 	//double volume;
-	determinant = std::abs (vertices[0]->x * (vertices[1]->y * (vertices[2]->z * vertices[3]->z - vertices[3]->z * vertices[2]->z)
-		- vertices[1]->z * (vertices[2]->y * vertices[3]->z - vertices[3]->y * vertices[2]->z)
-		+ vertices[1]->z * (vertices[2]->y * vertices[3]->y - vertices[3]->y * vertices[2]->y))
-		- vertices[0]->y * (vertices[1]->x * (vertices[2]->z * vertices[3]->z - vertices[3]->z * vertices[2]->z)
-			- vertices[1]->z * (vertices[2]->x * vertices[3]->z - vertices[3]->x * vertices[2]->z)
-			+ vertices[1]->z * (vertices[2]->x * vertices[3]->x - vertices[3]->x * vertices[2]->x))
-		+ vertices[0]->z * (vertices[1]->x * (vertices[2]->y * vertices[3]->z - vertices[3]->y * vertices[2]->z)
-			- vertices[1]->y * (vertices[2]->x * vertices[3]->z - vertices[3]->x * vertices[2]->z)
-			+ vertices[1]->y * (vertices[2]->x * vertices[3]->y - vertices[3]->x * vertices[2]->y))
-		- vertices[0]->x * (vertices[1]->x * (vertices[2]->y * vertices[3]->y - vertices[3]->y * vertices[2]->y)
-			- vertices[1]->y * (vertices[2]->x * vertices[3]->y - vertices[3]->x * vertices[2]->y)
-			+ vertices[1]->x * (vertices[2]->x * vertices[3]->x - vertices[3]->x * vertices[2]->x)));
-	volumeTetra = determinant / 6;
+	Eigen::Vector3d AB(vertices[1]->x - vertices[0]->x, vertices[1]->y - vertices[0]->y, vertices[1]->z - vertices[0]->z);
+	Eigen::Vector3d AC(vertices[2]->x - vertices[0]->x, vertices[2]->y - vertices[0]->y, vertices[2]->z - vertices[0]->z);
+	Eigen::Vector3d AD(vertices[3]->x - vertices[0]->x, vertices[3]->y - vertices[0]->y, vertices[3]->z - vertices[0]->z);
+
+	// Calculate volume using the formula
+	volumeTetra = (AB.cross(AC)).dot(AD) / 6.0;
+	volumeTetra = std::abs(volumeTetra);
 	massTetra = volumeTetra * den;
 	return massTetra;
 

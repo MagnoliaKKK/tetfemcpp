@@ -44,8 +44,6 @@ public:
 	}
 	Eigen::MatrixXd createElementK(double E, double nu, const Eigen::Vector3d& groupCenterOfMass);
 	double calMassTetra(double den);
-	
-	
 
 };
 
@@ -58,6 +56,7 @@ public:
 	double groupMass;//每组的质量
 	Eigen::MatrixXd massMatrix;//group mass matrix
 	Eigen::MatrixXd massDistribution;
+	Eigen::MatrixXd groupK;//group stiffness matrix
 
 	void addTetrahedron(Tetrahedron* tet);
 	std::vector<Vertex*> getUniqueVertices();
@@ -66,6 +65,7 @@ public:
 	Eigen::MatrixXd calMassMatrix(double den);
 	void setVertexMassesFromMassMatrix();
 	void calMassDistributionMatrix();
+	void calGroupK(double E, double nu);
 };
 
 class Object {

@@ -31,7 +31,7 @@ int main() {
 	// Call TetGen to tetrahedralize the geometry
 	tetrahedralize(&behavior, &in, &out);
 
-	int groupNum = 3; //ｷﾖｼｸﾗ・ﾄｿﾇｰﾏﾈﾗ鋐・ﾗ・Objectﾀ犲ﾍﾑﾕﾉｫｶｼﾐｴﾋﾀﾁﾋ
+	int groupNum = 1; //ｷﾖｼｸﾗ・ﾄｿﾇｰﾏﾈﾗ鋐・ﾗ・Objectﾀ犲ﾍﾑﾕﾉｫｶｼﾐｴﾋﾀﾁﾋ
 	Object object;
 	divideIntoGroups(out, object, groupNum);
 
@@ -77,7 +77,13 @@ int main() {
 	
 	Eigen::Matrix4f mat;
 	while (!glfwWindowShouldClose(window)) {
-
+		double aa = object.groups[0].tetrahedra[0]->calMassTetra(density);
+		object.groups[0].calMassMatrix(density);
+		object.groups[0].calMassGroup();
+		object.groups[0].calCenterofMass();
+		object.groups[0].calGroupK(youngs, poisson);
+		object.groups[0].setVertexMassesFromMassMatrix();
+		
 		/*object.groups[0].tetrahedra[1]->vertices[2]->x += 0.01;
 		object.groups[1].getUniqueVertices()[3]->y += 0.001;*/
 
