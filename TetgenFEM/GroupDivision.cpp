@@ -1,5 +1,6 @@
 ﻿#include "GroupDivision.h"
-
+double timeStep = 0.01;
+double alpha = 0.1;
 
 void Group::addTetrahedron(Tetrahedron* tet) {
 	tetrahedra.push_back(tet);
@@ -154,6 +155,11 @@ Eigen::MatrixXd Group::calMassMatrix(double den) {
 	return M;
 }
 
+void Group::calDampingMatrix() {
+	dampingMatrix.setZero();
+	dampingMatrix = alpha * massMatrix;
+}
+
 void Group::calMassDistributionMatrix() {
 
 	massDistribution = Eigen::MatrixXd::Zero(3 * verticesMap.size(), 3 * verticesMap.size());
@@ -189,6 +195,30 @@ void Group::setVertexMassesFromMassMatrix() {
 	}
 }
 
+void Group::calPrimeVec() {
+	Eigen::VectorXd gravity(3 * verticesMap.size());
+	Eigen::MatrixXd inverseTerm = (massMatrix + dampingMatrix * timeStep).inverse();
+	gravity.setZero();
+	for (int i = 1; i < 3 * verticesMap.size(); i += 3) {
+		gravity(i) = 9.8;
+	}
+	primeVec = Eigen::VectorXd::Zero(3 * verticesMap.size());
+	for (int pi = 0; pi < verticesMap.size(); pi++)
+	{
+		Eigen::Vector3d currentPosition = Eigen::Vector3d(verticesMap[pi]->x, verticesMap[pi]->y, verticesMap[pi]->z);
+		groupVelocity.block(3 * pi, 0, 3, 1) = groupVelocity.block(3 * pi, 0, 3, 1)  + gravity.block(3 * pi, 0, 3, 1) * timeStep;
+		Eigen::Vector3d velocityUpdate = inverseTerm * massMatrix * groupVelocity.block(3 * pi, 0, 3, 1) * timeStep;
+		Eigen::Vector3d newPosition = currentPosition + velocityUpdate;
+		// 更新primeVec为当前位置加上速度更新
+		
+		verticesMap[pi]->x = newPosition.x();
+		verticesMap[pi]->y = newPosition.y();
+		verticesMap[pi]->z = newPosition.z();
+		primeVec.block(3 * pi, 0, 3, 1) = newPosition;
+	}
+	
+	
+}
 
 Group& Object::getGroup(int index) {
 	return groups[index];

@@ -57,6 +57,12 @@ public:
 	Eigen::MatrixXd massMatrix;//group mass matrix
 	Eigen::MatrixXd massDistribution;
 	Eigen::MatrixXd groupK;//group stiffness matrix
+	Eigen::VectorXd primeVec;
+	Eigen::VectorXd groupVelocity;
+	Eigen::VectorXd groupExf;
+	Eigen::MatrixXd rotationMatrix;
+	Eigen::VectorXd gravity;
+	Eigen::MatrixXd dampingMatrix;
 
 	void addTetrahedron(Tetrahedron* tet);
 	std::vector<Vertex*> getUniqueVertices();
@@ -66,6 +72,8 @@ public:
 	void setVertexMassesFromMassMatrix();
 	void calMassDistributionMatrix();
 	void calGroupK(double E, double nu);
+	void calPrimeVec();
+	void calDampingMatrix();
 };
 
 class Object {

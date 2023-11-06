@@ -15,6 +15,7 @@ double youngs = 10000000;
 double poisson = 0.49;
 double density = 1000;
 
+
 int main() {
 
 
