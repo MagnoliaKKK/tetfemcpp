@@ -32,10 +32,10 @@ int main() {
 	// Call TetGen to tetrahedralize the geometry
 	tetrahedralize(&behavior, &in, &out);
 
-	int groupNum = 1; //分几讈E目前先襾E讈EObject类和颜色都写死了
+	int groupNum = 1; //最多3组 Object类和颜色都写死了
 	Object object;
 	divideIntoGroups(out, object, groupNum);
-
+	//下面这个for把Object Group Vertex都填满了
 	// Accessing and printing the groups and their tetrahedra
 	for (int i = 0; i < groupNum; ++i) {  // Loop over the groups
 		Group& group = object.getGroup(i);
@@ -47,6 +47,7 @@ int main() {
 
 			for (int k = 0; k < 4; ++k) {  // Loop over the vertices in each tetrahedron
 				Vertex* vertex = tet->vertices[k];
+
 				//std::cout << "    Vertex " << k << ": (" << vertex->x << ", " << vertex->y << ", " << vertex->z << ")" << std::endl;
 			}
 		}
