@@ -1,6 +1,7 @@
 ﻿#include "GroupDivision.h"
 double timeStep = 0.01;
 double alpha = 0.1;
+const  double PI = 3.14159265358979265358979;
 
 void Group::addTetrahedron(Tetrahedron* tet) {
 	tetrahedra.push_back(tet);
@@ -35,8 +36,90 @@ void Group::calCenterofMass() {
 		centerofMass = Eigen::Vector3d(0.0, 0.0, 0.0);
 	}
 }
+void Group::calLocalPos() {
+	// 确保initLocalPos有足够的空间来存储所有的局部位置
+	initLocalPos.resize(3 * verticesMap.size());
 
+	for (const auto& vertexPair : verticesMap) {
+		const Vertex* vertex = vertexPair.second;
+		Eigen::Vector3d initial_position(vertex->initx, vertex->inity, vertex->initz);
+		// 计算初始位置与初始重心的差值
+		Eigen::Vector3d local_position = initial_position - initCOM;
 
+		// 将局部位置存储在initLocalPos中，注意index需要乘以3因为每个顶点有3个坐标值
+		initLocalPos.segment<3>(vertex->index * 3) = local_position;
+	}
+}
+Eigen::Vector3d Group::axlAPD(Eigen::Matrix3d a) {
+	Eigen::Vector3d g = Eigen::Vector3d::Zero();
+	g[0] = a(1, 2) - a(2, 1);
+	g[1] = a(2, 0) - a(0, 2);
+	g[2] = a(0, 1) - a(1, 0);
+	return g;
+}
+Eigen::Vector3d Group::clamp2(Eigen::Vector3d x, double y, double z) {
+	if (x.norm() < y) {
+		return (y / x.norm()) * x;
+	}
+	else if (x.norm() > z) {
+		return (z / x.norm()) * x;
+	}
+	else {
+		return x;
+	}
+}
+Eigen::Quaterniond Group::Exp2(Eigen::Vector3d a) {
+	double s = sin((a * 0.5).norm());
+	double x = s * a.x() / a.norm();
+	double y = s * a.y() / a.norm();
+	double z = s * a.z() / a.norm();
+	Eigen::Quaterniond qq = Eigen::Quaterniond(cos((a * 0.5).norm()), x, y, z);
+	return  qq;
+}
+void Group::calRotationMatrix() {
+	Eigen::Matrix3d Apq = Eigen::Matrix3d::Zero();
+	Eigen::Matrix3d tempA = Eigen::Matrix3d::Zero();
+	Eigen::Vector3d center_grid = Eigen::Vector3d::Zero();
+	
+	// 计算Apq矩阵
+	for (unsigned int pi = 0; pi < verticesMap.size(); pi++) {
+		tempA = (primeVec.block<3, 1>(3 * pi, 0) - center_grid) * initLocalPos.block<3, 1>(3 * pi, 0).transpose();
+		Apq += massMatrix(3 * pi, 3 * pi) * tempA;
+	}
+
+	// 初始化四元数和旋转矩阵
+	Eigen::Quaterniond quaternion(Eigen::Quaterniond::Identity());
+	Eigen::Matrix3d rotate_matrix = Eigen::Matrix3d::Identity();
+
+	// 迭代寻找最佳旋转
+	for (unsigned int ci = 0; ci < 20; ci++) {
+		Eigen::Matrix3d R = quaternion.toRotationMatrix();
+		Eigen::Matrix3d S = R.transpose() * Apq;
+		Eigen::Vector3d gradR = axlAPD(S);
+		Eigen::Matrix3d HesseR = S.trace() * Eigen::Matrix3d::Identity() - (S + S.transpose()) * 0.5;
+		Eigen::Vector3d omega = -HesseR.inverse() * gradR;
+
+		double w = omega.norm();
+		if (w < 1.0e-9) {
+			break;
+		}
+
+		omega = clamp2(omega, -1 * PI, PI);
+		quaternion = quaternion * Exp2(omega);
+	}
+
+	rotate_matrix = quaternion.toRotationMatrix();
+
+	// 构建旋转矩阵的3N x 3N版本
+	rotationMatrix = Eigen::MatrixXd::Zero(3 * verticesMap.size(), 3 * verticesMap.size());
+	for (unsigned int pi = 0; pi < verticesMap.size(); pi++) {
+		rotationMatrix.block<3, 3>(3 * pi, 3 * pi) = rotate_matrix;
+	}
+
+	// 将旋转矩阵转换为稀疏格式（如果需要）
+	//Eigen::SparseMatrix<double> Rn_Matrix_Sparse = rotate_matrix3N.sparseView();
+	//Eigen::SparseMatrix<double> Rn_MatrixTR_Sparse = rotate_matrix3N.transpose().sparseView();
+}
 //
 Eigen::MatrixXd Tetrahedron::createElementK(double E, double nu, const Eigen::Vector3d& groupCenterOfMass) {
 
@@ -192,6 +275,26 @@ void Group::setVertexMassesFromMassMatrix() {
 		// Assuming that the vertices are stored sequentially in the verticesMap
 		// And the index in the massMatrix corresponds to the index in the Vertex object
 		verticesMap[i]->vertexMass = mass;
+	}
+}
+
+void Group::calInitCOM() {
+	double totalMass = 0.0;
+	Eigen::Vector3d weightedSum(0.0, 0.0, 0.0);
+
+	for (const auto& vertexPair : verticesMap) {
+		Vertex* vertex = vertexPair.second;
+		totalMass += vertex->vertexMass;
+		weightedSum += vertex->vertexMass * Eigen::Vector3d(vertex->initx, vertex->inity, vertex->initz);
+	}
+
+	if (totalMass > 0.0) {
+		initCOM = weightedSum / totalMass;
+	}
+	else {
+		// Handle the case where totalMass is zero to avoid division by zero.
+		// You can set centerofMass to a default value or handle it according to your requirements.
+		initCOM = Eigen::Vector3d(0.0, 0.0, 0.0);
 	}
 }
 

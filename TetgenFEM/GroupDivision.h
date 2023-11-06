@@ -69,6 +69,8 @@ public:
 	Eigen::MatrixXd rotationMatrix;
 	Eigen::VectorXd gravity;
 	Eigen::MatrixXd dampingMatrix;
+	Eigen::Vector3d initCOM;//initial center of mass
+	Eigen::VectorXd initLocalPos;//initial position - center of mass
 
 	void addTetrahedron(Tetrahedron* tet);
 	std::vector<Vertex*> getUniqueVertices();
@@ -80,6 +82,13 @@ public:
 	void calGroupK(double E, double nu);
 	void calPrimeVec();
 	void calDampingMatrix();
+	void calInitCOM();
+	void calRotationMatrix();
+	void calLocalPos();
+	Eigen::Vector3d axlAPD(Eigen::Matrix3d a);
+	Eigen::Vector3d clamp2(Eigen::Vector3d x, double y, double z);
+	Eigen::Quaterniond Exp2(Eigen::Vector3d a);
+
 };
 
 class Object {
