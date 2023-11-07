@@ -299,29 +299,47 @@ void Group::calInitCOM() {
 }
 
 void Group::calPrimeVec() {
-	Eigen::VectorXd gravity(3 * verticesMap.size());
-	Eigen::MatrixXd inverseTerm = (massMatrix + dampingMatrix * timeStep).inverse();
-	gravity.setZero();
-	for (int i = 1; i < 3 * verticesMap.size(); i += 3) {
-		gravity(i) = 9.8;
-	}
+	// 确保groupVelocity已经初始化且设置为正确的尺寸
+	groupVelocity = Eigen::VectorXd::Zero(3 * verticesMap.size());
 	primeVec = Eigen::VectorXd::Zero(3 * verticesMap.size());
-	for (int pi = 0; pi < verticesMap.size(); pi++)
-	{
-		Eigen::Vector3d currentPosition = Eigen::Vector3d(verticesMap[pi]->x, verticesMap[pi]->y, verticesMap[pi]->z);
-		groupVelocity.block(3 * pi, 0, 3, 1) = groupVelocity.block(3 * pi, 0, 3, 1)  + gravity.block(3 * pi, 0, 3, 1) * timeStep;
-		Eigen::Vector3d velocityUpdate = inverseTerm * massMatrix * groupVelocity.block(3 * pi, 0, 3, 1) * timeStep;
-		Eigen::Vector3d newPosition = currentPosition + velocityUpdate;
-		// 更新primeVec为当前位置加上速度更新
-		
-		verticesMap[pi]->x = newPosition.x();
-		verticesMap[pi]->y = newPosition.y();
-		verticesMap[pi]->z = newPosition.z();
-		primeVec.block(3 * pi, 0, 3, 1) = newPosition;
+	// 计算逆矩阵
+	Eigen::MatrixXd inverseTerm = (massMatrix + dampingMatrix * timeStep).inverse();
+
+	// 初始化gravity向量
+	Eigen::VectorXd gravity = Eigen::VectorXd::Zero(3 * verticesMap.size());
+	for (int i = 1; i < 3 * verticesMap.size(); i += 3) {
+		gravity(i) = -9.8; // y方向上设置重力
 	}
-	
-	
+
+	// 更新groupVelocity
+	groupVelocity += gravity * timeStep;
+
+	// 使用整个矩阵计算velocityUpdate
+	Eigen::VectorXd velocityUpdate = inverseTerm * (massMatrix * groupVelocity) * timeStep;
+
+	// 更新primeVec和顶点位置
+	for (auto& vertexPair : verticesMap) {
+		int pi = vertexPair.first; // 假设map的key是索引
+		Vertex* vertex = vertexPair.second;
+
+		// 获取当前顶点的速度更新部分
+		Eigen::Vector3d currentVelocityUpdate = velocityUpdate.segment<3>(3 * pi);
+
+		// 计算新的位置
+		Eigen::Vector3d newPosition = Eigen::Vector3d(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate;
+
+		// 更新primeVec
+		primeVec.segment<3>(3 * static_cast<Eigen::Index>(pi)) = newPosition;
+
+		// 更新顶点位置
+		vertex->x = newPosition.x();
+		vertex->y = newPosition.y();
+		vertex->z = newPosition.z();
+	}
 }
+
+
+
 
 Group& Object::getGroup(int index) {
 	return groups[index];

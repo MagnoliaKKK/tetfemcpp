@@ -82,11 +82,13 @@ int main() {
 		double aa = object.groups[0].tetrahedra[0]->calMassTetra(density);
 		object.groups[0].calMassMatrix(density);
 		object.groups[0].calMassGroup();
+		object.groups[0].calDampingMatrix();
 		object.groups[0].calCenterofMass();
 		Eigen::Vector3d groupCOM = object.groups[0].centerofMass;
 		Ke = object.groups[0].tetrahedra[0]->createElementK(youngs, poisson, groupCOM);
 		object.groups[0].calGroupK(youngs, poisson);
 		object.groups[0].setVertexMassesFromMassMatrix();
+		object.groups[0].calPrimeVec();
 		
 		/*object.groups[0].tetrahedra[1]->vertices[2]->x += 0.01;
 		object.groups[1].getUniqueVertices()[3]->y += 0.001;*/

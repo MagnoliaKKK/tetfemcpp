@@ -15,12 +15,15 @@ public:
 	const double initx, inity, initz; //初始化后不可更改
 	int index;  // Add an index field to help identify vertices
 	double vertexMass; // mass of vertices
+	double velx, vely, velz;//速度的三个分量
 
 	//Vertex(double x, double y, double z, int index) : x(x), y(y), z(z), index(index) {}
 	Vertex(double x, double y, double z, int index)
 		: initx(x), inity(y), initz(z), // 首先初始化const成员
 		x(x), y(y), z(z), // 然后是可变成员
-		index(index), vertexMass(1) // 其他成员可以直接赋值
+		index(index), vertexMass(1), // 其他成员可以直接赋值
+		velx(0), vely(0), velz(0) // 初始化速度分量为0 
+
 	{}
 };
 
