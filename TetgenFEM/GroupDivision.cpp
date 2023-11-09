@@ -1,4 +1,5 @@
 ﻿#include "GroupDivision.h"
+
 double timeStep = 0.01;
 double alpha = 0.1;
 const  double PI = 3.14159265358979265358979;
@@ -82,7 +83,8 @@ void Group::calRotationMatrix() {
 	Eigen::Vector3d center_grid = Eigen::Vector3d::Zero();
 	
 	// 计算Apq矩阵
-	for (unsigned int pi = 0; pi < verticesMap.size(); pi++) {
+	for (size_t pi = 0; pi < verticesMap.size(); pi++) {
+		
 		tempA = (primeVec.block<3, 1>(3 * pi, 0) - center_grid) * initLocalPos.block<3, 1>(3 * pi, 0).transpose();
 		Apq += massMatrix(3 * pi, 3 * pi) * tempA;
 	}
@@ -115,6 +117,9 @@ void Group::calRotationMatrix() {
 	for (unsigned int pi = 0; pi < verticesMap.size(); pi++) {
 		rotationMatrix.block<3, 3>(3 * pi, 3 * pi) = rotate_matrix;
 	}
+
+	rotationSparse = rotationMatrix.sparseView();
+	rotationTransSparse = rotationMatrix.transpose().sparseView();
 
 	// 将旋转矩阵转换为稀疏格式（如果需要）
 	//Eigen::SparseMatrix<double> Rn_Matrix_Sparse = rotate_matrix3N.sparseView();
@@ -209,6 +214,7 @@ void Group::calGroupK(double E, double nu) {
 			}
 		}
 	}
+	kSparse = groupK.sparseView();
 }
 
 
@@ -236,11 +242,13 @@ Eigen::MatrixXd Group::calMassMatrix(double den) {
 	}
 	massMatrix = M;
 	return M;
+	massSparse = massMatrix.sparseView();
 }
 
 void Group::calDampingMatrix() {
 	dampingMatrix.setZero();
 	dampingMatrix = alpha * massMatrix;
+	dampingSparse = dampingMatrix.sparseView();
 }
 
 void Group::calMassDistributionMatrix() {
@@ -259,11 +267,11 @@ void Group::calMassDistributionMatrix() {
 		Vertex* vertex = vertexEntry.second;
 		int vertexIndex = vertex->index;
 
-		massDistribution.block(3 * vertexIndex, 0, 3, 3 * vertexIndex) = SUMsub_M_Matrix;
+		massDistribution.block(3 * vertexIndex, 0, 3, 3 * verticesMap.size()) = SUMsub_M_Matrix;
 	}
 	// Reset SUM_M to a sparse view
 	//massDistributionSparse.setZero();
-	//massDistributionSparse = massDistribution.sparseView();
+	massDistributionSparse = massDistribution.sparseView();
 
 	
 }
@@ -338,7 +346,42 @@ void Group::calPrimeVec() {
 	}
 }
 
+void Group::calLHS() {
+	Eigen::MatrixXd I = Eigen::MatrixXd::Identity(3 * verticesMap.size(), 3 * verticesMap.size());
+	Eigen::MatrixXd A;
+	Eigen::MatrixXd B;
+	//Eigen::MatrixXd C;
+	//A = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK;
+	//B = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * massDistribution;
+	massDampingSparseInv = (massMatrix + timeStep * dampingMatrix).inverse().sparseView();
+	A = timeStep * timeStep * massDampingSparseInv * kSparse;
+	B = timeStep * timeStep * massDampingSparseInv * kSparse * massDistributionSparse;
+	LHS = I + A - B;
 
+}
+
+void Group::calRHS() {
+	Eigen::VectorXd A;
+	Eigen::VectorXd B;
+	Eigen::VectorXd C;
+	Eigen::VectorXd D;
+	Fbind = Eigen::VectorXd::Zero(3 * verticesMap.size());
+	/*A = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * initLocalPos;
+	B = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * rotationMatrix.transpose() * primeVec;
+	C = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * rotationMatrix.transpose() * massDistribution * primeVec;
+	D = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * rotationMatrix.inverse() * Fbind;*/
+	A = timeStep * timeStep * massDampingSparseInv * kSparse * initLocalPos;
+	B = timeStep * timeStep * massDampingSparseInv * kSparse * rotationTransSparse * primeVec;
+	C = timeStep * timeStep * massDampingSparseInv * kSparse * rotationTransSparse * massDistributionSparse * primeVec;
+	D = timeStep * timeStep * massDampingSparseInv * rotationTransSparse * Fbind;
+	RHS = A - B + C + D;
+}
+
+void Group::calDeltaX() {
+	
+	deltaX = RHS.inverse() * RHS;
+	deltaX = rotationTransSparse * deltaX;
+}
 
 
 Group& Object::getGroup(int index) {

@@ -9,6 +9,11 @@
 #include <string>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include "Eigen/Sparse"
+#include "GMRES.h"
+#include "Eigen/IterativeLinearSolvers"
+
+
 class Vertex {
 public:
 	double x, y, z;
@@ -74,6 +79,19 @@ public:
 	Eigen::MatrixXd dampingMatrix;
 	Eigen::Vector3d initCOM;//initial center of mass
 	Eigen::VectorXd initLocalPos;//initial position - center of mass
+	Eigen::MatrixXd LHS;
+	Eigen::VectorXd RHS;
+	Eigen::VectorXd Fbind;
+	Eigen::VectorXd deltaX;
+	Eigen::SparseMatrix<double> rotationSparse;
+	Eigen::SparseMatrix<double> rotationTransSparse;//R^t sparse
+	Eigen::SparseMatrix<double> kSparse;
+	Eigen::SparseMatrix<double> massSparse;
+	Eigen::SparseMatrix<double> dampingSparse;
+	Eigen::SparseMatrix<double> massDistributionSparse;
+	Eigen::SparseMatrix<double> massDampingSparseInv; //(M+C').inv sparse
+
+
 
 	void addTetrahedron(Tetrahedron* tet);
 	std::vector<Vertex*> getUniqueVertices();
@@ -87,10 +105,13 @@ public:
 	void calDampingMatrix();
 	void calInitCOM();
 	void calRotationMatrix();
-	void calLocalPos();
+	void calLocalPos();//calculate initial local position
 	Eigen::Vector3d axlAPD(Eigen::Matrix3d a);
 	Eigen::Vector3d clamp2(Eigen::Vector3d x, double y, double z);
 	Eigen::Quaterniond Exp2(Eigen::Vector3d a);
+	void calLHS();
+	void calRHS();
+	void calDeltaX();
 
 };
 

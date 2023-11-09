@@ -145,6 +145,7 @@
     <ClCompile Include="VisualOpenGL.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="GMRES.h" />
     <ClInclude Include="GroupDivision.h" />
     <ClInclude Include="ReadSTL.h" />
     <ClInclude Include="tetgen.h" />

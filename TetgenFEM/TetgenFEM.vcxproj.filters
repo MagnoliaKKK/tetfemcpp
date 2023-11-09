@@ -41,6 +41,9 @@
     <ClInclude Include="GroupDivision.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GMRES.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="eigen-3.4.0\Eigen.natvis">

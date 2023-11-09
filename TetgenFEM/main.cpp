@@ -88,7 +88,14 @@ int main() {
 		Ke = object.groups[0].tetrahedra[0]->createElementK(youngs, poisson, groupCOM);
 		object.groups[0].calGroupK(youngs, poisson);
 		object.groups[0].setVertexMassesFromMassMatrix();
+		object.groups[0].calMassDistributionMatrix();
 		object.groups[0].calPrimeVec();
+		object.groups[0].calInitCOM();
+		object.groups[0].calLocalPos();
+		object.groups[0].calRotationMatrix();
+		object.groups[0].calLHS();
+		object.groups[0].calRHS();
+		object.groups[0].calDeltaX();
 		
 		/*object.groups[0].tetrahedra[1]->vertices[2]->x += 0.01;
 		object.groups[1].getUniqueVertices()[3]->y += 0.001;*/
