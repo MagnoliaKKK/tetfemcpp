@@ -4,6 +4,37 @@ double timeStep = 0.01;
 double alpha = 0.1;
 const  double PI = 3.14159265358979265358979;
 
+std::vector<Vertex*> Object::findCommonVertices(const Group& group1, const Group& group2) { //寻找两个组的共同点
+	std::unordered_set<int> visitedVerticesIndices;
+	std::vector<Vertex*> commonVertices;
+
+	// 首先，遍历第一个组的四面体和顶点
+	for (const auto& tetra : group1.tetrahedra) {
+		for (int i = 0; i < 4; ++i) {
+			Vertex* v = tetra->vertices[i];
+			visitedVerticesIndices.insert(v->index);
+		}
+	}
+
+	// 然后，遍历第二个组的四面体和顶点
+	for (const auto& tetra : group2.tetrahedra) {
+		for (int i = 0; i < 4; ++i) {
+			Vertex* v = tetra->vertices[i];
+			int index = v->index;
+
+			// 如果这个顶点的索引已经存在于第一个组中，将其添加到结果向量中
+			if (visitedVerticesIndices.count(index)) {
+				// 使用一个集合来确保每个共同顶点只被添加一次
+				if (std::find(commonVertices.begin(), commonVertices.end(), v) == commonVertices.end()) {
+					commonVertices.push_back(v);
+				}
+			}
+		}
+	}
+
+	return commonVertices;
+}
+
 void Group::addTetrahedron(Tetrahedron* tet) {
 	tetrahedra.push_back(tet);
 	for (int i = 0; i < 4; ++i) {

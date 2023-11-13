@@ -15,3 +15,5 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 std::string createEdgeId(Vertex* vertex1, Vertex* vertex2);
 void drawEdge(Vertex* vertex1, Vertex* vertex2, float r, float g, float b);
 void drawAxis(float length);
+void XPrintString(const char* s);
+void initFontData();

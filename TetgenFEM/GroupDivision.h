@@ -121,6 +121,7 @@ public:
 	Group groups[3];
 
 	Group& getGroup(int index);
+	std::vector<Vertex*> findCommonVertices(const Group& group1, const Group& group2);// find common vertex
 };
 
 void findBoundaryEdges(tetgenio& out);

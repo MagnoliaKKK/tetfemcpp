@@ -1,10 +1,36 @@
 #include "VisualOpenGL.h"
+#include <Windows.h>
 
 
 double lastX, lastY;
 bool mousePressed = false;
 // Global variables to hold rotation state
 Eigen::Quaternionf rotation = Eigen::Quaternionf::Identity();
+
+
+#define MAX_CHAR    128
+GLuint TextFont;
+
+//英文、数字
+void XPrintString(const char* s)
+{
+
+	glListBase(TextFont);
+	glCallLists(strlen(s), GL_UNSIGNED_BYTE, s);
+}
+
+
+
+
+//启用文字，不支持汉字、unicode
+void initFontData()
+{
+	TextFont = glGenLists(MAX_CHAR);
+	wglUseFontBitmaps(wglGetCurrentDC(), 0, MAX_CHAR, TextFont);
+}
+
+
+
 // Callback to handle mouse button events
 void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
 	if (button == GLFW_MOUSE_BUTTON_LEFT) {
