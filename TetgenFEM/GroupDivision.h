@@ -112,6 +112,7 @@ public:
 	void calLHS();
 	void calRHS();
 	void calDeltaX();
+	void calFbind();
 
 };
 

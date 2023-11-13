@@ -383,6 +383,9 @@ void Group::calDeltaX() {
 	deltaX = rotationTransSparse * deltaX;
 }
 
+void Group::calFbind() {
+
+}
 
 Group& Object::getGroup(int index) {
 	return groups[index];

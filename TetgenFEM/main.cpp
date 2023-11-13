@@ -95,7 +95,7 @@ int main() {
 		object.groups[0].calRotationMatrix();
 		object.groups[0].calLHS();
 		object.groups[0].calRHS();
-		object.groups[0].calDeltaX();
+		//object.groups[0].calDeltaX();
 		
 		/*object.groups[0].tetrahedra[1]->vertices[2]->x += 0.01;
 		object.groups[1].getUniqueVertices()[3]->y += 0.001;*/
