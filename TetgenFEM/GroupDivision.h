@@ -118,7 +118,7 @@ public:
 
 class Object {
 public:
-	Group groups[3];
+	Group groups[3]; // change this
 
 	Group& getGroup(int index);
 	std::vector<Vertex*> findCommonVertices(const Group& group1, const Group& group2);// find common vertex

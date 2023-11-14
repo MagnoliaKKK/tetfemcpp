@@ -457,6 +457,7 @@ void divideIntoGroups(tetgenio& out, Object& object, int numGroups) {
 
 	// Create vertices
 	std::vector<Vertex*> vertices;
+
 	for (int i = 0; i < out.numberofpoints; ++i) {
 		double x = out.pointlist[i * 3];
 		double y = out.pointlist[i * 3 + 1];

@@ -43,7 +43,7 @@ int main() {
 
 	int groupNum = 2; //Object类和颜色都写死了
 	Object object;
-	divideIntoGroups(out, object, groupNum);
+	divideIntoGroups(out, object, groupNum); //convert tetgen to our data structure
 	//下面这个for把Object Group Vertex都划分了
 	// Accessing and printing the groups and their tetrahedra
 	for (int i = 0; i < groupNum; ++i) {  // Loop over the groups
@@ -169,7 +169,7 @@ int main() {
 
 
 		//分组显示
-		for (int groupIdx = 0; groupIdx < 3; ++groupIdx) {
+		for (int groupIdx = 0; groupIdx < 3; ++groupIdx) { //这里也是写死了
 			Group& group = object.getGroup(groupIdx);
 			for (Tetrahedron* tet : group.tetrahedra) {
 				for (int edgeIdx = 0; edgeIdx < 6; ++edgeIdx) {  // Loop through each edge in the tetrahedron
