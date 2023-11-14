@@ -38,7 +38,7 @@ std::vector<Vertex*> Object::findCommonVertices(const Group& group1, const Group
 void Group::addTetrahedron(Tetrahedron* tet) {
 	tetrahedra.push_back(tet);
 	for (int i = 0; i < 4; ++i) {
-		verticesMap[tet->vertices[i]->index] = tet->vertices[i];
+		verticesMap[tet->vertices[i]->index] = tet->vertices[i]; //添加四面体的同时，把四面体的顶点加入verticesMap
 	}
 }
 std::vector<Vertex*> Group::getUniqueVertices() {
