@@ -457,7 +457,6 @@ void divideIntoGroups(tetgenio& out, Object& object, int numGroups) {
 
 	// Create vertices
 	std::vector<Vertex*> vertices;
-
 	for (int i = 0; i < out.numberofpoints; ++i) {
 		double x = out.pointlist[i * 3];
 		double y = out.pointlist[i * 3 + 1];
@@ -472,7 +471,7 @@ void divideIntoGroups(tetgenio& out, Object& object, int numGroups) {
 		Vertex* v3 = vertices[out.tetrahedronlist[i * 4 + 2] - 1];
 		Vertex* v4 = vertices[out.tetrahedronlist[i * 4 + 3] - 1];
 
-		Tetrahedron* tet = new Tetrahedron(v1, v2, v3, v4);
+		Tetrahedron* tet = new Tetrahedron(v1, v2, v3, v4); //把vertex打包进四面体
 
 
 		// Determine group based on average X coordinate
@@ -480,7 +479,7 @@ void divideIntoGroups(tetgenio& out, Object& object, int numGroups) {
 		int groupIndex = (avgX - minX) / groupRange;
 		if (groupIndex >= numGroups) groupIndex = numGroups - 1;  // Update here
 
-		object.getGroup(groupIndex).addTetrahedron(tet);
+		object.getGroup(groupIndex).addTetrahedron(tet); //把四面体打包进group
 
 		// Set up edges for each tetrahedron
 		static int edgeIndices[6][2] = { {0, 1}, {1, 2}, {2, 0}, {0, 3}, {1, 3}, {2, 3} };

@@ -150,15 +150,32 @@ int main() {
 
 		for (int groupIdx = 0; groupIdx < 3; ++groupIdx) { //写点的标号，画字
 			Group& group = object.getGroup(groupIdx);
-			std::vector<Vertex*> uniqueVertices = group.getUniqueVertices();
-			for (size_t i = 0; i < uniqueVertices.size(); ++i) {
-				Vertex* vertex = uniqueVertices[i];
+
+			//画不重复的版本
+			//std::vector<Vertex*> uniqueVertices = group.getUniqueVertices();
+			//for (size_t i = 0; i < uniqueVertices.size(); ++i) {
+			//	Vertex* vertex = uniqueVertices[i];
+			//	char buffer[5]; // 分配足够大的缓冲区
+			//	sprintf_s(buffer, "%d", vertex->index); // 将int转换为char*
+			//	glColor3f(1, 0.0f, 0.0f);
+			//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
+			//	XPrintString(buffer);
+			//}
+
+
+			//画重复的版本
+
+			for (const auto& pair : group.verticesMap) {
+				int key = pair.first;          // 键（整数）
+				Vertex* value = pair.second;   // 值（Vertex*）
+
 				char buffer[5]; // 分配足够大的缓冲区
-				sprintf_s(buffer, "%d", vertex->index); // 将int转换为char*
+				sprintf_s(buffer, "%d", value->index); // 将int转换为char*
 				glColor3f(1, 0.0f, 0.0f);
-				glRasterPos3f(vertex->x, vertex->y, vertex->z);
+				glRasterPos3f(value->x, value->y, value->z);
 				XPrintString(buffer);
 			}
+
 		}
 
 		
