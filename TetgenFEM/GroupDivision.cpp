@@ -4,6 +4,56 @@ double timeStep = 0.01;
 double alpha = 0.1;
 const  double PI = 3.14159265358979265358979;
 
+
+void Object::updateIndices() {
+	std::unordered_set<int> globalIndices;
+	std::unordered_map<int, Vertex*> indexToVertexMap; // 旧索引到新顶点的映射
+	int maxIndex = 0;
+
+	// 首先遍历所有顶点以找到最大索引值
+	for (Group& group : groups) {
+		for (Tetrahedron* tetra : group.tetrahedra) {
+			for (int i = 0; i < 4; ++i) {
+				Vertex* vertex = tetra->vertices[i];
+				maxIndex = std::max(maxIndex, vertex->index);
+			}
+		}
+	}
+
+	int nextAvailableIndex = maxIndex + 1;
+
+	// 再次遍历所有顶点以更新索引
+	for (Group& group : groups) {
+		std::unordered_set<int> localIndices; // 每个组内的本地索引集合
+
+		for (Tetrahedron* tetra : group.tetrahedra) {
+			for (int i = 0; i < 4; ++i) {
+				Vertex* vertex = tetra->vertices[i];
+
+				if (localIndices.find(vertex->index) == localIndices.end()) {
+					localIndices.insert(vertex->index);
+
+					if (globalIndices.find(vertex->index) != globalIndices.end()) {
+						// 如果索引已在全局集合中，创建新顶点并更新映射
+						Vertex* newVertex = new Vertex(vertex->x, vertex->y, vertex->z, nextAvailableIndex++);
+						indexToVertexMap[vertex->index] = newVertex;
+						tetra->vertices[i] = newVertex;
+						vertex = newVertex;
+					}
+					globalIndices.insert(vertex->index);
+				}
+				else if (indexToVertexMap.find(vertex->index) != indexToVertexMap.end()) {
+					// 更新为新的顶点引用
+					tetra->vertices[i] = indexToVertexMap[vertex->index];
+				}
+			}
+		}
+	}
+
+
+
+}
+
 std::vector<Vertex*> Object::findCommonVertices(const Group& group1, const Group& group2) { //寻找两个组的共同点
 	std::unordered_set<int> visitedVerticesIndices;
 	std::vector<Vertex*> commonVertices;

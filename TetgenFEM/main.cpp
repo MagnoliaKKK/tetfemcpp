@@ -41,25 +41,26 @@ int main() {
 	// Call TetGen to tetrahedralize the geometry
 	tetrahedralize(&behavior, &in, &out);
 
-	int groupNum = 2; //Object类和颜色都写死了
+	int groupNum = 2; //Object类和颜色都写死了 不能超出class Object {里的组数
 	Object object;
 	divideIntoGroups(out, object, groupNum); //convert tetgen to our data structure
+	object.updateIndices();
 	//下面这个for把Object Group Vertex都划分了
 	// Accessing and printing the groups and their tetrahedra
 	for (int i = 0; i < groupNum; ++i) {  // Loop over the groups
 		Group& group = object.getGroup(i);
 		std::cout << "Group " << i << " has " << group.tetrahedra.size() << " tetrahedra." << std::endl;
 
-		for (size_t j = 0; j < group.tetrahedra.size(); ++j) {  // Loop over the tetrahedra in each group
-			Tetrahedron* tet = group.tetrahedra[j];
-			//std::cout << "  Tetrahedron " << j << " vertices:" << std::endl;
+		//for (size_t j = 0; j < group.tetrahedra.size(); ++j) {  // Loop over the tetrahedra in each group
+		//	Tetrahedron* tet = group.tetrahedra[j];
+		//	//std::cout << "  Tetrahedron " << j << " vertices:" << std::endl;
 
-			for (int k = 0; k < 4; ++k) {  // Loop over the vertices in each tetrahedron
-				Vertex* vertex = tet->vertices[k];
+		//	for (int k = 0; k < 4; ++k) {  // Loop over the vertices in each tetrahedron
+		//		Vertex* vertex = tet->vertices[k];
 
-				//std::cout << "    Vertex " << k << ": (" << vertex->x << ", " << vertex->y << ", " << vertex->z << ")" << std::endl;
-			}
-		}
+		//		//std::cout << "    Vertex " << k << ": (" << vertex->x << ", " << vertex->y << ", " << vertex->z << ")" << std::endl;
+		//	}
+		//}
 	}
 
 
@@ -165,15 +166,30 @@ int main() {
 
 			//画重复的版本
 
-			for (const auto& pair : group.verticesMap) {
-				int key = pair.first;          // 键（整数）
-				Vertex* value = pair.second;   // 值（Vertex*）
 
-				char buffer[5]; // 分配足够大的缓冲区
-				sprintf_s(buffer, "%d", value->index); // 将int转换为char*
-				glColor3f(1, 0.0f, 0.0f);
-				glRasterPos3f(value->x, value->y, value->z);
-				XPrintString(buffer);
+			for (Tetrahedron* tetra : group.tetrahedra) { // 遍历组中的每个四面体
+				for (int i = 0; i < 4; ++i) { // 遍历四面体的每个顶点
+					Vertex* vertex = tetra->vertices[i];
+					char buffer[5]; // 分配足够大的缓冲区
+					sprintf_s(buffer, "%d", vertex->index); // 将int转换为char*
+					//if (groupIdx == 0) {
+					//	glColor3f(1, 0.0f, 0.0f);
+					//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
+					//	XPrintString(buffer);
+					//}
+						
+					//if(groupIdx == 1)
+					//{
+					//	glColor3f(0, 1, 0.0f);
+					//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
+					//	XPrintString(buffer);
+					//}
+					//	
+					glColor3f(1, 0.0f, 0.0f);
+					glRasterPos3f(vertex->x, vertex->y, vertex->z);
+					XPrintString(buffer);
+					
+				}
 			}
 
 		}
