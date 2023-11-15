@@ -492,9 +492,37 @@ void Group::calDeltaX() {
 	deltaX = rotationTransSparse * deltaX;
 }
 
-void Group::calFbind() {
+void Group::calFbind(const std::vector<Vertex*>& commonVerticesThisGroup,
+	const std::vector<Vertex*>& commonVerticesAdjacentGroup,
+	double k) {
+	// 假设每个组都已经计算了与其它组共同的顶点列表，并且这些顶点在各自组内有局部编号
 
+	// 初始化Fbind，长度为组内顶点数的三倍
+	Eigen::VectorXd Fbind = Eigen::VectorXd::Zero(verticesMap.size() * 3);
+
+	// 遍历所有共有顶点
+	for (size_t i = 0; i < commonVerticesThisGroup.size(); ++i) {
+		// 取得当前组和邻近组的共同顶点
+		Vertex* vertexThisGroup = commonVerticesThisGroup[i];
+		Vertex* vertexAdjacentGroup = commonVerticesAdjacentGroup[i];
+
+		// 计算两个相同全局顶点之间的位置差异
+		Eigen::Vector3d posThisGroup(vertexThisGroup->x, vertexThisGroup->y, vertexThisGroup->z);
+		Eigen::Vector3d posAdjacentGroup(vertexAdjacentGroup->x, vertexAdjacentGroup->y, vertexAdjacentGroup->z);
+		Eigen::Vector3d posDifference = posThisGroup - posAdjacentGroup;
+
+		// 计算约束力
+		Eigen::Vector3d force = k * posDifference;
+
+		// 使用局部编号localIndex将约束力放置在Fbind中对应的位置
+		int localIndexThisGroup = vertexThisGroup->localIndex;
+		Fbind.segment<3>(3 * localIndexThisGroup) += force;
+	}
+
+	// ... 进行Fbind的其他处理，可能包括赋值给类成员或返回
 }
+
+
 
 Group& Object::getGroup(int index) {
 	return groups[index];

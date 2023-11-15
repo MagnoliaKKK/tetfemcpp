@@ -30,12 +30,12 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/bunny.stl", in);
+	readSTL("stls/cubeLong.stl", in);
 
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.1/15a0.1"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
+	char args[] = "pq1.1/15a0.01"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
 	behavior.parse_commandline(args);
 
 	// Call TetGen to tetrahedralize the geometry
@@ -48,7 +48,8 @@ int main() {
 	object.assignLocalIndicesToAllGroups(); //∑÷≈‰Local index
 	object.generateUniqueVertices();//≤˙…˙UniqueVertices
 
-	auto commonPoints = object.findCommonVertices(object.getGroup(0), object.getGroup(2));
+	auto commonPoints = object.findCommonVertices(object.getGroup(0), object.getGroup(1));
+	auto commonPoints1 = object.findCommonVertices(object.getGroup(1), object.getGroup(2));
 
 	// Accessing and printing the groups and their tetrahedra
 	for (int i = 0; i < groupNum; ++i) {  // Loop over the groups

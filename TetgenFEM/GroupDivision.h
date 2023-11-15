@@ -114,7 +114,9 @@ public:
 	void calLHS();
 	void calRHS();
 	void calDeltaX();
-	void calFbind();
+	void calFbind(const std::vector<Vertex*>& commonVerticesThisGroup,
+		const std::vector<Vertex*>& commonVerticesAdjacentGroup,
+		double k);
 
 };
 
