@@ -41,27 +41,19 @@ int main() {
 	// Call TetGen to tetrahedralize the geometry
 	tetrahedralize(&behavior, &in, &out);
 
-	int groupNum = 2; //Object类和颜色都写死了 不能超出class Object {里的组数
+	int groupNum = 3; //Object类和颜色都写死了 不能超出class Object {里的组数
 	Object object;
 	divideIntoGroups(out, object, groupNum); //convert tetgen to our data structure
-	object.updateIndices(); // 每个点分配一个独立index，重复的改新的
+	object.updateIndices(); // 每个点分配一个独立index，重复的改新的index
 	object.assignLocalIndicesToAllGroups(); //分配Local index
-	//下面这个for把Object Group Vertex都划分了
+	object.generateUniqueVertices();//产生UniqueVertices
+
+	auto commonPoints = object.findCommonVertices(object.getGroup(0), object.getGroup(2));
+
 	// Accessing and printing the groups and their tetrahedra
 	for (int i = 0; i < groupNum; ++i) {  // Loop over the groups
 		Group& group = object.getGroup(i);
 		std::cout << "Group " << i << " has " << group.tetrahedra.size() << " tetrahedra." << std::endl;
-
-		//for (size_t j = 0; j < group.tetrahedra.size(); ++j) {  // Loop over the tetrahedra in each group
-		//	Tetrahedron* tet = group.tetrahedra[j];
-		//	//std::cout << "  Tetrahedron " << j << " vertices:" << std::endl;
-
-		//	for (int k = 0; k < 4; ++k) {  // Loop over the vertices in each tetrahedron
-		//		Vertex* vertex = tet->vertices[k];
-
-		//		//std::cout << "    Vertex " << k << ": (" << vertex->x << ", " << vertex->y << ", " << vertex->z << ")" << std::endl;
-		//	}
-		//}
 	}
 
 
@@ -110,7 +102,7 @@ int main() {
 		//object.groups[0].calLHS();
 		//object.groups[0].calRHS();
 		
-		//auto aaaaa = object.findCommonVertices(object.getGroup(0), object.getGroup(1));
+
 		//object.groups[0].calDeltaX();
 
 		/*object.groups[0].tetrahedra[1]->vertices[2]->x += 0.01;
@@ -173,7 +165,7 @@ int main() {
 				for (int i = 0; i < 4; ++i) { // 遍历四面体的每个顶点
 					Vertex* vertex = tetra->vertices[i];
 					char buffer[5]; // 分配足够大的缓冲区
-					sprintf_s(buffer, "%d", vertex->localIndex); // 将int转换为char*
+					sprintf_s(buffer, "%d", vertex->index); // 将int转换为char*
 					//if (groupIdx == 0) {
 					//	glColor3f(1, 0.0f, 0.0f);
 					//	glRasterPos3f(vertex->x, vertex->y, vertex->z);

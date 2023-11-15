@@ -68,49 +68,58 @@ void Object::updateIndices() {
 			}
 		}
 	}
-
-
-
 }
 
-std::vector<Vertex*> Object::findCommonVertices(const Group& group1, const Group& group2) { //寻找两个组的共同点
-	std::unordered_set<int> visitedVerticesIndices;
-	std::vector<Vertex*> commonVertices;
+void Object::generateUniqueVertices() { //执行这个函数以后，verticesMap就会装满这个组的vertices， 不重复
+	//std::vector<Vertex*> uniqueVertices;
+	
+	for (Group& group : groups) {
+		group.verticesMap.clear(); // 清空现有的映射
 
-	// 首先，遍历第一个组的四面体和顶点
-	for (const auto& tetra : group1.tetrahedra) {
-		for (int i = 0; i < 4; ++i) {
-			Vertex* v = tetra->vertices[i];
-			visitedVerticesIndices.insert(v->index);
-		}
-	}
+		for (Tetrahedron* tetra : group.tetrahedra) {
+			for (int i = 0; i < 4; ++i) {
+				Vertex* vertex = tetra->vertices[i];
 
-	// 然后，遍历第二个组的四面体和顶点
-	for (const auto& tetra : group2.tetrahedra) {
-		for (int i = 0; i < 4; ++i) {
-			Vertex* v = tetra->vertices[i];
-			int index = v->index;
-
-			// 如果这个顶点的索引已经存在于第一个组中，将其添加到结果向量中
-			if (visitedVerticesIndices.count(index)) {
-				// 使用一个集合来确保每个共同顶点只被添加一次
-				if (std::find(commonVertices.begin(), commonVertices.end(), v) == commonVertices.end()) {
-					commonVertices.push_back(v);
+				// 如果顶点尚未在verticesMap中，则添加
+				if (group.verticesMap.find(vertex->index) == group.verticesMap.end()) {
+					group.verticesMap[vertex->index] = vertex;
 				}
 			}
 		}
 	}
 
-	return commonVertices;
+}
+
+std::pair<std::vector<Vertex*>, std::vector<Vertex*>> Object::findCommonVertices(const Group& group1, const Group& group2) { //寻找共同点
+	std::vector<Vertex*> commonVerticesGroup1;
+	std::vector<Vertex*> commonVerticesGroup2;
+
+	// 遍历group1的verticesMap中的所有顶点
+	for (auto& mapEntry1 : group1.verticesMap) {
+		Vertex* vertex1 = mapEntry1.second;
+
+		// 遍历group2的verticesMap中的所有顶点
+		for (auto& mapEntry2 : group2.verticesMap) {
+			Vertex* vertex2 = mapEntry2.second;
+
+			// 检查坐标是否相同
+			if (vertex1->x == vertex2->x && vertex1->y == vertex2->y && vertex1->z == vertex2->z) {
+				commonVerticesGroup1.push_back(vertex1);
+				commonVerticesGroup2.push_back(vertex2);
+			}
+		}
+	}
+
+	return { commonVerticesGroup1, commonVerticesGroup2 };
 }
 
 void Group::addTetrahedron(Tetrahedron* tet) {
 	tetrahedra.push_back(tet);
-	for (int i = 0; i < 4; ++i) {
-		verticesMap[tet->vertices[i]->index] = tet->vertices[i]; //添加四面体的同时，把四面体的顶点加入verticesMap
-	}
+	//for (int i = 0; i < 4; ++i) {
+	//	verticesMap[tet->vertices[i]->index] = tet->vertices[i]; //添加四面体的同时，把四面体的顶点加入verticesMap
+	//}
 }
-std::vector<Vertex*> Group::getUniqueVertices() {
+std::vector<Vertex*> Group::getUniqueVertices() { //这个还是需要的，相当于把hashmap转换成vertexGroup
 	std::vector<Vertex*> uniqueVertices;
 	for (auto& pair : verticesMap) {
 		uniqueVertices.push_back(pair.second);
