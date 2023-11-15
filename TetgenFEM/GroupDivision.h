@@ -19,7 +19,8 @@ class Vertex {
 public:
 	double x, y, z;
 	const double initx, inity, initz; //初始化后不可更改
-	int index;  // Add an index field to help identify vertices
+	int index;  // global index
+	int localIndex; // 组内的本地索引
 	double vertexMass; // mass of vertices
 	double velx, vely, velz;//速度的三个分量
 
@@ -124,6 +125,7 @@ public:
 
 	Group& getGroup(int index);
 	std::vector<Vertex*> findCommonVertices(const Group& group1, const Group& group2);// find common vertex
+	void assignLocalIndicesToAllGroups(); // local Index
 	void updateIndices();
 };
 

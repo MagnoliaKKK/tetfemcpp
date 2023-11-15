@@ -44,7 +44,8 @@ int main() {
 	int groupNum = 2; //Object类和颜色都写死了 不能超出class Object {里的组数
 	Object object;
 	divideIntoGroups(out, object, groupNum); //convert tetgen to our data structure
-	object.updateIndices();
+	object.updateIndices(); // 每个点分配一个独立index，重复的改新的
+	object.assignLocalIndicesToAllGroups(); //分配Local index
 	//下面这个for把Object Group Vertex都划分了
 	// Accessing and printing the groups and their tetrahedra
 	for (int i = 0; i < groupNum; ++i) {  // Loop over the groups
@@ -172,7 +173,7 @@ int main() {
 				for (int i = 0; i < 4; ++i) { // 遍历四面体的每个顶点
 					Vertex* vertex = tetra->vertices[i];
 					char buffer[5]; // 分配足够大的缓冲区
-					sprintf_s(buffer, "%d", vertex->index); // 将int转换为char*
+					sprintf_s(buffer, "%d", vertex->localIndex); // 将int转换为char*
 					//if (groupIdx == 0) {
 					//	glColor3f(1, 0.0f, 0.0f);
 					//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
@@ -187,11 +188,11 @@ int main() {
 					//}
 					//	
 
-					//std::default_random_engine generator(vertex->index);//随机数发生器，用于字符偏移防重叠
-					//std::uniform_real_distribution<float> distribution(0, 0.1);
-					//float random_number = distribution(generator);
+					std::default_random_engine generator(vertex->index);//随机数发生器，用于字符偏移防重叠
+					std::uniform_real_distribution<float> distribution(0, 0.05);
+					float random_number = distribution(generator);
 					glColor3f(1, 0.0f, 0.0f);
-					glRasterPos3f(vertex->x, vertex->y, vertex->z);
+					glRasterPos3f(vertex->x + random_number, vertex->y + random_number, vertex->z + random_number);
 					XPrintString(buffer);
 					
 				}

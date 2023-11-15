@@ -5,6 +5,25 @@ double alpha = 0.1;
 const  double PI = 3.14159265358979265358979;
 
 
+void Object::assignLocalIndicesToAllGroups() { // local index generation
+	for (Group& group : groups) {
+		int currentLocalIndex = 0;
+		std::unordered_set<Vertex*> processedVertices; // 用于跟踪已处理的顶点
+
+		for (Tetrahedron* tetra : group.tetrahedra) {
+			for (int i = 0; i < 4; ++i) {
+				Vertex* vertex = tetra->vertices[i];
+
+				// 检查顶点是否已经处理过
+				if (processedVertices.find(vertex) == processedVertices.end()) {
+					vertex->localIndex = currentLocalIndex++; // 分配本地索引
+					processedVertices.insert(vertex); // 标记为已处理
+				}
+			}
+		}
+	}
+}
+
 void Object::updateIndices() {
 	std::unordered_set<int> globalIndices;
 	std::unordered_map<int, Vertex*> indexToVertexMap; // 旧索引到新顶点的映射
