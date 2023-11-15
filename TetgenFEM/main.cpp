@@ -7,7 +7,7 @@
 #include "GLFW/glfw3.h"
 
 #include <cmath>
-
+#include <random>
 #include "VisualOpenGL.h"
 #include "ReadSTL.h"
 #include "GroupDivision.h"
@@ -89,6 +89,7 @@ int main() {
 
 	Eigen::Matrix4f mat;
 	initFontData();
+	
 	while (!glfwWindowShouldClose(window)) {
 		
 		//double aa = object.groups[0].tetrahedra[0]->calMassTetra(density);
@@ -185,6 +186,10 @@ int main() {
 					//	XPrintString(buffer);
 					//}
 					//	
+
+					//std::default_random_engine generator(vertex->index);//随机数发生器，用于字符偏移防重叠
+					//std::uniform_real_distribution<float> distribution(0, 0.1);
+					//float random_number = distribution(generator);
 					glColor3f(1, 0.0f, 0.0f);
 					glRasterPos3f(vertex->x, vertex->y, vertex->z);
 					XPrintString(buffer);
