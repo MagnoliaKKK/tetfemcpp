@@ -30,7 +30,7 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/cubeLong.stl", in);
+	readSTL("stls/bunny.stl", in);
 
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
@@ -180,11 +180,11 @@ int main() {
 					//}
 					//	
 
-					std::default_random_engine generator(vertex->index);//随机数发生器，用于字符偏移防重叠
-					std::uniform_real_distribution<float> distribution(0, 0.05);
-					float random_number = distribution(generator);
+					//std::default_random_engine generator(vertex->index);//随机数发生器，用于字符偏移防重叠
+					//std::uniform_real_distribution<float> distribution(0, 0.05);
+					//float random_number = distribution(generator);
 					glColor3f(1, 0.0f, 0.0f);
-					glRasterPos3f(vertex->x + random_number, vertex->y + random_number, vertex->z + random_number);
+					glRasterPos3f(vertex->x + 0, vertex->y + 0, vertex->z + 0);
 					XPrintString(buffer);
 					
 				}
