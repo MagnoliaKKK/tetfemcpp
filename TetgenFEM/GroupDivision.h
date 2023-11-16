@@ -92,6 +92,7 @@ public:
 	Eigen::SparseMatrix<double> dampingSparse;
 	Eigen::SparseMatrix<double> massDistributionSparse;
 	Eigen::SparseMatrix<double> massDampingSparseInv; //(M+C').inv sparse
+	Eigen::VectorXd currentPosition;//计算bindf用的位置信息，不用做位置更新
 
 
 
@@ -114,9 +115,12 @@ public:
 	void calLHS();
 	void calRHS();
 	void calDeltaX();
+	void calculateCurrentPositions();
 	void calFbind(const std::vector<Vertex*>& commonVerticesThisGroup,
 		const std::vector<Vertex*>& commonVerticesAdjacentGroup,
 		double k);
+	void updatePosition();
+	void updateVelocity();
 
 };
 
@@ -124,12 +128,15 @@ public:
 class Object {
 public:
 	Group groups[3]; // change this
+	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints;
+	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints1;
 
 	Group& getGroup(int index);
 	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> findCommonVertices(const Group& group1, const Group& group2);// find common vertex
 	void assignLocalIndicesToAllGroups(); // local Index
 	void updateIndices();
 	void generateUniqueVertices();//generate unique vertices
+	void PBDLOOP(int looptime);
 };
 
 void findBoundaryEdges(tetgenio& out);

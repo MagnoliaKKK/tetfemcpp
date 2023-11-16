@@ -48,9 +48,7 @@ int main() {
 	object.assignLocalIndicesToAllGroups(); //∑÷≈‰Local index
 	object.generateUniqueVertices();//≤˙…˙UniqueVertices
 
-	auto commonPoints = object.findCommonVertices(object.getGroup(0), object.getGroup(1));
-	auto commonPoints1 = object.findCommonVertices(object.getGroup(1), object.getGroup(2));
-
+	
 	// Accessing and printing the groups and their tetrahedra
 	for (int i = 0; i < groupNum; ++i) {  // Loop over the groups
 		Group& group = object.getGroup(i);

@@ -492,6 +492,26 @@ void Group::calDeltaX() {
 	deltaX = rotationTransSparse * deltaX;
 }
 
+void Group::calculateCurrentPositions() {
+	// 遍历所有顶点
+	for (auto& vertexPair : verticesMap) {
+		Vertex* vertex = vertexPair.second;
+		int localIndex = vertex->localIndex;
+
+		// 获取primeVec中对应顶点的位置
+		Eigen::Vector3d primePosition = primeVec.segment<3>(3 * localIndex);
+
+		// 获取deltaX中对应顶点的位移
+		Eigen::Vector3d displacement = deltaX.segment<3>(3 * localIndex);
+
+		// 计算当前位置
+		Eigen::Vector3d currentPos = primePosition + displacement;
+		currentPosition.segment<3>(3 * localIndex) = currentPos;
+
+	}
+}
+
+
 void Group::calFbind(const std::vector<Vertex*>& commonVerticesThisGroup,
 	const std::vector<Vertex*>& commonVerticesAdjacentGroup,
 	double k) {
@@ -522,11 +542,101 @@ void Group::calFbind(const std::vector<Vertex*>& commonVerticesThisGroup,
 	// ... 进行Fbind的其他处理，可能包括赋值给类成员或返回
 }
 
+void Group::updatePosition() {
+	
+	// 遍历所有顶点
+	for (auto& vertexPair : verticesMap) {
+		Vertex* vertex = vertexPair.second;
+		int localIndex = vertex->localIndex;
 
+		// 从currentPosition中获取对应顶点的位置
+		Eigen::Vector3d pos = currentPosition.segment<3>(3 * localIndex);
+
+		// 更新顶点的位置
+		vertex->x = pos.x();
+		vertex->y = pos.y();
+		vertex->z = pos.z();
+	}
+}
+
+void Group::updateVelocity() {
+	
+
+	// 遍历所有顶点，更新速度并保存当前位置
+	for (auto& vertexPair : verticesMap) {
+		Vertex* vertex = vertexPair.second;
+		int localIndex = vertex->localIndex;
+
+		// 获取当前位置
+		Eigen::Vector3d previousPos(vertex->x, vertex->y, vertex->z);
+
+		// 从 previousPosition 获取上一帧的位置
+		Eigen::Vector3d currentPos = currentPosition.segment<3>(3 * localIndex);
+
+		// 计算速度
+		Eigen::Vector3d velocity = (currentPos - previousPos) / timeStep;
+
+		// 更新 vertex 的速度
+		// 例如：vertex->velocity = velocity;
+
+		// 保存当前位置作为下一帧的“上一帧位置”
+		//previousPosition.segment<3>(3 * localIndex) = currentPos;
+	}
+
+	//// 更新currentPosition为本帧最后的位置
+	//for (auto& vertexPair : verticesMap) {
+	//	Vertex* vertex = vertexPair.second;
+	//	int localIndex = vertex->localIndex;
+
+	//	currentPosition.segment<3>(3 * localIndex) = Eigen::Vector3d(vertex->x, vertex->y, vertex->z);
+	//}
+}
 
 Group& Object::getGroup(int index) {
 	return groups[index];
 }
+
+void Object::PBDLOOP(int looptime) {
+
+
+	// 1. 初始化：将每个组的 Fbind 置零
+	for (auto g : groups) {
+		g.Fbind.setZero(); // 假设 Group 类有一个方法来清除 Fbind
+	}
+
+	// 2. 开始迭代
+	for (int iter = 0; iter < looptime; ++iter) {
+		// 每组计算 RHS
+		for (auto g : groups) {
+			g.calRHS(); // 假设这个方法已经实现
+			g.calDeltaX();
+			g.calculateCurrentPositions();
+			
+			
+		}
+		groups[0].calFbind(commonPoints.first, commonPoints.second, 1000);
+		groups[1].calFbind(commonPoints.second, commonPoints.first, 1000);
+		groups[1].calFbind(commonPoints1.first, commonPoints1.second, 1000);
+		groups[2].calFbind(commonPoints1.second, commonPoints1.first, 1000);		
+	}
+	for (auto g : groups)
+	{
+		g.updatePosition();
+
+	}
+	// 迭代完成后更新位置和速度
+	//for (int i = 0; i < 3; ++i) {
+	//	// 更新位置，这里可能需要一些逻辑来获取最后一次迭代的结果
+	//	groups[i].updateFinalPositions(); // 假设这个方法用最后一次迭代的结果更新顶点位置
+
+	//	// 更新速度
+	//	groups[i].updateVelocities(timestep); // 假设这个方法用 (现在位置 - 上一帧位置) / timestep 计算速度
+	//}
+
+	// ... 现在，所有的组都应该有了更新后的位置和速度，可以传递给绘图功能
+	// drawGroups(); // 假设有一个方法来绘制或输出最新的组状态
+}
+
 
 std::unordered_set<std::string> boundaryEdgesSet;  // Set to store boundary edges
 
