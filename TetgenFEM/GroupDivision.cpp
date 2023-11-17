@@ -312,19 +312,20 @@ void Group::calGroupK(double E, double nu) {
 		// Determine where to add the local stiffness matrix in the global stiffness matrix
 		for (int i = 0; i < 4; ++i) { // Each tetrahedron has 4 vertices
 			Vertex* vertex = tetra->vertices[i];
-			int globalIndex = vertex->index * 3; // Assuming the index is set up correctly in verticesMap
+			int localIndex = vertex->localIndex * 3; // Use local index
 
 			for (int j = 0; j < 4; ++j) {
 				Vertex* otherVertex = tetra->vertices[j];
-				int otherGlobalIndex = otherVertex->index * 3;
+				int otherLocalIndex = otherVertex->localIndex * 3;
 
 				// Add the 3x3 submatrix of localK to the correct place in groupK
-				groupK.block<3, 3>(globalIndex, otherGlobalIndex) += localK.block<3, 3>(i * 3, j * 3);
+				groupK.block<3, 3>(localIndex, otherLocalIndex) += localK.block<3, 3>(i * 3, j * 3);
 			}
 		}
 	}
 	kSparse = groupK.sparseView();
 }
+
 
 
 void Group::calMassGroup() {
@@ -343,16 +344,17 @@ Eigen::MatrixXd Group::calMassMatrix(double den) {
 		double vertexMass = tetMass / 4.0;  // Assume uniform distribution of mass among vertices
 
 		for (int i = 0; i < 4; i++) {
-			int idx = tet->vertices[i]->index;
-			M(3 * idx, 3 * idx) += vertexMass;     // x-direction
-			M(3 * idx + 1, 3 * idx + 1) += vertexMass; // y-direction
-			M(3 * idx + 2, 3 * idx + 2) += vertexMass; // z-direction
+			int localIdx = tet->vertices[i]->localIndex;  // Use local index
+			M(3 * localIdx, 3 * localIdx) += vertexMass;     // x-direction
+			M(3 * localIdx + 1, 3 * localIdx + 1) += vertexMass; // y-direction
+			M(3 * localIdx + 2, 3 * localIdx + 2) += vertexMass; // z-direction
 		}
 	}
 	massMatrix = M;
 	return M;
-	massSparse = massMatrix.sparseView();
+	// massSparse = massMatrix.sparseView();  // Commented out as it's not part of the provided code snippet
 }
+
 
 void Group::calDampingMatrix() {
 	dampingMatrix.setZero();
@@ -361,39 +363,39 @@ void Group::calDampingMatrix() {
 }
 
 void Group::calMassDistributionMatrix() {
+	int N = verticesMap.size();  // Number of unique vertices
+	massDistribution = Eigen::MatrixXd::Zero(3 * N, 3 * N);
+	Eigen::MatrixXd SUMsub_M_Matrix = Eigen::MatrixXd::Zero(3, 3 * N);
 
-	massDistribution = Eigen::MatrixXd::Zero(3 * verticesMap.size(), 3 * verticesMap.size());
-	Eigen::MatrixXd SUMsub_M_Matrix = Eigen::MatrixXd::Zero(3, 3 * verticesMap.size());
 	for (const auto& vertexEntry : verticesMap) {
 		Vertex* vertex = vertexEntry.second;
-		int vertexIndex = vertex->index;
+		int localIdx = vertex->localIndex;  // Use local index
 
 		// Create a 3x3 identity matrix scaled by the vertex's mass
-		SUMsub_M_Matrix.block(0, 3 * vertexIndex, 3, 3) = (vertex->vertexMass / groupMass) * Eigen::Matrix3d::Identity();
+		SUMsub_M_Matrix.block(0, 3 * localIdx, 3, 3) = (vertex->vertexMass / groupMass) * Eigen::Matrix3d::Identity();
 	}
-	
+
 	for (const auto& vertexEntry : verticesMap) {
 		Vertex* vertex = vertexEntry.second;
-		int vertexIndex = vertex->index;
+		int localIdx = vertex->localIndex;  // Use local index
 
-		massDistribution.block(3 * vertexIndex, 0, 3, 3 * verticesMap.size()) = SUMsub_M_Matrix;
+		massDistribution.block(3 * localIdx, 0, 3, 3 * N) = SUMsub_M_Matrix;
 	}
-	// Reset SUM_M to a sparse view
-	//massDistributionSparse.setZero();
-	massDistributionSparse = massDistribution.sparseView();
 
-	
+	// Reset SUM_M to a sparse view
+	massDistributionSparse = massDistribution.sparseView();
 }
+
 void Group::setVertexMassesFromMassMatrix() {
 	int N = verticesMap.size();  // Number of unique vertices
 
 	for (int i = 0; i < N; i++) {
-		double mass = massMatrix(3 * i, 3 * i);
-		// Assuming that the vertices are stored sequentially in the verticesMap
-		// And the index in the massMatrix corresponds to the index in the Vertex object
+		int localIdx = verticesMap[i]->localIndex;  // Use local index
+		double mass = massMatrix(3 * localIdx, 3 * localIdx);
 		verticesMap[i]->vertexMass = mass;
 	}
 }
+
 
 void Group::calInitCOM() {
 	double totalMass = 0.0;
@@ -515,8 +517,6 @@ void Group::calculateCurrentPositions() {
 void Group::calFbind(const std::vector<Vertex*>& commonVerticesThisGroup,
 	const std::vector<Vertex*>& commonVerticesAdjacentGroup,
 	double k) {
-	// 假设每个组都已经计算了与其它组共同的顶点列表，并且这些顶点在各自组内有局部编号
-
 	// 初始化Fbind，长度为组内顶点数的三倍
 	Eigen::VectorXd Fbind = Eigen::VectorXd::Zero(verticesMap.size() * 3);
 
@@ -526,10 +526,13 @@ void Group::calFbind(const std::vector<Vertex*>& commonVerticesThisGroup,
 		Vertex* vertexThisGroup = commonVerticesThisGroup[i];
 		Vertex* vertexAdjacentGroup = commonVerticesAdjacentGroup[i];
 
-		// 计算两个相同全局顶点之间的位置差异
+		// 计算当前顶点和邻近组顶点的平均位置
 		Eigen::Vector3d posThisGroup(vertexThisGroup->x, vertexThisGroup->y, vertexThisGroup->z);
 		Eigen::Vector3d posAdjacentGroup(vertexAdjacentGroup->x, vertexAdjacentGroup->y, vertexAdjacentGroup->z);
-		Eigen::Vector3d posDifference = posThisGroup - posAdjacentGroup;
+		Eigen::Vector3d averagePosition = (posThisGroup + posAdjacentGroup) / 2.0;
+
+		// 计算当前顶点位置与平均位置之间的位置差异
+		Eigen::Vector3d posDifference = posThisGroup - averagePosition;
 
 		// 计算约束力
 		Eigen::Vector3d force = k * posDifference;
@@ -541,6 +544,7 @@ void Group::calFbind(const std::vector<Vertex*>& commonVerticesThisGroup,
 
 	// ... 进行Fbind的其他处理，可能包括赋值给类成员或返回
 }
+
 
 void Group::updatePosition() {
 	
@@ -608,7 +612,7 @@ void Object::PBDLOOP(int looptime) {
 	for (int iter = 0; iter < looptime; ++iter) {
 		// 每组计算 RHS
 		for (auto g : groups) {
-			g.calRHS(); // 假设这个方法已经实现
+			g.calRHS(); 
 			g.calDeltaX();
 			g.calculateCurrentPositions();
 			
