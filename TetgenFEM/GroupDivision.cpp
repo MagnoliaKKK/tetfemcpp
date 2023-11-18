@@ -113,6 +113,8 @@ std::pair<std::vector<Vertex*>, std::vector<Vertex*>> Object::findCommonVertices
 	return { commonVerticesGroup1, commonVerticesGroup2 };
 }
 
+
+
 void Group::addTetrahedron(Tetrahedron* tet) {
 	tetrahedra.push_back(tet);
 	//for (int i = 0; i < 4; ++i) {
@@ -419,7 +421,7 @@ void Group::calInitCOM() {
 
 void Group::calPrimeVec() {
 	// 确保groupVelocity已经初始化且设置为正确的尺寸
-	groupVelocity = Eigen::VectorXd::Zero(3 * verticesMap.size());
+	//groupVelocity = Eigen::VectorXd::Zero(3 * verticesMap.size());
 	primeVec = Eigen::VectorXd::Zero(3 * verticesMap.size());
 	// 计算逆矩阵
 	Eigen::MatrixXd inverseTerm = (massMatrix + dampingMatrix * timeStep).inverse();
@@ -438,23 +440,24 @@ void Group::calPrimeVec() {
 
 	// 更新primeVec和顶点位置
 	for (auto& vertexPair : verticesMap) {
-		int pi = vertexPair.first; // 假设map的key是索引
 		Vertex* vertex = vertexPair.second;
+		int localPi = vertex->localIndex; // 使用局部索引
 
 		// 获取当前顶点的速度更新部分
-		Eigen::Vector3d currentVelocityUpdate = velocityUpdate.segment<3>(3 * pi);
+		Eigen::Vector3d currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
 
 		// 计算新的位置
 		Eigen::Vector3d newPosition = Eigen::Vector3d(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate;
 
 		// 更新primeVec
-		primeVec.segment<3>(3 * static_cast<Eigen::Index>(pi)) = newPosition;
+		primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
 
 		// 更新顶点位置
 		vertex->x = newPosition.x();
 		vertex->y = newPosition.y();
 		vertex->z = newPosition.z();
 	}
+
 }
 
 void Group::calLHS() {

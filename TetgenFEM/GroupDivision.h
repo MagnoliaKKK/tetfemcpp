@@ -95,7 +95,7 @@ public:
 	Eigen::VectorXd currentPosition;//计算bindf用的位置信息，不用做位置更新
 
 
-
+	
 	void addTetrahedron(Tetrahedron* tet);
 	std::vector<Vertex*> getUniqueVertices();
 	void calCenterofMass();
@@ -122,6 +122,36 @@ public:
 	void updatePosition();
 	void updateVelocity();
 
+
+	Group()
+		: centerofMass(Eigen::Vector3d::Zero()),  // Initialize Eigen vector
+		groupMass(0.0),                         // Initialize double
+		massMatrix(Eigen::MatrixXd::Zero(3 * verticesMap.size(), 3 * verticesMap.size())),
+		massDistribution(Eigen::MatrixXd::Zero(3 * verticesMap.size(), 3 * verticesMap.size())),
+		groupK(Eigen::MatrixXd::Zero(3 * verticesMap.size(), 3 * verticesMap.size())),
+		primeVec(Eigen::VectorXd::Zero(3 * verticesMap.size())),
+		groupVelocity(Eigen::VectorXd::Zero(3 * verticesMap.size())),
+		groupExf(Eigen::VectorXd::Zero(3 * verticesMap.size())),
+		rotationMatrix(Eigen::MatrixXd::Identity(3 * verticesMap.size(), 3 * verticesMap.size())),  // 3x3 identity matrix
+		gravity(Eigen::VectorXd::Zero(3 * verticesMap.size())),
+		dampingMatrix(Eigen::MatrixXd::Zero(3 * verticesMap.size(), 3 * verticesMap.size())),
+		initCOM(Eigen::Vector3d::Zero()),
+		initLocalPos(Eigen::VectorXd::Zero(3 * verticesMap.size())),
+		LHS(Eigen::MatrixXd::Zero(3 * verticesMap.size(), 3 * verticesMap.size())),
+		RHS(Eigen::VectorXd::Zero(3 * verticesMap.size())),
+		Fbind(Eigen::VectorXd::Zero(3 * verticesMap.size())),
+		deltaX(Eigen::VectorXd::Zero(3 * verticesMap.size())),
+		rotationSparse(3 * verticesMap.size(), 3 * verticesMap.size()),
+		rotationTransSparse(3 * verticesMap.size(), 3 * verticesMap.size()),
+		kSparse(3 * verticesMap.size(), 3 * verticesMap.size()),
+		massSparse(3 * verticesMap.size(), 3 * verticesMap.size()),
+		dampingSparse(3 * verticesMap.size(), 3 * verticesMap.size()),
+		massDistributionSparse(3 * verticesMap.size(), 3 * verticesMap.size()),
+		massDampingSparseInv(3 * verticesMap.size(), 3 * verticesMap.size()),
+		currentPosition(Eigen::VectorXd::Zero(3 * verticesMap.size()))
+	{
+		// Additional initialization logic, if needed
+	}
 };
 
 
