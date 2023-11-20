@@ -85,24 +85,54 @@ int main() {
 	while (!glfwWindowShouldClose(window)) {
 		
 		//double aa = object.groups[0].tetrahedra[0]->calMassTetra(density);
-		//object.groups[0].calMassMatrix(density);
-		//object.groups[0].calMassGroup();
-		//object.groups[0].calDampingMatrix();
-		//object.groups[0].calCenterofMass();
-		//Eigen::Vector3d groupCOM = object.groups[0].centerofMass;
-		//Ke = object.groups[0].tetrahedra[0]->createElementK(youngs, poisson, groupCOM);
-		//object.groups[0].calGroupK(youngs, poisson);
-		//object.groups[0].setVertexMassesFromMassMatrix();
-		//object.groups[0].calMassDistributionMatrix();
-		//object.groups[0].calPrimeVec();
-		//object.groups[0].calInitCOM();
-		//object.groups[0].calLocalPos();
-		//object.groups[0].calRotationMatrix();
-		//object.groups[0].calLHS();
+		object.groups[0].calMassMatrix(density);
+		object.groups[0].calMassGroup();
+		object.groups[0].calDampingMatrix();
+		object.groups[0].calCenterofMass();
+		Eigen::Vector3d groupCOM = object.groups[0].centerofMass;
+		object.groups[0].calGroupK(youngs, poisson);
+		object.groups[0].setVertexMassesFromMassMatrix();
+		object.groups[0].calMassDistributionMatrix();
+		object.groups[0].calPrimeVec();
+		object.groups[0].calInitCOM();
+		object.groups[0].calLocalPos();
+		object.groups[0].calRotationMatrix();
+		object.groups[0].calLHS();
 		//object.groups[0].calRHS();
-		
-
 		//object.groups[0].calDeltaX();
+		//object.groups[0].calFbind(object.commonPoints.first, object.commonPoints.second, 1000);
+
+		object.groups[1].calMassMatrix(density);
+		object.groups[1].calMassGroup();
+		object.groups[1].calDampingMatrix();
+		object.groups[1].calCenterofMass();
+		Eigen::Vector3d groupCOM1 = object.groups[1].centerofMass;
+		object.groups[1].calGroupK(youngs, poisson);
+		object.groups[1].setVertexMassesFromMassMatrix();
+		object.groups[1].calMassDistributionMatrix();
+		object.groups[1].calPrimeVec();
+		object.groups[1].calInitCOM();
+		object.groups[1].calLocalPos();
+		object.groups[1].calRotationMatrix();
+		object.groups[1].calLHS();
+
+		object.groups[2].calMassMatrix(density);
+		object.groups[2].calMassGroup();
+		object.groups[2].calDampingMatrix();
+		object.groups[2].calCenterofMass();
+		Eigen::Vector3d groupCOM2 = object.groups[2].centerofMass;
+		object.groups[2].calGroupK(youngs, poisson);
+		object.groups[2].setVertexMassesFromMassMatrix();
+		object.groups[2].calMassDistributionMatrix();
+		object.groups[2].calPrimeVec();
+		object.groups[2].calInitCOM();
+		object.groups[2].calLocalPos();
+		object.groups[2].calRotationMatrix();
+		object.groups[2].calLHS();
+
+		object.PBDLOOP(10);
+		
+		int a = 1;
 
 		/*object.groups[0].tetrahedra[1]->vertices[2]->x += 0.01;
 		object.groups[1].getUniqueVertices()[3]->y += 0.001;*/

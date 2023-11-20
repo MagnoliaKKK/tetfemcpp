@@ -86,6 +86,7 @@ void Object::generateUniqueVertices() { //执行这个函数以后，verticesMap
 				}
 			}
 		}
+		group.initialize();
 	}
 
 }
@@ -113,7 +114,11 @@ std::pair<std::vector<Vertex*>, std::vector<Vertex*>> Object::findCommonVertices
 	return { commonVerticesGroup1, commonVerticesGroup2 };
 }
 
-
+void Group::initialize() {
+	groupVelocity = Eigen::VectorXd::Zero(3 * verticesMap.size());
+	Fbind = Eigen::VectorXd(3 * verticesMap.size());
+	currentPosition = Eigen::VectorXd::Zero(3 * verticesMap.size());;
+}
 
 void Group::addTetrahedron(Tetrahedron* tet) {
 	tetrahedra.push_back(tet);
@@ -159,7 +164,7 @@ void Group::calLocalPos() {
 		Eigen::Vector3d local_position = initial_position - initCOM;
 
 		// 将局部位置存储在initLocalPos中，注意index需要乘以3因为每个顶点有3个坐标值
-		initLocalPos.segment<3>(vertex->index * 3) = local_position;
+		initLocalPos.segment<3>(vertex->localIndex * 3) = local_position;
 	}
 }
 Eigen::Vector3d Group::axlAPD(Eigen::Matrix3d a) {
@@ -389,14 +394,15 @@ void Group::calMassDistributionMatrix() {
 }
 
 void Group::setVertexMassesFromMassMatrix() {
-	int N = verticesMap.size();  // Number of unique vertices
+	int N = verticesMap.size();  // Number of unique vertices in the hash map
 
-	for (int i = 0; i < N; i++) {
-		int localIdx = verticesMap[i]->localIndex;  // Use local index
+	for (auto& vertexPair : verticesMap) {
+		int localIdx = vertexPair.second->localIndex;  // Access local index from the second value of the pair
 		double mass = massMatrix(3 * localIdx, 3 * localIdx);
-		verticesMap[i]->vertexMass = mass;
+		vertexPair.second->vertexMass = mass;
 	}
 }
+
 
 
 void Group::calInitCOM() {
@@ -493,7 +499,7 @@ void Group::calRHS() {
 
 void Group::calDeltaX() {
 	
-	deltaX = RHS.inverse() * RHS;
+	deltaX = LHS.inverse() * RHS;
 	deltaX = rotationTransSparse * deltaX;
 }
 
@@ -501,17 +507,17 @@ void Group::calculateCurrentPositions() {
 	// 遍历所有顶点
 	for (auto& vertexPair : verticesMap) {
 		Vertex* vertex = vertexPair.second;
-		int localIndex = vertex->localIndex;
+		int localidx = vertex->localIndex;
 
 		// 获取primeVec中对应顶点的位置
-		Eigen::Vector3d primePosition = primeVec.segment<3>(3 * localIndex);
+		Eigen::Vector3d primePosition = primeVec.segment<3>(3 * localidx);
 
 		// 获取deltaX中对应顶点的位移
-		Eigen::Vector3d displacement = deltaX.segment<3>(3 * localIndex);
+		Eigen::Vector3d displacement = deltaX.segment<3>(3 * localidx);
 
 		// 计算当前位置
 		Eigen::Vector3d currentPos = primePosition + displacement;
-		currentPosition.segment<3>(3 * localIndex) = currentPos;
+		currentPosition.segment<3>(3 * localidx) = currentPos;
 
 	}
 }
@@ -521,7 +527,7 @@ void Group::calFbind(const std::vector<Vertex*>& commonVerticesThisGroup,
 	const std::vector<Vertex*>& commonVerticesAdjacentGroup,
 	double k) {
 	// 初始化Fbind，长度为组内顶点数的三倍
-	Eigen::VectorXd Fbind = Eigen::VectorXd::Zero(verticesMap.size() * 3);
+    Fbind = Eigen::VectorXd::Zero(verticesMap.size() * 3);
 
 	// 遍历所有共有顶点
 	for (size_t i = 0; i < commonVerticesThisGroup.size(); ++i) {
@@ -618,13 +624,12 @@ void Object::PBDLOOP(int looptime) {
 			g.calRHS(); 
 			g.calDeltaX();
 			g.calculateCurrentPositions();
-			
-			
+						
 		}
 		groups[0].calFbind(commonPoints.first, commonPoints.second, 1000);
-		groups[1].calFbind(commonPoints.second, commonPoints.first, 1000);
-		groups[1].calFbind(commonPoints1.first, commonPoints1.second, 1000);
-		groups[2].calFbind(commonPoints1.second, commonPoints1.first, 1000);		
+		groups[1].calFbind(commonPoints.first, commonPoints.second, 1000);
+		//groups[1].calFbind(commonPoints1.first, commonPoints1.second, 1000);
+		groups[2].calFbind(commonPoints1.first, commonPoints1.second, 1000);		
 	}
 	for (auto g : groups)
 	{
