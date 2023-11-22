@@ -82,7 +82,10 @@ int main() {
 	Eigen::Matrix4f mat;
 	initFontData();
 	
+	
 	while (!glfwWindowShouldClose(window)) {
+		object.commonPoints = object.findCommonVertices(object.groups[0], object.groups[1]);
+		object.commonPoints1 = object.findCommonVertices(object.groups[1], object.groups[2]);
 		
 		//double aa = object.groups[0].tetrahedra[0]->calMassTetra(density);
 		object.groups[0].calMassMatrix(density);
