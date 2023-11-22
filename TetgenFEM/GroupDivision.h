@@ -23,15 +23,21 @@ public:
 	int localIndex; // 组内的本地索引
 	double vertexMass; // mass of vertices
 	double velx, vely, velz;//速度的三个分量
+	bool isFixed;
 
 	//Vertex(double x, double y, double z, int index) : x(x), y(y), z(z), index(index) {}
 	Vertex(double x, double y, double z, int index)
 		: initx(x), inity(y), initz(z), // 首先初始化const成员
 		x(x), y(y), z(z), // 然后是可变成员
 		index(index), vertexMass(1), // 其他成员可以直接赋值
-		velx(0), vely(0), velz(0) // 初始化速度分量为0 
-
+		velx(0), vely(0), velz(0), // 初始化速度分量为0
+		isFixed(false) // 默认不是固定点
 	{}
+	void setFixedIfBelowThreshold() {
+		if (initx < -0.619) {
+			isFixed = true;
+		}
+	}
 };
 
 class Edge {
@@ -122,6 +128,7 @@ public:
 	void updatePosition();
 	void updateVelocity();
 	void initialize();
+	void updateVertexPositions();
 
 
 	Group()

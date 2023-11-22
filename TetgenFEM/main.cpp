@@ -86,6 +86,17 @@ int main() {
 	while (!glfwWindowShouldClose(window)) {
 		object.commonPoints = object.findCommonVertices(object.groups[0], object.groups[1]);
 		object.commonPoints1 = object.findCommonVertices(object.groups[1], object.groups[2]);
+
+		for (Group& g : object.groups) {
+			// 遍历Group中的每个Vertex
+			for (const auto& vertexPair : g.verticesMap) {
+				// 对每个顶点调用setFixedIfBelowThreshold方法
+				Vertex* vertex = vertexPair.second;
+				
+				vertex->setFixedIfBelowThreshold();
+			}
+			
+		}
 		
 		//double aa = object.groups[0].tetrahedra[0]->calMassTetra(density);
 		object.groups[0].calMassMatrix(density);
@@ -101,8 +112,9 @@ int main() {
 		object.groups[0].calLocalPos();
 		object.groups[0].calRotationMatrix();
 		object.groups[0].calLHS();
+		//object.groups[0].updateVertexPositions();
 		//object.groups[0].calRHS();
-		//object.groups[0].calDeltaX();
+		//.groups[0].calDeltaX();
 		//object.groups[0].calFbind(object.commonPoints.first, object.commonPoints.second, 1000);
 
 		object.groups[1].calMassMatrix(density);
@@ -118,6 +130,9 @@ int main() {
 		object.groups[1].calLocalPos();
 		object.groups[1].calRotationMatrix();
 		object.groups[1].calLHS();
+		//object.groups[1].calRHS();
+		//object.groups[1].calDeltaX();
+		//object.groups[1].updateVertexPositions();
 
 		object.groups[2].calMassMatrix(density);
 		object.groups[2].calMassGroup();
@@ -132,15 +147,13 @@ int main() {
 		object.groups[2].calLocalPos();
 		object.groups[2].calRotationMatrix();
 		object.groups[2].calLHS();
+		//object.groups[0].calRHS();
+		//object.groups[2].calDeltaX();
+		//object.groups[2].updateVertexPositions();
 
 		object.PBDLOOP(10);
 		
 		int a = 1;
-
-		/*object.groups[0].tetrahedra[1]->vertices[2]->x += 0.01;
-		object.groups[1].getUniqueVertices()[3]->y += 0.001;*/
-
-		//object.getGroup(1).tetrahedra[0]->vertices[0]->x += 0.01;
 		// Render here
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		

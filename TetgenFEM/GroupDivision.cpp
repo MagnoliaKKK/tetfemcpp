@@ -457,11 +457,35 @@ void Group::calPrimeVec() {
 
 		// 更新primeVec
 		primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
+		if (vertex->isFixed) {
+			// 对于固定点，将位置设置为初始位置
+			primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = Eigen::Vector3d(vertex->initx, vertex->inity, vertex->initz);
+
+			// 保持顶点位置不变
+			vertex->x = vertex->initx;
+			vertex->y = vertex->inity;
+			vertex->z = vertex->initz;
+		}
+		else {
+			// 获取当前顶点的速度更新部分
+			Eigen::Vector3d currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
+
+			// 计算新的位置
+			Eigen::Vector3d newPosition = Eigen::Vector3d(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate;
+
+			// 更新primeVec
+			primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
+
+			// 更新顶点位置
+			vertex->x = newPosition.x();
+			vertex->y = newPosition.y();
+			vertex->z = newPosition.z();
+		}
 
 		// 更新顶点位置
-		vertex->x = newPosition.x();
+		/*vertex->x = newPosition.x();
 		vertex->y = newPosition.y();
-		vertex->z = newPosition.z();
+		vertex->z = newPosition.z();*/
 	}
 
 }
@@ -521,7 +545,32 @@ void Group::calculateCurrentPositions() {
 
 	}
 }
+void Group::updateVertexPositions() {
+	for (auto& vertexPair : verticesMap) {
+		Vertex* vertex = vertexPair.second;
 
+		// 使用局部索引来获取正确的矩阵块和primeVec部分
+		int localIndex = vertex->localIndex;
+		Eigen::Matrix3d rotationBlock = rotationMatrix.block<3, 3>(3 * localIndex, 3 * localIndex);
+		Eigen::Vector3d positionInPrimeVec = primeVec.segment<3>(3 * localIndex);
+
+		if (vertex->isFixed) {
+			// 对于固定点，将位置设置为初始位置
+			vertex->x = vertex->initx;
+			vertex->y = vertex->inity;
+			vertex->z = vertex->initz;
+		}
+		else {
+			// 使用旋转矩阵块乘以primeVec中的位置
+			Eigen::Vector3d newPosition = rotationBlock * positionInPrimeVec;
+
+			// 更新顶点位置
+			vertex->x = newPosition.x();
+			vertex->y = newPosition.y();
+			vertex->z = newPosition.z();
+		}
+	}
+}
 
 void Group::calFbind(const std::vector<Vertex*>& commonVerticesThisGroup,
 	const std::vector<Vertex*>& commonVerticesAdjacentGroup,
@@ -564,11 +613,23 @@ void Group::updatePosition() {
 
 		// 从currentPosition中获取对应顶点的位置
 		Eigen::Vector3d pos = currentPosition.segment<3>(3 * localIndex);
+		if (vertex->isFixed) {
+			// 对于固定点，将位置设置为初始位置
+			vertex->x = vertex->initx;
+			vertex->y = vertex->inity;
+			vertex->z = vertex->initz;
+		}
+		else {
+			// 使用旋转矩阵块乘以primeVec中的位置
+			
+
+			vertex->x = pos.x();
+			vertex->y = pos.y();
+			vertex->z = pos.z();
+		}
 
 		// 更新顶点的位置
-		vertex->x = pos.x();
-		vertex->y = pos.y();
-		vertex->z = pos.z();
+		
 	}
 }
 
@@ -629,10 +690,11 @@ void Object::PBDLOOP(int looptime) {
 		groups[0].calFbind(commonPoints.first, commonPoints.second, 1000);
 		groups[1].calFbind(commonPoints.first, commonPoints.second, 1000);
 		//groups[1].calFbind(commonPoints1.first, commonPoints1.second, 1000);
-		groups[2].calFbind(commonPoints1.first, commonPoints1.second, 1000);		
+		groups[2].calFbind(commonPoints1.second, commonPoints1.first,1000);		
 	}
 	for (auto g : groups)
 	{
+		g.updateVelocity();
 		g.updatePosition();
 
 	}
