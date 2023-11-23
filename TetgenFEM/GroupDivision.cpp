@@ -509,7 +509,7 @@ void Group::calRHS() {
 	Eigen::VectorXd B;
 	Eigen::VectorXd C;
 	Eigen::VectorXd D;
-	Fbind = Eigen::VectorXd::Zero(3 * verticesMap.size());
+	//Fbind = Eigen::VectorXd::Zero(3 * verticesMap.size());
 	/*A = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * initLocalPos;
 	B = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * rotationMatrix.transpose() * primeVec;
 	C = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * rotationMatrix.transpose() * massDistribution * primeVec;
@@ -587,10 +587,10 @@ void Group::calFbind(const std::vector<Vertex*>& commonVerticesThisGroup,
 		// 计算当前顶点和邻近组顶点的平均位置
 		Eigen::Vector3d posThisGroup(vertexThisGroup->x, vertexThisGroup->y, vertexThisGroup->z);
 		Eigen::Vector3d posAdjacentGroup(vertexAdjacentGroup->x, vertexAdjacentGroup->y, vertexAdjacentGroup->z);
-		Eigen::Vector3d averagePosition = (posThisGroup + posAdjacentGroup) / 2.0;
+		//Eigen::Vector3d averagePosition = (posThisGroup + posAdjacentGroup) / 2.0;
 
 		// 计算当前顶点位置与平均位置之间的位置差异
-		Eigen::Vector3d posDifference = posThisGroup - averagePosition;
+		Eigen::Vector3d posDifference = posThisGroup - posAdjacentGroup;
 
 		// 计算约束力
 		Eigen::Vector3d force = k * posDifference;
@@ -675,7 +675,7 @@ void Object::PBDLOOP(int looptime) {
 
 	// 1. 初始化：将每个组的 Fbind 置零
 	for (auto g : groups) {
-		g.Fbind.setZero(); // 假设 Group 类有一个方法来清除 Fbind
+		g.Fbind = Eigen::VectorXd::Zero(3 * g.verticesMap.size()); // 假设 Group 类有一个方法来清除 Fbind
 	}
 
 	// 2. 开始迭代
@@ -687,10 +687,10 @@ void Object::PBDLOOP(int looptime) {
 			g.calculateCurrentPositions();
 						
 		}
-		groups[0].calFbind(commonPoints.first, commonPoints.second, 1000);
-		groups[1].calFbind(commonPoints.first, commonPoints.second, 1000);
+		groups[0].calFbind(commonPoints.first, commonPoints.second, 10000000);
+		groups[1].calFbind(commonPoints.second, commonPoints.first, 10000000);
 		//groups[1].calFbind(commonPoints1.first, commonPoints1.second, 1000);
-		groups[2].calFbind(commonPoints1.second, commonPoints1.first,1000);		
+		//groups[2].calFbind(commonPoints1.second, commonPoints1.first,1000);		
 	}
 	for (auto g : groups)
 	{
