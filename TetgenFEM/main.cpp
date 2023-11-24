@@ -86,7 +86,7 @@ int main() {
 	while (!glfwWindowShouldClose(window)) {
 		object.commonPoints = object.findCommonVertices(object.groups[0], object.groups[1]);
 		//object.commonPoints1 = object.findCommonVertices(object.groups[1], object.groups[2]);
-
+		//固定点设置
 		for (Group& g : object.groups) {
 			// 遍历Group中的每个Vertex
 			for (const auto& vertexPair : g.verticesMap) {
@@ -151,11 +151,10 @@ int main() {
 		//object.groups[2].calDeltaX();
 		//object.groups[2].updateVertexPositions();
 
-		object.PBDLOOP(10);
+		object.PBDLOOP(2);
 
 		
 		
-		int a = 1;
 		// Render here
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		

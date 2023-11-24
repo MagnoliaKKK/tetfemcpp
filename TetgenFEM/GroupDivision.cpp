@@ -118,6 +118,7 @@ void Group::initialize() {
 	groupVelocity = Eigen::VectorXd::Zero(3 * verticesMap.size());
 	Fbind = Eigen::VectorXd(3 * verticesMap.size());
 	currentPosition = Eigen::VectorXd::Zero(3 * verticesMap.size());;
+	gravity = Eigen::VectorXd::Zero(3 * verticesMap.size());
 }
 
 void Group::addTetrahedron(Tetrahedron* tet) {
@@ -250,18 +251,18 @@ Eigen::MatrixXd Tetrahedron::createElementK(double E, double nu, const Eigen::Ve
 
 	double N_x[4], N_y[4], N_z[4];
 
-	double p1x = vertices[0]->x;
-	double p1y = vertices[0]->y;
-	double p1z = vertices[0]->z;
-	double p2x = vertices[1]->x;
-	double p2y = vertices[1]->y;
-	double p2z = vertices[1]->z;
-	double p3x = vertices[2]->x;
-	double p3y = vertices[2]->y;
-	double p3z = vertices[2]->z;
-	double p4x = vertices[3]->x;
-	double p4y = vertices[3]->y;
-	double p4z = vertices[3]->z;
+	double p1x = vertices[0]->x - groupCenterOfMass.x();
+	double p1y = vertices[0]->y - groupCenterOfMass.y();
+	double p1z = vertices[0]->z - groupCenterOfMass.z();
+	double p2x = vertices[1]->x - groupCenterOfMass.x();
+	double p2y = vertices[1]->y - groupCenterOfMass.y();
+	double p2z = vertices[1]->z - groupCenterOfMass.z();
+	double p3x = vertices[2]->x - groupCenterOfMass.x();
+	double p3y = vertices[2]->y - groupCenterOfMass.y();
+	double p3z = vertices[2]->z - groupCenterOfMass.z();
+	double p4x = vertices[3]->x - groupCenterOfMass.x();
+	double p4y = vertices[3]->y - groupCenterOfMass.y();
+	double p4z = vertices[3]->z - groupCenterOfMass.z();
 
 	N_x[0] = (-p3y * p4z + p3z * p4y + p2y * p4z - p2y * p3z - p2z * p4y + p2z * p3y);
 	N_y[0] = (p3x * p4z - p3z * p4x - p2x * p4z + p2x * p3z + p2z * p4x - p2z * p3x);
@@ -433,7 +434,7 @@ void Group::calPrimeVec() {
 	Eigen::MatrixXd inverseTerm = (massMatrix + dampingMatrix * timeStep).inverse();
 
 	// 初始化gravity向量
-	Eigen::VectorXd gravity = Eigen::VectorXd::Zero(3 * verticesMap.size());
+	
 	for (int i = 1; i < 3 * verticesMap.size(); i += 3) {
 		gravity(i) = -9.8; // y方向上设置重力
 	}
@@ -510,21 +511,21 @@ void Group::calRHS() {
 	Eigen::VectorXd C;
 	Eigen::VectorXd D;
 	//Fbind = Eigen::VectorXd::Zero(3 * verticesMap.size());
-	/*A = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * initLocalPos;
+	A = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * initLocalPos;
 	B = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * rotationMatrix.transpose() * primeVec;
 	C = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * rotationMatrix.transpose() * massDistribution * primeVec;
-	D = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * rotationMatrix.inverse() * Fbind;*/
-	A = timeStep * timeStep * massDampingSparseInv * kSparse * initLocalPos;
+	D = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * rotationMatrix.inverse() * Fbind;
+	/*A = timeStep * timeStep * massDampingSparseInv * kSparse * initLocalPos;
 	B = timeStep * timeStep * massDampingSparseInv * kSparse * rotationTransSparse * primeVec;
 	C = timeStep * timeStep * massDampingSparseInv * kSparse * rotationTransSparse * massDistributionSparse * primeVec;
-	D = timeStep * timeStep * massDampingSparseInv * rotationTransSparse * Fbind;
+	D = timeStep * timeStep * massDampingSparseInv * rotationTransSparse * Fbind;*/
 	RHS = A - B + C + D;
 }
 
 void Group::calDeltaX() {
 	
 	deltaX = LHS.inverse() * RHS;
-	deltaX = rotationTransSparse * deltaX;
+	deltaX = rotationMatrix.transpose() * deltaX;
 }
 
 void Group::calculateCurrentPositions() {
@@ -576,7 +577,7 @@ void Group::calFbind(const std::vector<Vertex*>& commonVerticesThisGroup,
 	const std::vector<Vertex*>& commonVerticesAdjacentGroup,
 	double k) {
 	// 初始化Fbind，长度为组内顶点数的三倍
-    Fbind = Eigen::VectorXd::Zero(verticesMap.size() * 3);
+	Fbind = Eigen::VectorXd::Zero(verticesMap.size() * 3);
 
 	// 遍历所有共有顶点
 	for (size_t i = 0; i < commonVerticesThisGroup.size(); ++i) {
@@ -584,24 +585,23 @@ void Group::calFbind(const std::vector<Vertex*>& commonVerticesThisGroup,
 		Vertex* vertexThisGroup = commonVerticesThisGroup[i];
 		Vertex* vertexAdjacentGroup = commonVerticesAdjacentGroup[i];
 
-		// 计算当前顶点和邻近组顶点的平均位置
-		Eigen::Vector3d posThisGroup(vertexThisGroup->x, vertexThisGroup->y, vertexThisGroup->z);
-		Eigen::Vector3d posAdjacentGroup(vertexAdjacentGroup->x, vertexAdjacentGroup->y, vertexAdjacentGroup->z);
-		//Eigen::Vector3d averagePosition = (posThisGroup + posAdjacentGroup) / 2.0;
+		// 获取currentPosition中当前顶点和邻近组顶点的位置
+		int localIndexThisGroup = vertexThisGroup->localIndex;
+		int localIndexAdjacentGroup = vertexAdjacentGroup->localIndex;
+		Eigen::Vector3d posThisGroup = currentPosition.segment<3>(3 * localIndexThisGroup);
+		Eigen::Vector3d posAdjacentGroup = currentPosition.segment<3>(3 * localIndexAdjacentGroup);
 
-		// 计算当前顶点位置与平均位置之间的位置差异
+		// 计算当前顶点位置与邻近组顶点位置之间的位置差异
 		Eigen::Vector3d posDifference = posThisGroup - posAdjacentGroup;
 
 		// 计算约束力
 		Eigen::Vector3d force = k * posDifference;
 
 		// 使用局部编号localIndex将约束力放置在Fbind中对应的位置
-		int localIndexThisGroup = vertexThisGroup->localIndex;
 		Fbind.segment<3>(3 * localIndexThisGroup) += force;
 	}
-
-	// ... 进行Fbind的其他处理，可能包括赋值给类成员或返回
 }
+
 
 
 void Group::updatePosition() {
@@ -674,14 +674,14 @@ void Object::PBDLOOP(int looptime) {
 
 
 	// 1. 初始化：将每个组的 Fbind 置零
-	for (auto g : groups) {
+	for (auto& g : groups) {
 		g.Fbind = Eigen::VectorXd::Zero(3 * g.verticesMap.size()); // 假设 Group 类有一个方法来清除 Fbind
 	}
 
 	// 2. 开始迭代
 	for (int iter = 0; iter < looptime; ++iter) {
 		// 每组计算 RHS
-		for (auto g : groups) {
+		for (auto& g : groups) {
 			g.calRHS(); 
 			g.calDeltaX();
 			g.calculateCurrentPositions();
@@ -692,7 +692,7 @@ void Object::PBDLOOP(int looptime) {
 		//groups[1].calFbind(commonPoints1.first, commonPoints1.second, 1000);
 		//groups[2].calFbind(commonPoints1.second, commonPoints1.first,1000);		
 	}
-	for (auto g : groups)
+	for (auto& g : groups)
 	{
 		g.updateVelocity();
 		g.updatePosition();
