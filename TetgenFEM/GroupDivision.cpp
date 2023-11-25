@@ -244,10 +244,20 @@ void Group::calRotationMatrix() {
 }
 //
 Eigen::MatrixXd Tetrahedron::createElementK(double E, double nu, const Eigen::Vector3d& groupCenterOfMass) {
-
+	double lambda = (E * nu) / ((1 + nu) * (1 - 2 * nu));
+	double G = E / (2 * (1 + nu));
 	// Initialize the B matrix
 	Eigen::MatrixXd B(6, 12);
 	B.setZero();
+	Eigen::MatrixXd XX = Eigen::MatrixXd::Zero(4, 4);
+	Eigen::MatrixXd YY = Eigen::MatrixXd::Zero(4, 4);
+	Eigen::MatrixXd ZZ = Eigen::MatrixXd::Zero(4, 4);
+	Eigen::MatrixXd XY = Eigen::MatrixXd::Zero(4, 4);
+	Eigen::MatrixXd XZ = Eigen::MatrixXd::Zero(4, 4);
+	Eigen::MatrixXd YX = Eigen::MatrixXd::Zero(4, 4);
+	Eigen::MatrixXd YZ = Eigen::MatrixXd::Zero(4, 4);
+	Eigen::MatrixXd ZX = Eigen::MatrixXd::Zero(4, 4);
+	Eigen::MatrixXd ZY = Eigen::MatrixXd::Zero(4, 4);
 
 	double N_x[4], N_y[4], N_z[4];
 
@@ -280,30 +290,55 @@ Eigen::MatrixXd Tetrahedron::createElementK(double E, double nu, const Eigen::Ve
 	N_y[3] = (-p2x * p3z + p2z * p3x + p1x * p3z - p1x * p2z - p1z * p3x + p1z * p2x);
 	N_z[3] = (p2x * p3y - p2y * p3x - p1x * p3y + p1x * p2y + p1y * p3x - p1y * p2x);
 
-	for (unsigned int i = 0; i < 4; i++) {
-		B(0, 3 * i) = N_x[i];
-		B(1, 3 * i + 1) = N_y[i];
-		B(2, 3 * i + 2) = N_z[i];
-		B(3, 3 * i) = N_y[i]; 
-		B(3, 3 * i + 1) = N_x[i];
-		B(4, 3 * i) = N_z[i]; 
-		B(4, 3 * i + 2) = N_x[i];
-		B(5, 3 * i + 1) = N_z[i]; 
-		B(5, 3 * i + 2) = N_y[i];
-	}
-	// Calculate the material's elasticity matrix D
-	Eigen::MatrixXd D(6, 6);
-	double factor = E / ((1 + nu) * (1 - 2 * nu));
-	D <<
-		(1 - nu) * factor, nu* factor, nu* factor, 0, 0, 0,
-		nu* factor, (1 - nu)* factor, nu* factor, 0, 0, 0,
-		nu* factor, nu* factor, (1 - nu)* factor, 0, 0, 0,
-		0, 0, 0, ((1 - 2 * nu) / 2)* factor, 0, 0,
-		0, 0, 0, 0, ((1 - 2 * nu) / 2)* factor, 0,
-		0, 0, 0, 0, 0, ((1 - 2 * nu) / 2)* factor;
+	for (int ki = 0; ki < 4; ki++) {
+		for (int kj = 0; kj < 4; kj++) {
+			XX(ki, kj) = N_x[ki] * N_x[kj];
+			YY(ki, kj) = N_y[ki] * N_y[kj];
+			ZZ(ki, kj) = N_z[ki] * N_z[kj];
 
-	// Calculate the element stiffness matrix K
-	Eigen::MatrixXd K = (B / (6 * volumeTetra)).transpose() * D * (B/(6 * volumeTetra)) * volumeTetra;
+			XY(ki, kj) = N_x[ki] * N_y[kj];
+			XZ(ki, kj) = N_x[ki] * N_z[kj];
+
+			YX(ki, kj) = N_y[ki] * N_x[kj];
+			YZ(ki, kj) = N_y[ki] * N_z[kj];
+
+			ZX(ki, kj) = N_z[ki] * N_x[kj];
+			ZY(ki, kj) = N_z[ki] * N_y[kj];
+		}
+	}
+
+	Eigen::MatrixXd ONE = Eigen::MatrixXd::Zero(12, 12);
+	Eigen::MatrixXd TWO = Eigen::MatrixXd::Zero(12, 12);
+	Eigen::MatrixXd THREE = Eigen::MatrixXd::Zero(12, 12);
+	Eigen::MatrixXd FOUR = Eigen::MatrixXd::Zero(12, 12);
+
+	//一つ目の行列作成
+	ONE.block(0, 0, 4, 4) = XX;
+	ONE.block(4, 4, 4, 4) = YY;
+	ONE.block(8, 8, 4, 4) = ZZ;
+	ONE = 2 * G * ONE;
+	//二つ目の行列作成
+	TWO.block(0, 0, 4, 4) = XX; TWO.block(0, 4, 4, 4) = XY; TWO.block(0, 8, 4, 4) = XZ;
+	TWO.block(4, 0, 4, 4) = YX; TWO.block(4, 4, 4, 4) = YY; TWO.block(4, 8, 4, 4) = YZ;
+	TWO.block(8, 0, 4, 4) = ZX; TWO.block(8, 4, 4, 4) = ZY; TWO.block(8, 8, 4, 4) = ZZ;
+	TWO = lambda * TWO;
+
+	//三つ目の行列作成
+	THREE.block(0, 0, 4, 4) = ZZ; THREE.block(0, 4, 4, 4) = YX;
+	THREE.block(4, 0, 4, 4) = XY; THREE.block(4, 4, 4, 4) = XX; THREE.block(4, 8, 4, 4) = ZY;
+	THREE.block(8, 4, 4, 4) = YZ; THREE.block(8, 8, 4, 4) = YY;
+	THREE = G * THREE;
+
+	//四つ目の行列作成
+	FOUR.block(0, 0, 4, 4) = YY;							  FOUR.block(0, 8, 4, 4) = ZX;
+	FOUR.block(4, 4, 4, 4) = ZZ;
+	FOUR.block(8, 0, 4, 4) = XZ;							  FOUR.block(8, 8, 4, 4) = XX;
+	FOUR = G * FOUR;
+
+	Eigen::MatrixXd K = ONE + TWO + THREE + FOUR;
+	K = K / (36.0 * volumeTetra);
+	
+	elementK = K;
 	return K;
 }
 void Group::calGroupK(double E, double nu) {
@@ -333,7 +368,6 @@ void Group::calGroupK(double E, double nu) {
 	}
 	kSparse = groupK.sparseView();
 }
-
 
 
 void Group::calMassGroup() {

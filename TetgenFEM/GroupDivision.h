@@ -57,6 +57,7 @@ public:
 	Edge* edges[6];  // Each tetrahedron has six edges
 	double massTetra;
 	double volumeTetra;
+	Eigen::MatrixXd elementK;
 
 	Tetrahedron(Vertex* v1, Vertex* v2, Vertex* v3, Vertex* v4) {
 		vertices[0] = v1;
