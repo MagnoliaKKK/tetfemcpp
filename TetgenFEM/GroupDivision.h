@@ -145,7 +145,7 @@ public:
 
 class Object {
 public:
-	Group groups[2]; // change this
+	Group groups[3]; // change this
 	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints;
 	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints1;
 

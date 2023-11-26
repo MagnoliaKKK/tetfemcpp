@@ -561,7 +561,8 @@ void Group::calculateCurrentPositions() {
 	// 遍历所有顶点
 	for (auto& vertexPair : verticesMap) {
 		Vertex* vertex = vertexPair.second;
-		int localidx = vertex->localIndex;
+		int localidx;
+		localidx = vertex->localIndex;
 
 		// 获取primeVec中对应顶点的位置
 		Eigen::Vector3d primePosition = primeVec.segment<3>(3 * localidx);
@@ -722,6 +723,7 @@ void Object::PBDLOOP(int looptime) {
 		}
 		groups[0].calFbind(commonPoints.first, commonPoints.second, 10000000);
 		groups[1].calFbind(commonPoints.second, commonPoints.first, 10000000);
+
 		//groups[1].calFbind(commonPoints1.first, commonPoints1.second, 1000);
 		//groups[2].calFbind(commonPoints1.second, commonPoints1.first,1000);		
 	}

@@ -17,7 +17,7 @@
 
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
-double youngs = 10000000;
+double youngs = 100000000;
 double poisson = 0.49;
 double density = 1000;
 
@@ -35,13 +35,13 @@ int main() {
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.1/15a0.01"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
+	char args[] = "pq1.1/15a0.005"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
 	behavior.parse_commandline(args);
 
 	// Call TetGen to tetrahedralize the geometry
 	tetrahedralize(&behavior, &in, &out);
 
-	int groupNum = 1; //Object类和颜色都写死了 不能超出class Object {里的组数
+	int groupNum = 2; //Object类和颜色都写死了 不能超出class Object {里的组数
 	Object object;
 	divideIntoGroups(out, object, groupNum); //convert tetgen to our data structure
 	object.updateIndices(); // 每个点分配一个独立index，重复的改新的index
@@ -177,7 +177,7 @@ int main() {
 		// 绘制白色点
 		glColor3f(1.0f, 1.0f, 1.0f);
 		glBegin(GL_POINTS);
-		for (int groupIdx = 0; groupIdx < 2; ++groupIdx) {
+		for (int groupIdx = 0; groupIdx < 3; ++groupIdx) {
 			Group& group = object.getGroup(groupIdx);
 			std::vector<Vertex*> uniqueVertices = group.getUniqueVertices();
 			for (Vertex* vertex : uniqueVertices) {
@@ -189,7 +189,7 @@ int main() {
 		glEnd();
 
 
-		for (int groupIdx = 0; groupIdx < 2; ++groupIdx) { //写点的标号，画字
+		for (int groupIdx = 0; groupIdx < 3; ++groupIdx) { //写点的标号，画字
 			Group& group = object.getGroup(groupIdx);
 
 			//画不重复的版本
@@ -246,7 +246,7 @@ int main() {
 
 
 		//分组显示
-		for (int groupIdx = 0; groupIdx < 2; ++groupIdx) { //这里也是写死了
+		for (int groupIdx = 0; groupIdx < 3; ++groupIdx) { //这里也是写死了
 			Group& group = object.getGroup(groupIdx);
 			for (Tetrahedron* tet : group.tetrahedra) {
 				for (int edgeIdx = 0; edgeIdx < 6; ++edgeIdx) {  // Loop through each edge in the tetrahedron
