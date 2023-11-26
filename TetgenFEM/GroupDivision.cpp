@@ -516,11 +516,6 @@ void Group::calPrimeVec() {
 			vertex->y = newPosition.y();
 			vertex->z = newPosition.z();
 		}
-
-		// 更新顶点位置
-		/*vertex->x = newPosition.x();
-		vertex->y = newPosition.y();
-		vertex->z = newPosition.z();*/
 	}
 
 }
@@ -529,12 +524,12 @@ void Group::calLHS() {
 	Eigen::MatrixXd I = Eigen::MatrixXd::Identity(3 * verticesMap.size(), 3 * verticesMap.size());
 	Eigen::MatrixXd A;
 	Eigen::MatrixXd B;
-	//Eigen::MatrixXd C;
-	//A = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK;
-	//B = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * massDistribution;
-	massDampingSparseInv = (massMatrix + timeStep * dampingMatrix).inverse().sparseView();
+	Eigen::MatrixXd C;
+	A = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK;
+	B = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * massDistribution;
+	/*massDampingSparseInv = (massMatrix + timeStep * dampingMatrix).inverse().sparseView();
 	A = timeStep * timeStep * massDampingSparseInv * kSparse;
-	B = timeStep * timeStep * massDampingSparseInv * kSparse * massDistributionSparse;
+	B = timeStep * timeStep * massDampingSparseInv * kSparse * massDistributionSparse;*/
 	LHS = I + A - B;
 
 }
@@ -607,31 +602,35 @@ void Group::updateVertexPositions() {
 	}
 }
 
-void Group::calFbind(const std::vector<Vertex*>& commonVerticesThisGroup,
-	const std::vector<Vertex*>& commonVerticesAdjacentGroup,
+void Group::calFbind(const std::vector<Vertex*>& commonVerticesGroup1,
+	const std::vector<Vertex*>& commonVerticesGroup2,
 	double k) {
-	// 初始化Fbind，长度为组内顶点数的三倍
+	// Initialize Fbind, with a length three times the number of vertices in the group
 	Fbind = Eigen::VectorXd::Zero(verticesMap.size() * 3);
 
-	// 遍历所有共有顶点
-	for (size_t i = 0; i < commonVerticesThisGroup.size(); ++i) {
-		// 取得当前组和邻近组的共同顶点
-		Vertex* vertexThisGroup = commonVerticesThisGroup[i];
-		Vertex* vertexAdjacentGroup = commonVerticesAdjacentGroup[i];
+	// Ensure that the size of both common vertices vectors is the same
+	if (commonVerticesGroup1.size() != commonVerticesGroup2.size()) {
+		throw std::runtime_error("Mismatch in size of common vertices vectors.");
+	}
 
-		// 获取currentPosition中当前顶点和邻近组顶点的位置
-		int localIndexThisGroup = vertexThisGroup->localIndex;
-		int localIndexAdjacentGroup = vertexAdjacentGroup->localIndex;
-		Eigen::Vector3d posThisGroup = currentPosition.segment<3>(3 * localIndexThisGroup);
-		Eigen::Vector3d posAdjacentGroup = currentPosition.segment<3>(3 * localIndexAdjacentGroup);
+	// Iterate through all common vertices
+	for (size_t i = 0; i < commonVerticesGroup1.size(); ++i) {
+		// Get the common vertex in this group and the other group
+		Vertex* vertexThisGroup = commonVerticesGroup1[i];
+		Vertex* vertexOtherGroup = commonVerticesGroup2[i];
 
-		// 计算当前顶点位置与邻近组顶点位置之间的位置差异
-		Eigen::Vector3d posDifference = posThisGroup - posAdjacentGroup;
+		// Directly use x, y, z from the Vertex objects for position
+		Eigen::Vector3d posThisGroup(vertexThisGroup->x, vertexThisGroup->y, vertexThisGroup->z);
+		Eigen::Vector3d posOtherGroup(vertexOtherGroup->x, vertexOtherGroup->y, vertexOtherGroup->z);
 
-		// 计算约束力
+		// Compute the position difference between the current vertex and the other group's vertex
+		Eigen::Vector3d posDifference = posThisGroup - posOtherGroup;
+
+		// Compute the constraint force
 		Eigen::Vector3d force = k * posDifference;
 
-		// 使用局部编号localIndex将约束力放置在Fbind中对应的位置
+		// Place the constraint force in Fbind at the appropriate position using the local index
+		int localIndexThisGroup = vertexThisGroup->localIndex;
 		Fbind.segment<3>(3 * localIndexThisGroup) += force;
 	}
 }
