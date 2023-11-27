@@ -199,35 +199,47 @@ void Group::calRotationMatrix() {
 	Eigen::Matrix3d tempA = Eigen::Matrix3d::Zero();
 	Eigen::Vector3d center_grid = Eigen::Vector3d::Zero();
 	
+	for (const auto& vertexEntry : verticesMap) {
+		center_grid[0] = massDistribution(0, 3 * vertexEntry.second->localIndex) * primeVec[3 * vertexEntry.second->localIndex];
+		center_grid[1] = massDistribution(0, 3 * vertexEntry.second->localIndex) * primeVec[3 * vertexEntry.second->localIndex + 1];
+		center_grid[2] = massDistribution(0, 3 * vertexEntry.second->localIndex) * primeVec[3 * vertexEntry.second->localIndex + 2];
+	}
 	// 计算Apq矩阵
-	for (size_t pi = 0; pi < verticesMap.size(); pi++) {
+	for (const auto& vertexEntry : verticesMap) {
 		
-		tempA = (primeVec.block<3, 1>(3 * pi, 0) - center_grid) * initLocalPos.block<3, 1>(3 * pi, 0).transpose();
-		Apq += massMatrix(3 * pi, 3 * pi) * tempA;
+		tempA = (primeVec.block<3, 1>(3 * vertexEntry.second->localIndex, 0) - center_grid) * initLocalPos.block<3, 1>(3 * vertexEntry.second->localIndex, 0).transpose();
+		Apq += massMatrix(3 * vertexEntry.second->localIndex, 3 * vertexEntry.second->localIndex) * tempA;
 	}
 
 	// 初始化四元数和旋转矩阵
+	Eigen::Vector3d omega = Eigen::Vector3d::Identity();
 	Eigen::Quaterniond quaternion(Eigen::Quaterniond::Identity());
 	Eigen::Matrix3d rotate_matrix = Eigen::Matrix3d::Identity();
+	Eigen::Vector3d gradR = Eigen::Vector3d::Zero();
+	Eigen::Matrix3d HesseR = Eigen::Matrix3d::Zero();
+	Eigen::Matrix3d S = Eigen::Matrix3d::Zero();
 
 	// 迭代寻找最佳旋转
 	for (unsigned int ci = 0; ci < 20; ci++) {
-		Eigen::Matrix3d R = quaternion.toRotationMatrix();
+		Eigen::Matrix3d R = quaternion.matrix();
 		Eigen::Matrix3d S = R.transpose() * Apq;
 		Eigen::Vector3d gradR = axlAPD(S);
 		Eigen::Matrix3d HesseR = S.trace() * Eigen::Matrix3d::Identity() - (S + S.transpose()) * 0.5;
-		Eigen::Vector3d omega = -HesseR.inverse() * gradR;
+		Eigen::Vector3d omega = -1 * HesseR.inverse() * gradR;
 
-		double w = omega.norm();
+		double w;
+		w = omega.norm();
 		if (w < 1.0e-9) {
 			break;
 		}
 
 		omega = clamp2(omega, -1 * PI, PI);
-		quaternion = quaternion * Exp2(omega);
+		Eigen::Quaterniond  temp2;
+		temp2 = Exp2(omega);
+		quaternion = quaternion * temp2;
 	}
 
-	rotate_matrix = quaternion.toRotationMatrix();
+	rotate_matrix = quaternion.matrix();
 
 	// 构建旋转矩阵的3N x 3N版本
 	rotationMatrix = Eigen::MatrixXd::Zero(3 * verticesMap.size(), 3 * verticesMap.size());
@@ -235,8 +247,8 @@ void Group::calRotationMatrix() {
 		rotationMatrix.block<3, 3>(3 * pi, 3 * pi) = rotate_matrix;
 	}
 
-	rotationSparse = rotationMatrix.sparseView();
-	rotationTransSparse = rotationMatrix.transpose().sparseView();
+	//rotationSparse = rotationMatrix.sparseView();
+	//rotationTransSparse = rotationMatrix.transpose().sparseView();
 
 	// 将旋转矩阵转换为稀疏格式（如果需要）
 	//Eigen::SparseMatrix<double> Rn_Matrix_Sparse = rotate_matrix3N.sparseView();
@@ -492,30 +504,30 @@ void Group::calPrimeVec() {
 
 		// 更新primeVec
 		primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
-		if (vertex->isFixed) {
-			// 对于固定点，将位置设置为初始位置
-			primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = Eigen::Vector3d(vertex->initx, vertex->inity, vertex->initz);
+		//if (vertex->isFixed) {
+		//	// 对于固定点，将位置设置为初始位置
+		//	primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = Eigen::Vector3d(vertex->initx, vertex->inity, vertex->initz);
 
-			// 保持顶点位置不变
-			vertex->x = vertex->initx;
-			vertex->y = vertex->inity;
-			vertex->z = vertex->initz;
-		}
-		else {
-			// 获取当前顶点的速度更新部分
-			Eigen::Vector3d currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
+		//	// 保持顶点位置不变
+		//	vertex->x = vertex->initx;
+		//	vertex->y = vertex->inity;
+		//	vertex->z = vertex->initz;
+		//}
+		//else {
+		//	// 获取当前顶点的速度更新部分
+		//	Eigen::Vector3d currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
 
-			// 计算新的位置
-			Eigen::Vector3d newPosition = Eigen::Vector3d(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate;
+		//	// 计算新的位置
+		//	Eigen::Vector3d newPosition = Eigen::Vector3d(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate;
 
-			// 更新primeVec
-			primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
+		//	// 更新primeVec
+		//	primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
 
-			// 更新顶点位置
-			vertex->x = newPosition.x();
-			vertex->y = newPosition.y();
-			vertex->z = newPosition.z();
-		}
+		//	// 更新顶点位置
+		//	vertex->x = newPosition.x();
+		//	vertex->y = newPosition.y();
+		//	vertex->z = newPosition.z();
+		//}
 	}
 
 }
@@ -576,32 +588,32 @@ void Group::calculateCurrentPositions() {
 
 	}
 }
-void Group::updateVertexPositions() {
-	for (auto& vertexPair : verticesMap) {
-		Vertex* vertex = vertexPair.second;
-
-		// 使用局部索引来获取正确的矩阵块和primeVec部分
-		int localIndex = vertex->localIndex;
-		Eigen::Matrix3d rotationBlock = rotationMatrix.block<3, 3>(3 * localIndex, 3 * localIndex);
-		Eigen::Vector3d positionInPrimeVec = primeVec.segment<3>(3 * localIndex);
-
-		if (vertex->isFixed) {
-			// 对于固定点，将位置设置为初始位置
-			vertex->x = vertex->initx;
-			vertex->y = vertex->inity;
-			vertex->z = vertex->initz;
-		}
-		else {
-			// 使用旋转矩阵块乘以primeVec中的位置
-			Eigen::Vector3d newPosition = rotationBlock * positionInPrimeVec;
-
-			// 更新顶点位置
-			vertex->x = newPosition.x();
-			vertex->y = newPosition.y();
-			vertex->z = newPosition.z();
-		}
-	}
-}
+//void Group::updateVertexPositions() {
+//	for (auto& vertexPair : verticesMap) {
+//		Vertex* vertex = vertexPair.second;
+//
+//		// 使用局部索引来获取正确的矩阵块和primeVec部分
+//		int localIndex = vertex->localIndex;
+//		Eigen::Matrix3d rotationBlock = rotationMatrix.block<3, 3>(3 * localIndex, 3 * localIndex);
+//		Eigen::Vector3d positionInPrimeVec = primeVec.segment<3>(3 * localIndex);
+//
+//		if (vertex->isFixed) {
+//			// 对于固定点，将位置设置为初始位置
+//			vertex->x = vertex->initx;
+//			vertex->y = vertex->inity;
+//			vertex->z = vertex->initz;
+//		}
+//		else {
+//			// 使用旋转矩阵块乘以primeVec中的位置
+//			Eigen::Vector3d newPosition = rotationBlock * positionInPrimeVec;
+//
+//			// 更新顶点位置
+//			vertex->x = newPosition.x();
+//			vertex->y = newPosition.y();
+//			vertex->z = newPosition.z();
+//		}
+//	}
+//}
 
 void Group::calFbind(const std::vector<Vertex*>& commonVerticesGroup1,
 	const std::vector<Vertex*>& commonVerticesGroup2,
@@ -623,16 +635,16 @@ void Group::calFbind(const std::vector<Vertex*>& commonVerticesGroup1,
 		// Directly use x, y, z from the Vertex objects for position
 		Eigen::Vector3d posThisGroup(vertexThisGroup->x, vertexThisGroup->y, vertexThisGroup->z);
 		Eigen::Vector3d posOtherGroup(vertexOtherGroup->x, vertexOtherGroup->y, vertexOtherGroup->z);
-
+		Eigen::Vector3d avgPosition = (posThisGroup + posOtherGroup) / 2;
 		// Compute the position difference between the current vertex and the other group's vertex
-		Eigen::Vector3d posDifference = posThisGroup - posOtherGroup;
+		Eigen::Vector3d posDifference = posThisGroup - avgPosition;
 
 		// Compute the constraint force
 		Eigen::Vector3d force = k * posDifference;
 
 		// Place the constraint force in Fbind at the appropriate position using the local index
 		int localIndexThisGroup = vertexThisGroup->localIndex;
-		Fbind.segment<3>(3 * localIndexThisGroup) += force;
+		Fbind.segment<3>(3 * localIndexThisGroup) = force;
 	}
 }
 

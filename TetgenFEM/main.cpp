@@ -97,6 +97,8 @@ int main() {
 			}
 			
 		}
+
+
 		
 		//double aa = object.groups[0].tetrahedra[0]->calMassTetra(density);
 		object.groups[0].calMassMatrix(density);

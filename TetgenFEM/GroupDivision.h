@@ -129,7 +129,7 @@ public:
 	void updatePosition();
 	void updateVelocity();
 	void initialize();
-	void updateVertexPositions();
+	//void updateVertexPositions();
 
 
 	Group()
