@@ -1,7 +1,7 @@
 ﻿#include "GroupDivision.h"
 
-double timeStep = 0.01;
-double alpha = 0.1;
+double timeStep = 0.001;
+double alpha = 1000;
 const  double PI = 3.14159265358979265358979;
 
 
@@ -555,12 +555,13 @@ void Group::calRHS() {
 	A = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * initLocalPos;
 	B = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * rotationMatrix.transpose() * primeVec;
 	C = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * rotationMatrix.transpose() * massDistribution * primeVec;
-	D = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * rotationMatrix.inverse() * Fbind;
+	//D = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * rotationMatrix.inverse() * Fbind;
 	/*A = timeStep * timeStep * massDampingSparseInv * kSparse * initLocalPos;
 	B = timeStep * timeStep * massDampingSparseInv * kSparse * rotationTransSparse * primeVec;
 	C = timeStep * timeStep * massDampingSparseInv * kSparse * rotationTransSparse * massDistributionSparse * primeVec;
 	D = timeStep * timeStep * massDampingSparseInv * rotationTransSparse * Fbind;*/
-	RHS = A - B + C + D;
+	//RHS = A - B + C + D;
+	RHS = A - B + C;
 }
 
 void Group::calDeltaX() {
@@ -659,6 +660,9 @@ void Group::updatePosition() {
 
 		// 从currentPosition中获取对应顶点的位置
 		Eigen::Vector3d pos = currentPosition.segment<3>(3 * localIndex);
+		/*vertex->x = pos.x();
+		vertex->y = pos.y();
+		vertex->z = pos.z();*/
 		if (vertex->isFixed) {
 			// 对于固定点，将位置设置为初始位置
 			vertex->x = vertex->initx;
@@ -733,8 +737,8 @@ void Object::PBDLOOP(int looptime) {
 			g.calculateCurrentPositions();
 						
 		}
-		groups[0].calFbind(commonPoints.first, commonPoints.second, 10000000);
-		groups[1].calFbind(commonPoints.second, commonPoints.first, 10000000);
+		//groups[0].calFbind(commonPoints.first, commonPoints.second, -10000000);
+		//groups[1].calFbind(commonPoints.second, commonPoints.first, -10000000);
 
 		//groups[1].calFbind(commonPoints1.first, commonPoints1.second, 1000);
 		//groups[2].calFbind(commonPoints1.second, commonPoints1.first,1000);		

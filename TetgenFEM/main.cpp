@@ -19,7 +19,7 @@
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 double youngs = 100000000;
 double poisson = 0.49;
-double density = 1000;
+double density = 1;
 
 
 
@@ -35,13 +35,13 @@ int main() {
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.1/15a0.005"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
+	char args[] = "pq1/15a0.01"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
 	behavior.parse_commandline(args);
 
 	// Call TetGen to tetrahedralize the geometry
 	tetrahedralize(&behavior, &in, &out);
 
-	int groupNum = 2; //Object类和颜色都写死了 不能超出class Object {里的组数
+	int groupNum = 1; //Object类和颜色都写死了 不能超出class Object {里的组数
 	Object object;
 	divideIntoGroups(out, object, groupNum); //convert tetgen to our data structure
 	object.updateIndices(); // 每个点分配一个独立index，重复的改新的index
@@ -81,57 +81,64 @@ int main() {
 
 	Eigen::Matrix4f mat;
 	initFontData();
-	
-	
-	while (!glfwWindowShouldClose(window)) {
-		object.commonPoints = object.findCommonVertices(object.groups[0], object.groups[1]);
-		//object.commonPoints1 = object.findCommonVertices(object.groups[1], object.groups[2]);
-		//固定点设置
-		for (Group& g : object.groups) {
-			// 遍历Group中的每个Vertex
-			for (const auto& vertexPair : g.verticesMap) {
-				// 对每个顶点调用setFixedIfBelowThreshold方法
-				Vertex* vertex = vertexPair.second;
-				
-				vertex->setFixedIfBelowThreshold();
-			}
-			
+	//object.commonPoints = object.findCommonVertices(object.groups[0], object.groups[1]);
+	for (Group& g : object.groups) {
+		// 遍历Group中的每个Vertex
+		for (const auto& vertexPair : g.verticesMap) {
+			// 对每个顶点调用setFixedIfBelowThreshold方法
+			Vertex* vertex = vertexPair.second;
+
+			vertex->setFixedIfBelowThreshold();
 		}
 
+	}
+	object.groups[0].calMassMatrix(density);
+	
+	object.groups[0].calDampingMatrix();
+	object.groups[0].calCenterofMass();
+	object.groups[0].calInitCOM();
+	object.groups[0].calLocalPos();
+	Eigen::Vector3d groupCOM = object.groups[0].centerofMass;
+	object.groups[0].calGroupK(youngs, poisson);
+	object.groups[0].setVertexMassesFromMassMatrix();
+	object.groups[0].calMassGroup();
+	object.groups[0].calMassDistributionMatrix();
+	
+	object.groups[0].calLHS();
 
+	/*object.groups[1].calMassMatrix(density);
+	object.groups[1].calMassGroup();
+	object.groups[1].calDampingMatrix();
+	object.groups[1].calCenterofMass();
+	Eigen::Vector3d groupCOM1 = object.groups[1].centerofMass;
+	object.groups[1].calGroupK(youngs, poisson);
+	object.groups[1].setVertexMassesFromMassMatrix();
+	object.groups[1].calMassDistributionMatrix();
+
+	object.groups[1].calInitCOM();
+	object.groups[1].calLocalPos();
+
+	object.groups[1].calLHS();*/
+	while (!glfwWindowShouldClose(window)) {
+		
+		//object.commonPoints1 = object.findCommonVertices(object.groups[1], object.groups[2]);
+		//固定点设置
+	
+	
 		
 		//double aa = object.groups[0].tetrahedra[0]->calMassTetra(density);
-		object.groups[0].calMassMatrix(density);
-		object.groups[0].calMassGroup();
-		object.groups[0].calDampingMatrix();
-		object.groups[0].calCenterofMass();
-		Eigen::Vector3d groupCOM = object.groups[0].centerofMass;
-		object.groups[0].calGroupK(youngs, poisson);
-		object.groups[0].setVertexMassesFromMassMatrix();
-		object.groups[0].calMassDistributionMatrix();
+		
 		object.groups[0].calPrimeVec();
-		object.groups[0].calInitCOM();
-		object.groups[0].calLocalPos();
 		object.groups[0].calRotationMatrix();
-		object.groups[0].calLHS();
+		
 		//object.groups[0].updateVertexPositions();
 		//object.groups[0].calRHS();
 		//.groups[0].calDeltaX();
 		//object.groups[0].calFbind(object.commonPoints.first, object.commonPoints.second, 1000);
 
-		object.groups[1].calMassMatrix(density);
-		object.groups[1].calMassGroup();
-		object.groups[1].calDampingMatrix();
-		object.groups[1].calCenterofMass();
-		Eigen::Vector3d groupCOM1 = object.groups[1].centerofMass;
-		object.groups[1].calGroupK(youngs, poisson);
-		object.groups[1].setVertexMassesFromMassMatrix();
-		object.groups[1].calMassDistributionMatrix();
-		object.groups[1].calPrimeVec();
-		object.groups[1].calInitCOM();
-		object.groups[1].calLocalPos();
-		object.groups[1].calRotationMatrix();
-		object.groups[1].calLHS();
+		/*object.groups[1].calPrimeVec();
+		object.groups[1].calRotationMatrix();*/
+	
 		//object.groups[1].calRHS();
 		//object.groups[1].calDeltaX();
 		//object.groups[1].updateVertexPositions();
@@ -153,7 +160,7 @@ int main() {
 		//object.groups[2].calDeltaX();
 		//object.groups[2].updateVertexPositions();
 
-		object.PBDLOOP(2);
+		object.PBDLOOP(5);
 
 		
 		
