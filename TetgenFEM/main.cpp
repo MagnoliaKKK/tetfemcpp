@@ -17,9 +17,9 @@
 
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
-double youngs = 100000000;
+double youngs = 1000000000;
 double poisson = 0.49;
-double density = 1;
+double density = 1000;
 
 
 

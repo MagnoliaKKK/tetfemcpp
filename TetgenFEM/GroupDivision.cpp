@@ -1,7 +1,7 @@
 ﻿#include "GroupDivision.h"
 
-double timeStep = 0.001;
-double alpha = 1000;
+double timeStep = 0.01;
+double alpha = 1000000;
 const  double PI = 3.14159265358979265358979;
 
 
@@ -256,102 +256,97 @@ void Group::calRotationMatrix() {
 }
 //
 Eigen::MatrixXd Tetrahedron::createElementK(double E, double nu, const Eigen::Vector3d& groupCenterOfMass) {
-	double lambda = (E * nu) / ((1 + nu) * (1 - 2 * nu));
-	double G = E / (2 * (1 + nu));
-	// Initialize the B matrix
+	// 定义节点坐标
+	double x1 = vertices[0]->x - groupCenterOfMass.x();
+	double y1 = vertices[0]->y - groupCenterOfMass.y();
+	double z1 = vertices[0]->z - groupCenterOfMass.z();
+	double x2 = vertices[1]->x - groupCenterOfMass.x();
+	double y2 = vertices[1]->y - groupCenterOfMass.y();
+	double z2 = vertices[1]->z - groupCenterOfMass.z();
+	double x3 = vertices[2]->x - groupCenterOfMass.x();
+	double y3 = vertices[2]->y - groupCenterOfMass.y();
+	double z3 = vertices[2]->z - groupCenterOfMass.z();
+	double x4 = vertices[3]->x - groupCenterOfMass.x();
+	double y4 = vertices[3]->y - groupCenterOfMass.y();
+	double z4 = vertices[3]->z - groupCenterOfMass.z();
+
+		// 构建体积计算矩阵 A
+	Eigen::Matrix4d A;
+	A << x1, y1, z1, 1,
+		 x2, y2, z2, 1,
+		 x3, y3, z3, 1,
+		 x4, y4, z4, 1;
+
+		// 计算四面体的体积
+	double V = std::abs(A.determinant() / 6);
+
+		// 定义 mbeta, mgamma, mdelta 矩阵
+	Eigen::Matrix3d mbeta1, mbeta2, mbeta3, mbeta4, mgamma1, mgamma2, mgamma3, mgamma4, mdelta1, mdelta2, mdelta3, mdelta4;
+
+
+	mbeta1 << 1, y2, z2, 1, y3, z3, 1, y4, z4;
+	mbeta2 << 1, y1, z1, 1, y3, z3, 1, y4, z4;
+	mbeta3 << 1, y1, z1, 1, y2, z2, 1, y4, z4;
+	mbeta4 << 1, y1, z1, 1, y2, z2, 1, y3, z3;
+
+	mgamma1 << 1, x2, z2, 1, x3, z3, 1, x4, z4;
+	mgamma2 << 1, x1, z1, 1, x3, z3, 1, x4, z4;
+	mgamma3 << 1, x1, z1, 1, x2, z2, 1, x4, z4;
+	mgamma4 << 1, x1, z1, 1, x2, z2, 1, x3, z3;
+
+	mdelta1 << 1, x2, y2, 1, x3, y3, 1, x4, y4;
+	mdelta2 << 1, x1, y1, 1, x3, y3, 1, x4, y4;
+	mdelta3 << 1, x1, y1, 1, x2, y2, 1, x4, y4;
+	mdelta4 << 1, x1, y1, 1, x2, y2, 1, x3, y3;
+
+		// 计算 beta, gamma 和 delta 值
+	double beta1 = -mbeta1.determinant();
+	double beta2 = mbeta2.determinant();
+	double beta3 = -mbeta3.determinant();
+	double beta4 = mbeta4.determinant();
+
+	double gamma1 = mgamma1.determinant();
+	double gamma2 = -mgamma2.determinant();
+	double gamma3 = mgamma3.determinant();
+	double gamma4 = -mgamma4.determinant();
+
+	double delta1 = -mdelta1.determinant();
+	double delta2 = mdelta2.determinant();
+	double delta3 = -mdelta3.determinant();
+	double delta4 = mdelta4.determinant();
+
+	// 定义 B 矩阵
 	Eigen::MatrixXd B(6, 12);
-	B.setZero();
-	Eigen::MatrixXd XX = Eigen::MatrixXd::Zero(4, 4);
-	Eigen::MatrixXd YY = Eigen::MatrixXd::Zero(4, 4);
-	Eigen::MatrixXd ZZ = Eigen::MatrixXd::Zero(4, 4);
-	Eigen::MatrixXd XY = Eigen::MatrixXd::Zero(4, 4);
-	Eigen::MatrixXd XZ = Eigen::MatrixXd::Zero(4, 4);
-	Eigen::MatrixXd YX = Eigen::MatrixXd::Zero(4, 4);
-	Eigen::MatrixXd YZ = Eigen::MatrixXd::Zero(4, 4);
-	Eigen::MatrixXd ZX = Eigen::MatrixXd::Zero(4, 4);
-	Eigen::MatrixXd ZY = Eigen::MatrixXd::Zero(4, 4);
-
-	double N_x[4], N_y[4], N_z[4];
-
-	double p1x = vertices[0]->x - groupCenterOfMass.x();
-	double p1y = vertices[0]->y - groupCenterOfMass.y();
-	double p1z = vertices[0]->z - groupCenterOfMass.z();
-	double p2x = vertices[1]->x - groupCenterOfMass.x();
-	double p2y = vertices[1]->y - groupCenterOfMass.y();
-	double p2z = vertices[1]->z - groupCenterOfMass.z();
-	double p3x = vertices[2]->x - groupCenterOfMass.x();
-	double p3y = vertices[2]->y - groupCenterOfMass.y();
-	double p3z = vertices[2]->z - groupCenterOfMass.z();
-	double p4x = vertices[3]->x - groupCenterOfMass.x();
-	double p4y = vertices[3]->y - groupCenterOfMass.y();
-	double p4z = vertices[3]->z - groupCenterOfMass.z();
-
-	N_x[0] = (-p3y * p4z + p3z * p4y + p2y * p4z - p2y * p3z - p2z * p4y + p2z * p3y);
-	N_y[0] = (p3x * p4z - p3z * p4x - p2x * p4z + p2x * p3z + p2z * p4x - p2z * p3x);
-	N_z[0] = (-p3x * p4y + p3y * p4x + p2x * p4y - p2x * p3y - p2y * p4x + p2y * p3x);
-
-	N_x[1] = (p3y * p4z - p3z * p4y - p1y * p4z + p1y * p3z + p1z * p4y - p1z * p3y);
-	N_y[1] = (-p3x * p4z + p3z * p4x + p1x * p4z - p1x * p3z - p1z * p4x + p1z * p3x);
-	N_z[1] = (p3x * p4y - p3y * p4x - p1x * p4y + p1x * p3y + p1y * p4x - p1y * p3x);
-
-	N_x[2] = (-p2y * p4z + p2z * p4y + p1y * p4z - p1y * p2z - p1z * p4y + p1z * p2y);
-	N_y[2] = (p2x * p4z - p2z * p4x - p1x * p4z + p1x * p2z + p1z * p4x - p1z * p2x);
-	N_z[2] = (-p2x * p4y + p2y * p4x + p1x * p4y - p1x * p2y - p1y * p4x + p1y * p2x);
-
-	N_x[3] = (p2y * p3z - p2z * p3y - p1y * p3z + p1y * p2z + p1z * p3y - p1z * p2y);
-	N_y[3] = (-p2x * p3z + p2z * p3x + p1x * p3z - p1x * p2z - p1z * p3x + p1z * p2x);
-	N_z[3] = (p2x * p3y - p2y * p3x - p1x * p3y + p1x * p2y + p1y * p3x - p1y * p2x);
-
-	for (int ki = 0; ki < 4; ki++) {
-		for (int kj = 0; kj < 4; kj++) {
-			XX(ki, kj) = N_x[ki] * N_x[kj];
-			YY(ki, kj) = N_y[ki] * N_y[kj];
-			ZZ(ki, kj) = N_z[ki] * N_z[kj];
-
-			XY(ki, kj) = N_x[ki] * N_y[kj];
-			XZ(ki, kj) = N_x[ki] * N_z[kj];
-
-			YX(ki, kj) = N_y[ki] * N_x[kj];
-			YZ(ki, kj) = N_y[ki] * N_z[kj];
-
-			ZX(ki, kj) = N_z[ki] * N_x[kj];
-			ZY(ki, kj) = N_z[ki] * N_y[kj];
-		}
-	}
-
-	Eigen::MatrixXd ONE = Eigen::MatrixXd::Zero(12, 12);
-	Eigen::MatrixXd TWO = Eigen::MatrixXd::Zero(12, 12);
-	Eigen::MatrixXd THREE = Eigen::MatrixXd::Zero(12, 12);
-	Eigen::MatrixXd FOUR = Eigen::MatrixXd::Zero(12, 12);
-
-	//一つ目の行列作成
-	ONE.block(0, 0, 4, 4) = XX;
-	ONE.block(4, 4, 4, 4) = YY;
-	ONE.block(8, 8, 4, 4) = ZZ;
-	ONE = 2 * G * ONE;
-	//二つ目の行列作成
-	TWO.block(0, 0, 4, 4) = XX; TWO.block(0, 4, 4, 4) = XY; TWO.block(0, 8, 4, 4) = XZ;
-	TWO.block(4, 0, 4, 4) = YX; TWO.block(4, 4, 4, 4) = YY; TWO.block(4, 8, 4, 4) = YZ;
-	TWO.block(8, 0, 4, 4) = ZX; TWO.block(8, 4, 4, 4) = ZY; TWO.block(8, 8, 4, 4) = ZZ;
-	TWO = lambda * TWO;
-
-	//三つ目の行列作成
-	THREE.block(0, 0, 4, 4) = ZZ; THREE.block(0, 4, 4, 4) = YX;
-	THREE.block(4, 0, 4, 4) = XY; THREE.block(4, 4, 4, 4) = XX; THREE.block(4, 8, 4, 4) = ZY;
-	THREE.block(8, 4, 4, 4) = YZ; THREE.block(8, 8, 4, 4) = YY;
-	THREE = G * THREE;
-
-	//四つ目の行列作成
-	FOUR.block(0, 0, 4, 4) = YY;							  FOUR.block(0, 8, 4, 4) = ZX;
-	FOUR.block(4, 4, 4, 4) = ZZ;
-	FOUR.block(8, 0, 4, 4) = XZ;							  FOUR.block(8, 8, 4, 4) = XX;
-	FOUR = G * FOUR;
-
-	Eigen::MatrixXd K = ONE + TWO + THREE + FOUR;
-	K = K / (36.0 * volumeTetra);
 	
-	elementK = K;
-	return K;
+	B << beta1, 0, 0, beta2, 0, 0, beta3, 0, 0, beta4, 0, 0,
+		0, gamma1, 0, 0, gamma2, 0, 0, gamma3, 0, 0, gamma4, 0,
+		0, 0, delta1, 0, 0, delta2, 0, 0, delta3, 0, 0, delta4,
+		gamma1, beta1, 0, gamma2, beta2, 0, gamma3, beta3, 0, gamma4, beta4, 0,
+		0, delta1, gamma1, 0, delta2, gamma2, 0, delta3, gamma3, 0, delta4, gamma4,
+		delta1, 0, beta1, delta2, 0, beta2, delta3, 0, beta3, delta4, 0, beta4;
+
+	B /= (6 * V);
+
+		// 定义材料属性矩阵 D
+	    // 泊松比
+	Eigen::MatrixXd D = Eigen::MatrixXd::Zero(6, 6);
+	
+	D << 1 - nu, nu, nu, 0, 0, 0,
+		nu, 1 - nu, nu, 0, 0, 0,
+		nu, nu, 1 - nu, 0, 0, 0,
+		0, 0, 0, (1 - 2 * nu) / 2, 0, 0,
+		0, 0, 0, 0, (1 - 2 * nu) / 2, 0,
+		0, 0, 0, 0, 0, (1 - 2 * nu) / 2;
+
+	D *= (E / ((1 + nu) * (1 - 2 * nu)));
+
+	// 计算刚度矩阵 k
+	Eigen::MatrixXd k=V * (B.transpose() * D * B);
+	
+	elementK = k;
+	return k;
+
+
 }
 void Group::calGroupK(double E, double nu) {
 	// Initialize groupK to the right size. Assuming 3 degrees of freedom per vertex
