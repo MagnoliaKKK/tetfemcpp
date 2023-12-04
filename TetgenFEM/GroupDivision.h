@@ -123,8 +123,10 @@ public:
 	void calRHS();
 	void calDeltaX();
 	void calculateCurrentPositions();
-	void calFbind(const std::vector<Vertex*>& commonVerticesThisGroup,
-		const std::vector<Vertex*>& commonVerticesAdjacentGroup,
+	void calFbind(const std::vector<Vertex*>& commonVerticesGroup1,
+		const std::vector<Vertex*>& commonVerticesGroup2,
+		const Eigen::VectorXd& currentPositionGroup1,
+		const Eigen::VectorXd& currentPositionGroup2,
 		double k);
 	void updatePosition();
 	void updateVelocity();

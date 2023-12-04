@@ -17,7 +17,7 @@
 
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
-double youngs = 1000000000;
+double youngs = 10000000;
 double poisson = 0.49;
 double density = 1000;
 
@@ -81,7 +81,7 @@ int main() {
 
 	Eigen::Matrix4f mat;
 	initFontData();
-	//object.commonPoints = object.findCommonVertices(object.groups[0], object.groups[1]);
+	object.commonPoints = object.findCommonVertices(object.groups[0], object.groups[1]);
 	for (Group& g : object.groups) {
 		// 遍历Group中的每个Vertex
 		for (const auto& vertexPair : g.verticesMap) {
@@ -106,7 +106,7 @@ int main() {
 	
 	object.groups[0].calLHS();
 
-	/*object.groups[1].calMassMatrix(density);
+	object.groups[1].calMassMatrix(density);
 	object.groups[1].calMassGroup();
 	object.groups[1].calDampingMatrix();
 	object.groups[1].calCenterofMass();
@@ -118,7 +118,7 @@ int main() {
 	object.groups[1].calInitCOM();
 	object.groups[1].calLocalPos();
 
-	object.groups[1].calLHS();*/
+	object.groups[1].calLHS();
 	while (!glfwWindowShouldClose(window)) {
 		
 		//object.commonPoints1 = object.findCommonVertices(object.groups[1], object.groups[2]);
@@ -136,8 +136,8 @@ int main() {
 		//.groups[0].calDeltaX();
 		//object.groups[0].calFbind(object.commonPoints.first, object.commonPoints.second, 1000);
 
-		/*object.groups[1].calPrimeVec();
-		object.groups[1].calRotationMatrix();*/
+		object.groups[1].calPrimeVec();
+		object.groups[1].calRotationMatrix();
 	
 		//object.groups[1].calRHS();
 		//object.groups[1].calDeltaX();

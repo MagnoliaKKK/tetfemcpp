@@ -1,7 +1,7 @@
 ﻿#include "GroupDivision.h"
 
 double timeStep = 0.01;
-double alpha = 1000000;
+double dampingConst = 0;
 const  double PI = 3.14159265358979265358979;
 
 
@@ -407,7 +407,7 @@ Eigen::MatrixXd Group::calMassMatrix(double den) {
 
 void Group::calDampingMatrix() {
 	dampingMatrix.setZero();
-	dampingMatrix = alpha * massMatrix;
+	dampingMatrix = dampingConst * massMatrix;
 	dampingSparse = dampingMatrix.sparseView();
 }
 
@@ -477,7 +477,7 @@ void Group::calPrimeVec() {
 	// 初始化gravity向量
 	
 	for (int i = 1; i < 3 * verticesMap.size(); i += 3) {
-		gravity(i) = -9.8; // y方向上设置重力
+		gravity(i) = -0.01; // y方向上设置重力
 	}
 
 	// 更新groupVelocity
@@ -613,15 +613,21 @@ void Group::calculateCurrentPositions() {
 
 void Group::calFbind(const std::vector<Vertex*>& commonVerticesGroup1,
 	const std::vector<Vertex*>& commonVerticesGroup2,
+	const Eigen::VectorXd& currentPositionGroup1,
+	const Eigen::VectorXd& currentPositionGroup2,
 	double k) {
 	// Initialize Fbind, with a length three times the number of vertices in the group
 	Fbind = Eigen::VectorXd::Zero(verticesMap.size() * 3);
-
-	// Ensure that the size of both common vertices vectors is the same
-	if (commonVerticesGroup1.size() != commonVerticesGroup2.size()) {
-		throw std::runtime_error("Mismatch in size of common vertices vectors.");
-	}
-
+	Eigen::Vector3d posThisGroup;
+	Eigen::Vector3d posOtherGroup;
+	Eigen::Vector3d avgPosition;
+	Eigen::Vector3d posDifference;
+	Eigen::Vector3d force;
+	posThisGroup = Eigen::Vector3d::Zero();
+	posOtherGroup = Eigen::Vector3d::Zero();
+	avgPosition = Eigen::Vector3d::Zero();
+	posDifference = Eigen::Vector3d::Zero();
+	force = Eigen::Vector3d::Zero();
 	// Iterate through all common vertices
 	for (size_t i = 0; i < commonVerticesGroup1.size(); ++i) {
 		// Get the common vertex in this group and the other group
@@ -629,32 +635,31 @@ void Group::calFbind(const std::vector<Vertex*>& commonVerticesGroup1,
 		Vertex* vertexOtherGroup = commonVerticesGroup2[i];
 
 		// Directly use x, y, z from the Vertex objects for position
-		Eigen::Vector3d posThisGroup(vertexThisGroup->x, vertexThisGroup->y, vertexThisGroup->z);
-		Eigen::Vector3d posOtherGroup(vertexOtherGroup->x, vertexOtherGroup->y, vertexOtherGroup->z);
-		Eigen::Vector3d avgPosition = (posThisGroup + posOtherGroup) / 2;
+		/*Eigen::Vector3d posThisGroup(vertexThisGroup->x, vertexThisGroup->y, vertexThisGroup->z);
+		Eigen::Vector3d posOtherGroup(vertexOtherGroup->x, vertexOtherGroup->y, vertexOtherGroup->z);*/
+		posThisGroup = currentPositionGroup1.segment<3>(3 * vertexThisGroup->localIndex);
+		posThisGroup = currentPositionGroup2.segment<3>(3 * vertexOtherGroup->localIndex);
+		avgPosition = (posThisGroup + posOtherGroup) / 2;
 		// Compute the position difference between the current vertex and the other group's vertex
-		Eigen::Vector3d posDifference = posThisGroup - avgPosition;
-
+		posDifference = posThisGroup - avgPosition;
 		// Compute the constraint force
-		Eigen::Vector3d force = k * posDifference;
-
+		force = k * posDifference;
 		// Place the constraint force in Fbind at the appropriate position using the local index
-		int localIndexThisGroup = vertexThisGroup->localIndex;
-		Fbind.segment<3>(3 * localIndexThisGroup) = force;
+		Fbind.segment<3>(3 * vertexThisGroup->localIndex) = force;
 	}
 }
 
 
 
 void Group::updatePosition() {
-	
+	Eigen::Vector3d pos = Eigen::Vector3d::Zero();
 	// 遍历所有顶点
 	for (auto& vertexPair : verticesMap) {
 		Vertex* vertex = vertexPair.second;
 		int localIndex = vertex->localIndex;
 
 		// 从currentPosition中获取对应顶点的位置
-		Eigen::Vector3d pos = currentPosition.segment<3>(3 * localIndex);
+		pos = currentPosition.segment<3>(3 * localIndex);
 		/*vertex->x = pos.x();
 		vertex->y = pos.y();
 		vertex->z = pos.z();*/
@@ -679,22 +684,26 @@ void Group::updatePosition() {
 }
 
 void Group::updateVelocity() {
+	Eigen::Vector3d previousPos = Eigen::Vector3d::Zero();
+	Eigen::Vector3d currentPos = Eigen::Vector3d::Zero();
+	Eigen::Vector3d velocity =  Eigen::Vector3d::Zero();
 	
-
 	// 遍历所有顶点，更新速度并保存当前位置
 	for (auto& vertexPair : verticesMap) {
 		Vertex* vertex = vertexPair.second;
 		int localIndex = vertex->localIndex;
 
 		// 获取当前位置
-		Eigen::Vector3d previousPos(vertex->x, vertex->y, vertex->z);
+		previousPos.x() = vertex->x;
+		previousPos.y() = vertex->y;
+		previousPos.z() = vertex->z;
 
 		// 从 previousPosition 获取上一帧的位置
-		Eigen::Vector3d currentPos = currentPosition.segment<3>(3 * localIndex);
+		currentPos = currentPosition.segment<3>(3 * localIndex);
 
 		// 计算速度
-		Eigen::Vector3d velocity = (currentPos - previousPos) / timeStep;
-
+		velocity = (currentPos - previousPos) / timeStep;
+		groupVelocity.segment<3>(3 * localIndex) = velocity;
 		// 更新 vertex 的速度
 		// 例如：vertex->velocity = velocity;
 
@@ -732,8 +741,8 @@ void Object::PBDLOOP(int looptime) {
 			g.calculateCurrentPositions();
 						
 		}
-		//groups[0].calFbind(commonPoints.first, commonPoints.second, -10000000);
-		//groups[1].calFbind(commonPoints.second, commonPoints.first, -10000000);
+		//groups[0].calFbind(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition, - 10000);
+		//groups[1].calFbind(commonPoints.second, commonPoints.first, groups[1].currentPosition,groups[0].currentPosition, -10000);
 
 		//groups[1].calFbind(commonPoints1.first, commonPoints1.second, 1000);
 		//groups[2].calFbind(commonPoints1.second, commonPoints1.first,1000);		
