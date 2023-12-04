@@ -1,9 +1,9 @@
 ﻿#include "GroupDivision.h"
 
 double timeStep = 0.01;
-double dampingConst = 0;
+double dampingConst = 75;
 const  double PI = 3.14159265358979265358979;
-
+const double Gravity = -9.8;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
 	for (Group& group : groups) {
@@ -477,7 +477,7 @@ void Group::calPrimeVec() {
 	// 初始化gravity向量
 	
 	for (int i = 1; i < 3 * verticesMap.size(); i += 3) {
-		gravity(i) = -0.01; // y方向上设置重力
+		gravity(i) = Gravity; // y方向上设置重力
 	}
 
 	// 更新groupVelocity
