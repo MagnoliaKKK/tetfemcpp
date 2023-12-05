@@ -1,7 +1,7 @@
 ﻿#include "GroupDivision.h"
 
 double timeStep = 0.01;
-double dampingConst = 75;
+double dampingConst = 50;
 const  double PI = 3.14159265358979265358979;
 const double Gravity = -9.8;
 
@@ -550,13 +550,14 @@ void Group::calRHS() {
 	A = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * initLocalPos;
 	B = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * rotationMatrix.transpose() * primeVec;
 	C = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * rotationMatrix.transpose() * massDistribution * primeVec;
-	//D = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * rotationMatrix.inverse() * Fbind;
+	D = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * rotationMatrix.inverse() * Fbind;
 	/*A = timeStep * timeStep * massDampingSparseInv * kSparse * initLocalPos;
 	B = timeStep * timeStep * massDampingSparseInv * kSparse * rotationTransSparse * primeVec;
 	C = timeStep * timeStep * massDampingSparseInv * kSparse * rotationTransSparse * massDistributionSparse * primeVec;
 	D = timeStep * timeStep * massDampingSparseInv * rotationTransSparse * Fbind;*/
 	//RHS = A - B + C + D;
-	RHS = A - B + C;
+	RHS = A - B + C +D;
+
 }
 
 void Group::calDeltaX() {

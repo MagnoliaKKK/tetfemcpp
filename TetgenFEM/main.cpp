@@ -17,7 +17,7 @@
 
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
-double youngs = 10000000;
+double youngs = 100000;
 double poisson = 0.49;
 double density = 1000;
 
@@ -106,19 +106,19 @@ int main() {
 	
 	object.groups[0].calLHS();
 
-	object.groups[1].calMassMatrix(density);
-	object.groups[1].calMassGroup();
-	object.groups[1].calDampingMatrix();
-	object.groups[1].calCenterofMass();
-	Eigen::Vector3d groupCOM1 = object.groups[1].centerofMass;
-	object.groups[1].calGroupK(youngs, poisson);
-	object.groups[1].setVertexMassesFromMassMatrix();
-	object.groups[1].calMassDistributionMatrix();
+	//object.groups[1].calMassMatrix(density);
+	//object.groups[1].calMassGroup();
+	//object.groups[1].calDampingMatrix();
+	//object.groups[1].calCenterofMass();
+	//Eigen::Vector3d groupCOM1 = object.groups[1].centerofMass;
+	//object.groups[1].calGroupK(youngs, poisson);
+	//object.groups[1].setVertexMassesFromMassMatrix();
+	//object.groups[1].calMassDistributionMatrix();
 
-	object.groups[1].calInitCOM();
-	object.groups[1].calLocalPos();
+	//object.groups[1].calInitCOM();
+	//object.groups[1].calLocalPos();
 
-	object.groups[1].calLHS();
+	//object.groups[1].calLHS();
 	while (!glfwWindowShouldClose(window)) {
 		
 		//object.commonPoints1 = object.findCommonVertices(object.groups[1], object.groups[2]);
@@ -160,7 +160,7 @@ int main() {
 		//object.groups[2].calDeltaX();
 		//object.groups[2].updateVertexPositions();
 
-		object.PBDLOOP(5);
+		object.PBDLOOP(2);
 
 		
 		
