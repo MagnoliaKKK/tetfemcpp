@@ -1,7 +1,7 @@
 ﻿#include "GroupDivision.h"
 
 double timeStep = 0.01;
-double dampingConst = 50;
+double dampingConst = 4;
 const  double PI = 3.14159265358979265358979;
 const double Gravity = -9.8;
 
@@ -357,7 +357,7 @@ void Group::calGroupK(double E, double nu) {
 	// Iterate over each tetrahedron to assemble the global stiffness matrix
 	for (auto& tetra : tetrahedra) {
 		// Get the local stiffness matrix for the current tetrahedron
-		Eigen::MatrixXd localK = tetra->createElementK(E, nu, centerofMass);
+		Eigen::MatrixXd localK = tetra->createElementK(E, nu, initCOM);
 
 		// Determine where to add the local stiffness matrix in the global stiffness matrix
 		for (int i = 0; i < 4; ++i) { // Each tetrahedron has 4 vertices
@@ -467,18 +467,39 @@ void Group::calInitCOM() {
 	}
 }
 
-void Group::calPrimeVec() {
+void Group::calPrimeVec(int w) {
 	// 确保groupVelocity已经初始化且设置为正确的尺寸
 	//groupVelocity = Eigen::VectorXd::Zero(3 * verticesMap.size());
 	primeVec = Eigen::VectorXd::Zero(3 * verticesMap.size());
 	// 计算逆矩阵
 	Eigen::MatrixXd inverseTerm = (massMatrix + dampingMatrix * timeStep).inverse();
 
-	// 初始化gravity向量
-	
-	for (int i = 1; i < 3 * verticesMap.size(); i += 3) {
-		gravity(i) = Gravity; // y方向上设置重力
+	for (int i = 0; i < 3 * verticesMap.size(); i += 1) {
+		gravity(i) = 0; // y方向上设置重力
 	}
+
+	// 初始化gravity向量
+	if (w == 4) {
+		for (int i = 0; i < 3 * verticesMap.size(); i += 3) {
+			gravity(i) = -Gravity; // y方向上设置重力 右
+		}
+	}
+	else if (w == 2) {
+		for (int i = 1; i < 3 * verticesMap.size(); i += 3) {
+			gravity(i) = Gravity; // y方向上设置重力 下
+		}
+	}
+	else if (w == 1) {
+		for (int i = 1; i < 3 * verticesMap.size(); i += 3) {
+			gravity(i) = -Gravity; // y方向上设置重力 上
+		}
+	}
+	else if (w == 3) {
+		for (int i = 0; i < 3 * verticesMap.size(); i += 3) {
+			gravity(i) = Gravity; // y方向上设置重力 左
+		}
+	}
+	
 
 	// 更新groupVelocity
 	groupVelocity += gravity * timeStep;
@@ -537,7 +558,7 @@ void Group::calLHS() {
 	/*massDampingSparseInv = (massMatrix + timeStep * dampingMatrix).inverse().sparseView();
 	A = timeStep * timeStep * massDampingSparseInv * kSparse;
 	B = timeStep * timeStep * massDampingSparseInv * kSparse * massDistributionSparse;*/
-	LHS = I + A - B;
+	FEMLHS = I + A - B;
 
 }
 
@@ -556,13 +577,20 @@ void Group::calRHS() {
 	C = timeStep * timeStep * massDampingSparseInv * kSparse * rotationTransSparse * massDistributionSparse * primeVec;
 	D = timeStep * timeStep * massDampingSparseInv * rotationTransSparse * Fbind;*/
 	//RHS = A - B + C + D;
-	RHS = A - B + C +D;
+	FEMRHS = A - B + C +D;
 
 }
 
 void Group::calDeltaX() {
 	
-	deltaX = LHS.inverse() * RHS;
+	//deltaX = LHS.inverse() * RHS;
+	if (FEMLHS.determinant() != 0) {
+		// 解线性方程Ax = b
+		deltaX = FEMLHS.colPivHouseholderQr().solve(FEMRHS);
+	}
+	else {
+		std::cout << "矩阵A是奇异的，无法解决方程组." << std::endl;
+	}
 	deltaX = rotationMatrix.transpose() * deltaX;
 }
 

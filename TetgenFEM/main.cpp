@@ -17,11 +17,11 @@
 
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
-double youngs = 100000;
+double youngs = 10000;
 double poisson = 0.49;
 double density = 1000;
 
-
+int wKey = 0;
 
 
 int main() {
@@ -30,12 +30,12 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/cubeLong.stl", in);
+	readSTL("stls/sphere.stl", in);
 
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1/15a0.1"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
+	char args[] = "pq1.1/15a0.1"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
 	behavior.parse_commandline(args);
 
 	// Call TetGen to tetrahedralize the geometry
@@ -81,7 +81,7 @@ int main() {
 
 	Eigen::Matrix4f mat;
 	initFontData();
-	object.commonPoints = object.findCommonVertices(object.groups[0], object.groups[1]);
+	//object.commonPoints = object.findCommonVertices(object.groups[0], object.groups[1]);
 	for (Group& g : object.groups) {
 		// 遍历Group中的每个Vertex
 		for (const auto& vertexPair : g.verticesMap) {
@@ -95,10 +95,10 @@ int main() {
 	object.groups[0].calMassMatrix(density);
 	
 	object.groups[0].calDampingMatrix();
-	object.groups[0].calCenterofMass();
-	object.groups[0].calInitCOM();
-	object.groups[0].calLocalPos();
-	Eigen::Vector3d groupCOM = object.groups[0].centerofMass;
+	//object.groups[0].calCenterofMass();
+	object.groups[0].calInitCOM(); 
+	object.groups[0].calLocalPos(); // 计算初始位置与初始重心的差值
+	//Eigen::Vector3d groupCOM = object.groups[0].centerofMass;
 	object.groups[0].calGroupK(youngs, poisson);
 	object.groups[0].setVertexMassesFromMassMatrix();
 	object.groups[0].calMassGroup();
@@ -119,16 +119,35 @@ int main() {
 	//object.groups[1].calLocalPos();
 
 	//object.groups[1].calLHS();
+	
 	while (!glfwWindowShouldClose(window)) {
 		
 		//object.commonPoints1 = object.findCommonVertices(object.groups[1], object.groups[2]);
 		//固定点设置
 	
 	
-		
+		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+			wKey = 1;
+			
+		}
+		else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+			wKey = 2;
+
+		}
+		else if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+			wKey = 3;
+
+		}
+		else if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+			wKey = 4;
+
+		}
+		else
+			wKey = 0;
+		std::cout << wKey << std::endl;// 当 W 被按下时的逻辑
 		//double aa = object.groups[0].tetrahedra[0]->calMassTetra(density);
 		
-		object.groups[0].calPrimeVec();
+		object.groups[0].calPrimeVec(wKey);
 		object.groups[0].calRotationMatrix();
 		
 		//object.groups[0].updateVertexPositions();
@@ -136,8 +155,8 @@ int main() {
 		//.groups[0].calDeltaX();
 		//object.groups[0].calFbind(object.commonPoints.first, object.commonPoints.second, 1000);
 
-		object.groups[1].calPrimeVec();
-		object.groups[1].calRotationMatrix();
+		//object.groups[1].calPrimeVec();
+		//object.groups[1].calRotationMatrix();
 	
 		//object.groups[1].calRHS();
 		//object.groups[1].calDeltaX();
@@ -186,7 +205,7 @@ int main() {
 		// 绘制白色点
 		glColor3f(1.0f, 1.0f, 1.0f);
 		glBegin(GL_POINTS);
-		for (int groupIdx = 0; groupIdx < 3; ++groupIdx) {
+		for (int groupIdx = 0; groupIdx < 1; ++groupIdx) {
 			Group& group = object.getGroup(groupIdx);
 			std::vector<Vertex*> uniqueVertices = group.getUniqueVertices();
 			for (Vertex* vertex : uniqueVertices) {
@@ -198,7 +217,7 @@ int main() {
 		glEnd();
 
 
-		for (int groupIdx = 0; groupIdx < 3; ++groupIdx) { //写点的标号，画字
+		for (int groupIdx = 0; groupIdx < 1; ++groupIdx) { //写点的标号，画字
 			Group& group = object.getGroup(groupIdx);
 
 			//画不重复的版本
@@ -255,7 +274,7 @@ int main() {
 
 
 		//分组显示
-		for (int groupIdx = 0; groupIdx < 3; ++groupIdx) { //这里也是写死了
+		for (int groupIdx = 0; groupIdx < 1; ++groupIdx) { //这里也是写死了
 			Group& group = object.getGroup(groupIdx);
 			for (Tetrahedron* tet : group.tetrahedra) {
 				for (int edgeIdx = 0; edgeIdx < 6; ++edgeIdx) {  // Loop through each edge in the tetrahedron

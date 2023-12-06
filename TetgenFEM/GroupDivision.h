@@ -88,8 +88,8 @@ public:
 	Eigen::MatrixXd dampingMatrix;
 	Eigen::Vector3d initCOM;//initial center of mass
 	Eigen::VectorXd initLocalPos;//initial position - center of mass
-	Eigen::MatrixXd LHS;
-	Eigen::VectorXd RHS;
+	Eigen::MatrixXd FEMLHS;
+	Eigen::VectorXd FEMRHS;
 	Eigen::VectorXd Fbind;
 	Eigen::VectorXd deltaX;
 	Eigen::SparseMatrix<double> rotationSparse;
@@ -111,7 +111,7 @@ public:
 	void setVertexMassesFromMassMatrix();
 	void calMassDistributionMatrix();
 	void calGroupK(double E, double nu);
-	void calPrimeVec();
+	void calPrimeVec(int w);
 	void calDampingMatrix();
 	void calInitCOM();
 	void calRotationMatrix();
@@ -147,7 +147,7 @@ public:
 
 class Object {
 public:
-	Group groups[3]; // change this
+	Group groups[1]; // change this
 	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints;
 	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints1;
 
