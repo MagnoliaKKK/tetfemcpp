@@ -49,7 +49,7 @@ void Object::updateIndices() {
 			for (int i = 0; i < 4; ++i) {
 				Vertex* vertex = tetra->vertices[i];
 
-				if (localIndices.find(vertex->index) == localIndices.end()) {
+				if (localIndices.find(vertex->index) == localIndices.end()) { //如果在 localIndices 集合中找不到 vertex->index 的值
 					localIndices.insert(vertex->index);
 
 					if (globalIndices.find(vertex->index) != globalIndices.end()) {
@@ -577,7 +577,7 @@ void Group::calRHS() {
 	C = timeStep * timeStep * massDampingSparseInv * kSparse * rotationTransSparse * massDistributionSparse * primeVec;
 	D = timeStep * timeStep * massDampingSparseInv * rotationTransSparse * Fbind;*/
 	//RHS = A - B + C + D;
-	FEMRHS = A - B + C +D;
+	FEMRHS = A - B + C + D;
 
 }
 
@@ -667,7 +667,7 @@ void Group::calFbind(const std::vector<Vertex*>& commonVerticesGroup1,
 		/*Eigen::Vector3d posThisGroup(vertexThisGroup->x, vertexThisGroup->y, vertexThisGroup->z);
 		Eigen::Vector3d posOtherGroup(vertexOtherGroup->x, vertexOtherGroup->y, vertexOtherGroup->z);*/
 		posThisGroup = currentPositionGroup1.segment<3>(3 * vertexThisGroup->localIndex);
-		posThisGroup = currentPositionGroup2.segment<3>(3 * vertexOtherGroup->localIndex);
+		posOtherGroup = currentPositionGroup2.segment<3>(3 * vertexOtherGroup->localIndex);
 		avgPosition = (posThisGroup + posOtherGroup) / 2;
 		// Compute the position difference between the current vertex and the other group's vertex
 		posDifference = posThisGroup - avgPosition;
@@ -676,6 +676,7 @@ void Group::calFbind(const std::vector<Vertex*>& commonVerticesGroup1,
 		// Place the constraint force in Fbind at the appropriate position using the local index
 		Fbind.segment<3>(3 * vertexThisGroup->localIndex) = force;
 	}
+	
 }
 
 
@@ -770,12 +771,13 @@ void Object::PBDLOOP(int looptime) {
 			g.calculateCurrentPositions();
 						
 		}
-		//groups[0].calFbind(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition, - 10000);
-		//groups[1].calFbind(commonPoints.second, commonPoints.first, groups[1].currentPosition,groups[0].currentPosition, -10000);
+		groups[0].calFbind(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition, -2233);
+		groups[1].calFbind(commonPoints.second, commonPoints.first, groups[1].currentPosition,groups[0].currentPosition, -2233);
 
 		//groups[1].calFbind(commonPoints1.first, commonPoints1.second, 1000);
 		//groups[2].calFbind(commonPoints1.second, commonPoints1.first,1000);		
 	}
+	//std::cout << "Bind is" << std::endl << groups[0].Fbind(58) << std::endl;
 	for (auto& g : groups)
 	{
 		g.updateVelocity();

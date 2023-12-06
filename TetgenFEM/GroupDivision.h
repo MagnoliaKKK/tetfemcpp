@@ -37,6 +37,7 @@ public:
 		if (initx < -0.619) {
 			isFixed = true;
 		}
+
 	}
 };
 
@@ -147,7 +148,7 @@ public:
 
 class Object {
 public:
-	Group groups[1]; // change this
+	Group groups[2]; // change this
 	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints;
 	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints1;
 
