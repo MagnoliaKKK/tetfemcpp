@@ -30,7 +30,7 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/cubeLong.stl", in);
+	readSTL("stls/cube.stl", in);
 
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
@@ -53,6 +53,7 @@ int main() {
 	for (int i = 0; i < groupNum; ++i) {  // Loop over the groups
 		Group& group = object.getGroup(i);
 		std::cout << "Group " << i << " has " << group.tetrahedra.size() << " tetrahedra." << std::endl;
+		group.LHS_I = Eigen::MatrixXd::Identity(3 * group.verticesMap.size(), 3 * group.verticesMap.size()); //节省时间小能手
 	}
 
 
@@ -124,7 +125,7 @@ int main() {
 	//for calculate frame rate
 	double lastTime = glfwGetTime();
 	int nbFrames = 0;
-	glfwSwapInterval(0);
+	glfwSwapInterval(1); //垂直同步
 
 	
 	while (!glfwWindowShouldClose(window)) {
@@ -162,7 +163,7 @@ int main() {
 		object.groups[1].calPrimeVec(wKey);
 		object.groups[1].calRotationMatrix();
 	
-		object.PBDLOOP(10);
+		object.PBDLOOP(2);
 
 		
 		

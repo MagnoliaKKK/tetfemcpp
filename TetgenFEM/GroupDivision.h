@@ -102,6 +102,11 @@ public:
 	Eigen::SparseMatrix<double> massDampingSparseInv; //(M+C').inv sparse
 	Eigen::VectorXd currentPosition;//计算bindf用的位置信息，不用做位置更新
 
+	Eigen::MatrixXd LHS_I;
+	Eigen::MatrixXd LHS_A;
+	Eigen::MatrixXd LHS_B;
+	Eigen::MatrixXd LHS_C;
+
 
 	
 	void addTetrahedron(Tetrahedron* tet);

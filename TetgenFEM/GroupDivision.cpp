@@ -549,16 +549,12 @@ void Group::calPrimeVec(int w) {
 }
 
 void Group::calLHS() {
-	Eigen::MatrixXd I = Eigen::MatrixXd::Identity(3 * verticesMap.size(), 3 * verticesMap.size());
-	Eigen::MatrixXd A;
-	Eigen::MatrixXd B;
-	Eigen::MatrixXd C;
 	//A = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK;
 	//B = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * massDistribution;
 	massDampingSparseInv = (massMatrix + timeStep * dampingMatrix).inverse().sparseView();
-	A = timeStep * timeStep * massDampingSparseInv * kSparse;
-	B = A * massDistributionSparse;
-	FEMLHS = I + A - B;
+	LHS_A = timeStep * timeStep * massDampingSparseInv * kSparse;
+	LHS_B = LHS_A * massDistributionSparse;
+	FEMLHS = LHS_I + LHS_A - LHS_B;
 
 }
 
