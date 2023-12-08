@@ -14,7 +14,7 @@
 
 
 //C:/Users/xu_yu/Desktop/tmp/arial.ttf
-
+ 
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 double youngs = 10000;
@@ -30,12 +30,12 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/sphere.stl", in);
+	readSTL("stls/cubeLong.stl", in);
 
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.414a0.1"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
+	char args[] = "pq1.414a0.01"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
 	behavior.parse_commandline(args);
 
 	// Call TetGen to tetrahedralize the geometry
@@ -121,6 +121,11 @@ int main() {
 	
 
 	object.groups[1].calLHS();
+	//for calculate frame rate
+	double lastTime = glfwGetTime();
+	int nbFrames = 0;
+	glfwSwapInterval(0);
+
 	
 	while (!glfwWindowShouldClose(window)) {
 		
@@ -297,6 +302,15 @@ int main() {
 
 		// Poll for and process events
 		glfwPollEvents();
+
+		//calculate frame rate
+		double currentTime = glfwGetTime();
+		nbFrames++;
+		if (currentTime - lastTime >= 1.0) { // 如果过去了至少1秒
+			printf("%d frames/sec\n", nbFrames);
+			nbFrames = 0;
+			lastTime += 1.0;
+		}
 
 	}
 

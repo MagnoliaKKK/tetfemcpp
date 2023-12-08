@@ -1,7 +1,7 @@
 ﻿#include "GroupDivision.h"
 
 double timeStep = 0.01;
-double dampingConst = 4;
+double dampingConst = 6;
 const  double PI = 3.14159265358979265358979;
 const double Gravity = -9.8;
 
@@ -553,11 +553,11 @@ void Group::calLHS() {
 	Eigen::MatrixXd A;
 	Eigen::MatrixXd B;
 	Eigen::MatrixXd C;
-	A = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK;
-	B = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * massDistribution;
-	/*massDampingSparseInv = (massMatrix + timeStep * dampingMatrix).inverse().sparseView();
+	//A = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK;
+	//B = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * massDistribution;
+	massDampingSparseInv = (massMatrix + timeStep * dampingMatrix).inverse().sparseView();
 	A = timeStep * timeStep * massDampingSparseInv * kSparse;
-	B = timeStep * timeStep * massDampingSparseInv * kSparse * massDistributionSparse;*/
+	B = A * massDistributionSparse;
 	FEMLHS = I + A - B;
 
 }
@@ -568,14 +568,15 @@ void Group::calRHS() {
 	Eigen::VectorXd C;
 	Eigen::VectorXd D;
 	//Fbind = Eigen::VectorXd::Zero(3 * verticesMap.size());
-	A = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * initLocalPos;
-	B = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * rotationMatrix.transpose() * primeVec;
-	C = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * rotationMatrix.transpose() * massDistribution * primeVec;
-	D = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * rotationMatrix.inverse() * Fbind;
-	/*A = timeStep * timeStep * massDampingSparseInv * kSparse * initLocalPos;
+	//A = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * initLocalPos;
+	//B = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * rotationMatrix.transpose() * primeVec;
+	//C = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * rotationMatrix.transpose() * massDistribution * primeVec;
+	//D = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * rotationMatrix.inverse() * Fbind;
+	rotationTransSparse = rotationMatrix.transpose().sparseView();
+	A = timeStep * timeStep * massDampingSparseInv * kSparse * initLocalPos;
 	B = timeStep * timeStep * massDampingSparseInv * kSparse * rotationTransSparse * primeVec;
 	C = timeStep * timeStep * massDampingSparseInv * kSparse * rotationTransSparse * massDistributionSparse * primeVec;
-	D = timeStep * timeStep * massDampingSparseInv * rotationTransSparse * Fbind;*/
+	D = timeStep * timeStep * massDampingSparseInv * rotationTransSparse * Fbind;
 	//RHS = A - B + C + D;
 	FEMRHS = A - B + C + D;
 
@@ -586,7 +587,8 @@ void Group::calDeltaX() {
 	//deltaX = LHS.inverse() * RHS;
 	if (FEMLHS.determinant() != 0) {
 		// 解线性方程Ax = b
-		deltaX = FEMLHS.colPivHouseholderQr().solve(FEMRHS);
+		deltaX = FEMLHS.inverse() * FEMRHS;
+		//deltaX = FEMLHS.colPivHouseholderQr().solve(FEMRHS);
 	}
 	else {
 		std::cout << "矩阵A是奇异的，无法解决方程组." << std::endl;
@@ -771,8 +773,8 @@ void Object::PBDLOOP(int looptime) {
 			g.calculateCurrentPositions();
 						
 		}
-		groups[0].calFbind(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition, -2233);
-		groups[1].calFbind(commonPoints.second, commonPoints.first, groups[1].currentPosition,groups[0].currentPosition, -2233);
+		groups[0].calFbind(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition, -3233);
+		groups[1].calFbind(commonPoints.second, commonPoints.first, groups[1].currentPosition,groups[0].currentPosition, -3233);
 
 		//groups[1].calFbind(commonPoints1.first, commonPoints1.second, 1000);
 		//groups[2].calFbind(commonPoints1.second, commonPoints1.first,1000);		
