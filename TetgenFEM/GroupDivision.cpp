@@ -2,7 +2,7 @@
 
 
 const double timeStep = 0.01;
-const double dampingConst = 6;
+const double dampingConst = 16;
 const double PI = 3.14159265358979265358979;
 const double Gravity = -9.8;
 
