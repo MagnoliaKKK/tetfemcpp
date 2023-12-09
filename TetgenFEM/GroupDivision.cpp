@@ -584,6 +584,7 @@ void Object::PBDLOOP(int looptime) {
 
 
 	// 1. 初始化：将每个组的 Fbind 置零
+	//#pragma omp parallel for
 	for (int i = 0; i < groupNum; ++i) {
 		auto& g = groups[i];
 		g.Fbind = Eigen::VectorXd::Zero(3 * g.verticesMap.size()); // 假设 Group 类有一个方法来清除 Fbind
