@@ -1,3 +1,4 @@
+
 //#define EIGEN_USE_MKL_ALL
 #include <iostream>
 #include <vector>
@@ -31,7 +32,7 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/cube.stl", in);
+	readSTL("stls/cubeLong.stl", in);
 
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
@@ -44,6 +45,7 @@ int main() {
 
 	int groupNum = 2; //Object类和颜色都写死了 不能超出class Object {里的组数
 	Object object;
+	object.groupNum = groupNum;
 	divideIntoGroups(out, object, groupNum); //convert tetgen to our data structure
 	object.updateIndices(); // 每个点分配一个独立index，重复的改新的index
 	object.assignLocalIndicesToAllGroups(); //分配Local index
@@ -94,35 +96,21 @@ int main() {
 		}
 
 	}
-	object.groups[0].calMassMatrix(density);
-	
-	object.groups[0].calDampingMatrix();
-	//object.groups[0].calCenterofMass();
-	object.groups[0].calInitCOM(); 
-	object.groups[0].calLocalPos(); // 计算初始位置与初始重心的差值
-	//Eigen::Vector3d groupCOM = object.groups[0].centerofMass;
-	object.groups[0].calGroupK(youngs, poisson);
-	object.groups[0].setVertexMassesFromMassMatrix();
-	object.groups[0].calMassGroup();
-	object.groups[0].calMassDistributionMatrix();
-	
-	object.groups[0].calLHS();
 
-	object.groups[1].calMassMatrix(density);
-	object.groups[1].calMassGroup();
-	object.groups[1].calDampingMatrix();
-	object.groups[1].calCenterofMass();
-	object.groups[1].calInitCOM();
-	object.groups[1].calLocalPos();
-	//Eigen::Vector3d groupCOM1 = object.groups[1].centerofMass;
-	object.groups[1].calGroupK(youngs, poisson);
-	object.groups[1].setVertexMassesFromMassMatrix();
-	object.groups[1].calMassDistributionMatrix();
 
+	for (int i = 0; i < object.groupNum; ++i) {
+		object.groups[i].calMassMatrix(density);
+		object.groups[i].calDampingMatrix();
+		object.groups[i].calCenterofMass();
+		object.groups[i].calInitCOM();
+		object.groups[i].calLocalPos(); // 计算初始位置与初始重心的差值
+		object.groups[i].calGroupK(youngs, poisson);
+		object.groups[i].setVertexMassesFromMassMatrix();
+		object.groups[i].calMassGroup();
+		object.groups[i].calMassDistributionMatrix();
+		object.groups[i].calLHS();
+	}
 	
-	
-
-	object.groups[1].calLHS();
 	//for calculate frame rate
 	double lastTime = glfwGetTime();
 	int nbFrames = 0;
@@ -157,13 +145,14 @@ int main() {
 		//double aa = object.groups[0].tetrahedra[0]->calMassTetra(density);
 		
 		//#pragma omp parallel for
+
 		for (int i = 0; i < groupNum; i++) {
 			object.groups[i].calPrimeVec(wKey);
 			object.groups[i].calRotationMatrix();
 		}
-		
+		//
 	
-		object.PBDLOOP(2);
+		object.PBDLOOP(10);
 
 		
 		
@@ -189,7 +178,7 @@ int main() {
 		// 绘制白色点
 		glColor3f(1.0f, 1.0f, 1.0f);
 		glBegin(GL_POINTS);
-		for (int groupIdx = 0; groupIdx < 2; ++groupIdx) {
+		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
 			Group& group = object.getGroup(groupIdx);
 			std::vector<Vertex*> uniqueVertices = group.getUniqueVertices();
 			for (Vertex* vertex : uniqueVertices) {
@@ -201,7 +190,7 @@ int main() {
 		glEnd();
 
 
-		for (int groupIdx = 0; groupIdx < 2; ++groupIdx) { //写点的标号，画字
+		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) { //写点的标号，画字
 			Group& group = object.getGroup(groupIdx);
 
 			//画不重复的版本
@@ -258,7 +247,7 @@ int main() {
 
 
 		//分组显示
-		for (int groupIdx = 0; groupIdx < 2; ++groupIdx) { //这里也是写死了
+		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) { //这里也是写死了
 			Group& group = object.getGroup(groupIdx);
 			for (Tetrahedron* tet : group.tetrahedra) {
 				for (int edgeIdx = 0; edgeIdx < 6; ++edgeIdx) {  // Loop through each edge in the tetrahedron

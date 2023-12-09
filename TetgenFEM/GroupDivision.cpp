@@ -1,8 +1,9 @@
 ﻿#include "GroupDivision.h"
 
-double timeStep = 0.01;
-double dampingConst = 6;
-const  double PI = 3.14159265358979265358979;
+
+const double timeStep = 0.01;
+const double dampingConst = 6;
+const double PI = 3.14159265358979265358979;
 const double Gravity = -9.8;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -471,8 +472,7 @@ void Group::calPrimeVec(int w) {
 	// 确保groupVelocity已经初始化且设置为正确的尺寸
 	//groupVelocity = Eigen::VectorXd::Zero(3 * verticesMap.size());
 	primeVec = Eigen::VectorXd::Zero(3 * verticesMap.size());
-	// 计算逆矩阵
-	Eigen::MatrixXd inverseTerm = (massMatrix + dampingMatrix * timeStep).inverse();
+	
 
 	gravity = Eigen::VectorXd::Zero(3 * verticesMap.size());
 
@@ -553,6 +553,12 @@ void Group::calLHS() {
 	massDampingSparseInv = (massMatrix + timeStep * dampingMatrix).inverse().sparseView();
 	LHS_A = timeStep * timeStep * massDampingSparseInv * kSparse;
 	LHS_B = LHS_A * massDistributionSparse;
+
+	// 计算逆矩阵 下面不属于LHS，顺便算
+	inverseTerm = (massMatrix + dampingMatrix * timeStep).inverse(); //顺顺便把这个算了
+	RHS_E = timeStep * timeStep * massDampingSparseInv * kSparse;
+	RHS_A = RHS_E * initLocalPos;
+
 	FEMLHS = LHS_I + LHS_A - LHS_B;
 	FEMLHS_Inv = FEMLHS.inverse();
 }
@@ -565,38 +571,86 @@ void Group::calRHS() {
 	//C = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * rotationMatrix.transpose() * massDistribution * primeVec;
 	//D = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * rotationMatrix.inverse() * Fbind;
 	//rotationTransSparse = rotationMatrix.transpose().sparseView();
-	auto RHS_E = timeStep * timeStep * massDampingSparseInv * kSparse;
-	auto RHS_F = RHS_E * rotationTransSparse;
-
-	RHS_A = RHS_E * initLocalPos;
-	RHS_B = RHS_F * primeVec;
-	RHS_C = RHS_F * massDistributionSparse * primeVec;
-	RHS_D = timeStep * timeStep * massDampingSparseInv * rotationTransSparse * Fbind;
-	//RHS = A - B + C + D;
-	FEMRHS = RHS_A - RHS_B + RHS_C + RHS_D;
+	
+	
+	
+	
+	RHS_D = RHS_G * Fbind;
+	FEMRHS = RHS_AsubBplusC + RHS_D; 
 
 }
 
+void Object::PBDLOOP(int looptime) {
+
+
+	// 1. 初始化：将每个组的 Fbind 置零
+	for (int i = 0; i < groupNum; ++i) {
+		auto& g = groups[i];
+		g.Fbind = Eigen::VectorXd::Zero(3 * g.verticesMap.size()); // 假设 Group 类有一个方法来清除 Fbind
+		g.rotationTransSparse = g.rotationMatrix.transpose().sparseView();
+
+		g.RHS_F = g.RHS_E * g.rotationTransSparse;//RHS的部分
+		g.RHS_B = g.RHS_F * g.primeVec; //46ms
+		g.RHS_C = g.RHS_F * g.massDistributionSparse * g.primeVec; //54ms
+		g.RHS_G = timeStep * timeStep * g.massDampingSparseInv * g.rotationTransSparse;
+		g.RHS_AsubBplusC = g.RHS_A - g.RHS_B + g.RHS_C; //24ms
+
+	}
+
+	// 2. 开始迭代
+
+	for (int iter = 0; iter < looptime; ++iter) {
+		// 每组计算 RHS
+
+		//#pragma omp parallel for //500fps to 300, -optimization
+		for (int i = 0; i < groupNum; ++i) {
+			auto& g = groups[i];
+			g.calRHS();
+			g.calDeltaX();
+			g.calculateCurrentPositions();
+
+		}
+
+		groups[0].calFbind(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition, -533);
+		groups[1].calFbind(commonPoints.second, commonPoints.first, groups[1].currentPosition, groups[0].currentPosition, -533);
+
+
+	}
+	//std::cout << "Bind is" << std::endl << groups[0].Fbind(58) << std::endl;
+	for (auto& g : groups)
+	{
+		g.updateVelocity();
+		g.updatePosition();
+
+	}
+	// 迭代完成后更新位置和速度
+	//for (int i = 0; i < 3; ++i) {
+	//	// 更新位置，这里可能需要一些逻辑来获取最后一次迭代的结果
+	//	groups[i].updateFinalPositions(); // 假设这个方法用最后一次迭代的结果更新顶点位置
+
+	//	// 更新速度
+	//	groups[i].updateVelocities(timestep); // 假设这个方法用 (现在位置 - 上一帧位置) / timestep 计算速度
+	//}
+
+	// ... 现在，所有的组都应该有了更新后的位置和速度，可以传递给绘图功能
+	// drawGroups(); // 假设有一个方法来绘制或输出最新的组状态
+}
+
+
 void Group::calDeltaX() {
 	
-	//deltaX = LHS.inverse() * RHS;
-	if (FEMLHS.determinant() != 0) {
-		// 解线性方程Ax = b
-		deltaX = FEMLHS_Inv * FEMRHS;
-		//deltaX = FEMLHS.colPivHouseholderQr().solve(FEMRHS);
-		
-		// 将 FEMLHS 转换为稀疏矩阵
-		//double threshold = 1e-18;
-		//Eigen::SparseMatrix<double> sparseFEMLHS = FEMLHS.sparseView(threshold);
+	// 解线性方程Ax = b
+	deltaX = FEMLHS_Inv * FEMRHS;
+	//deltaX = FEMLHS.colPivHouseholderQr().solve(FEMRHS);
 
-		//Eigen::BiCGSTAB<Eigen::SparseMatrix<double>> solver;
-		//solver.compute(sparseFEMLHS);
-		//deltaX = solver.solve(FEMRHS);
+	// 将 FEMLHS 转换为稀疏矩阵
+	//double threshold = 1e-18;
+	//Eigen::SparseMatrix<double> sparseFEMLHS = FEMLHS.sparseView(threshold);
 
-	}
-	else {
-		std::cout << "矩阵A是奇异的，无法解决方程组." << std::endl;
-	}
+	//Eigen::BiCGSTAB<Eigen::SparseMatrix<double>> solver;
+	//solver.compute(sparseFEMLHS);
+	//deltaX = solver.solve(FEMRHS);
+
 	deltaX = rotationMatrix.transpose() * deltaX;
 }
 
@@ -760,53 +814,6 @@ Group& Object::getGroup(int index) {
 	return groups[index];
 }
 
-void Object::PBDLOOP(int looptime) {
-
-
-	// 1. 初始化：将每个组的 Fbind 置零
-
-	for (auto& g : groups) {
-		g.Fbind = Eigen::VectorXd::Zero(3 * g.verticesMap.size()); // 假设 Group 类有一个方法来清除 Fbind
-		g.rotationTransSparse = g.rotationMatrix.transpose().sparseView();
-	}
-
-	// 2. 开始迭代
-
-	for (int iter = 0; iter < looptime; ++iter) {
-		// 每组计算 RHS
-		
-		
-		for (auto& g : groups) {
-			g.calRHS(); 
-			g.calDeltaX();
-			g.calculateCurrentPositions();
-						
-		}
-		groups[0].calFbind(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition, -3233);
-		groups[1].calFbind(commonPoints.second, commonPoints.first, groups[1].currentPosition,groups[0].currentPosition, -3233);
-
-		//groups[1].calFbind(commonPoints1.first, commonPoints1.second, 1000);
-		//groups[2].calFbind(commonPoints1.second, commonPoints1.first,1000);		
-	}
-	//std::cout << "Bind is" << std::endl << groups[0].Fbind(58) << std::endl;
-	for (auto& g : groups)
-	{
-		g.updateVelocity();
-		g.updatePosition();
-
-	}
-	// 迭代完成后更新位置和速度
-	//for (int i = 0; i < 3; ++i) {
-	//	// 更新位置，这里可能需要一些逻辑来获取最后一次迭代的结果
-	//	groups[i].updateFinalPositions(); // 假设这个方法用最后一次迭代的结果更新顶点位置
-
-	//	// 更新速度
-	//	groups[i].updateVelocities(timestep); // 假设这个方法用 (现在位置 - 上一帧位置) / timestep 计算速度
-	//}
-
-	// ... 现在，所有的组都应该有了更新后的位置和速度，可以传递给绘图功能
-	// drawGroups(); // 假设有一个方法来绘制或输出最新的组状态
-}
 
 
 std::unordered_set<std::string> boundaryEdgesSet;  // Set to store boundary edges

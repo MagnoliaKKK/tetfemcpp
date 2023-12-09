@@ -87,6 +87,7 @@ public:
 	Eigen::MatrixXd rotationMatrix;
 	Eigen::VectorXd gravity;
 	Eigen::MatrixXd dampingMatrix;
+	Eigen::MatrixXd inverseTerm;
 	Eigen::Vector3d initCOM;//initial center of mass
 	Eigen::VectorXd initLocalPos;//initial position - center of mass
 	Eigen::MatrixXd FEMLHS;
@@ -111,7 +112,8 @@ public:
 	Eigen::VectorXd RHS_A;
 	Eigen::VectorXd RHS_B;
 	Eigen::VectorXd RHS_C;
-	Eigen::VectorXd RHS_D;
+	Eigen::VectorXd RHS_D, RHS_AsubBplusC;
+	Eigen::SparseMatrix<double> RHS_E, RHS_F, RHS_G;
 
 
 	
@@ -159,9 +161,10 @@ public:
 
 class Object {
 public:
-	Group groups[2]; // change this
+	Group groups[5]; // change this
 	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints;
 	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints1;
+	int groupNum;
 
 	Group& getGroup(int index);
 	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> findCommonVertices(const Group& group1, const Group& group2);// find common vertex
