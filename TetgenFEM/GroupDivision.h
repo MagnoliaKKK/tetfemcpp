@@ -90,6 +90,7 @@ public:
 	Eigen::Vector3d initCOM;//initial center of mass
 	Eigen::VectorXd initLocalPos;//initial position - center of mass
 	Eigen::MatrixXd FEMLHS;
+	Eigen::MatrixXd FEMLHS_Inv;
 	Eigen::VectorXd FEMRHS;
 	Eigen::VectorXd Fbind;
 	Eigen::VectorXd deltaX;
@@ -106,6 +107,11 @@ public:
 	Eigen::MatrixXd LHS_A;
 	Eigen::MatrixXd LHS_B;
 	Eigen::MatrixXd LHS_C;
+
+	Eigen::VectorXd RHS_A;
+	Eigen::VectorXd RHS_B;
+	Eigen::VectorXd RHS_C;
+	Eigen::VectorXd RHS_D;
 
 
 	

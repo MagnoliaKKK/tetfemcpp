@@ -474,9 +474,7 @@ void Group::calPrimeVec(int w) {
 	// 计算逆矩阵
 	Eigen::MatrixXd inverseTerm = (massMatrix + dampingMatrix * timeStep).inverse();
 
-	for (int i = 0; i < 3 * verticesMap.size(); i += 1) {
-		gravity(i) = 0; // y方向上设置重力
-	}
+	gravity = Eigen::VectorXd::Zero(3 * verticesMap.size());
 
 	// 初始化gravity向量
 	if (w == 4) {
@@ -551,30 +549,31 @@ void Group::calPrimeVec(int w) {
 void Group::calLHS() {
 	//A = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK;
 	//B = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * massDistribution;
+
 	massDampingSparseInv = (massMatrix + timeStep * dampingMatrix).inverse().sparseView();
 	LHS_A = timeStep * timeStep * massDampingSparseInv * kSparse;
 	LHS_B = LHS_A * massDistributionSparse;
 	FEMLHS = LHS_I + LHS_A - LHS_B;
-
+	FEMLHS_Inv = FEMLHS.inverse();
 }
 
 void Group::calRHS() {
-	Eigen::VectorXd A;
-	Eigen::VectorXd B;
-	Eigen::VectorXd C;
-	Eigen::VectorXd D;
+	
 	//Fbind = Eigen::VectorXd::Zero(3 * verticesMap.size());
 	//A = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * initLocalPos;
 	//B = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * rotationMatrix.transpose() * primeVec;
 	//C = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * rotationMatrix.transpose() * massDistribution * primeVec;
 	//D = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * rotationMatrix.inverse() * Fbind;
-	rotationTransSparse = rotationMatrix.transpose().sparseView();
-	A = timeStep * timeStep * massDampingSparseInv * kSparse * initLocalPos;
-	B = timeStep * timeStep * massDampingSparseInv * kSparse * rotationTransSparse * primeVec;
-	C = timeStep * timeStep * massDampingSparseInv * kSparse * rotationTransSparse * massDistributionSparse * primeVec;
-	D = timeStep * timeStep * massDampingSparseInv * rotationTransSparse * Fbind;
+	//rotationTransSparse = rotationMatrix.transpose().sparseView();
+	auto RHS_E = timeStep * timeStep * massDampingSparseInv * kSparse;
+	auto RHS_F = RHS_E * rotationTransSparse;
+
+	RHS_A = RHS_E * initLocalPos;
+	RHS_B = RHS_F * primeVec;
+	RHS_C = RHS_F * massDistributionSparse * primeVec;
+	RHS_D = timeStep * timeStep * massDampingSparseInv * rotationTransSparse * Fbind;
 	//RHS = A - B + C + D;
-	FEMRHS = A - B + C + D;
+	FEMRHS = RHS_A - RHS_B + RHS_C + RHS_D;
 
 }
 
@@ -583,8 +582,17 @@ void Group::calDeltaX() {
 	//deltaX = LHS.inverse() * RHS;
 	if (FEMLHS.determinant() != 0) {
 		// 解线性方程Ax = b
-		deltaX = FEMLHS.inverse() * FEMRHS;
+		deltaX = FEMLHS_Inv * FEMRHS;
 		//deltaX = FEMLHS.colPivHouseholderQr().solve(FEMRHS);
+		
+		// 将 FEMLHS 转换为稀疏矩阵
+		//double threshold = 1e-18;
+		//Eigen::SparseMatrix<double> sparseFEMLHS = FEMLHS.sparseView(threshold);
+
+		//Eigen::BiCGSTAB<Eigen::SparseMatrix<double>> solver;
+		//solver.compute(sparseFEMLHS);
+		//deltaX = solver.solve(FEMRHS);
+
 	}
 	else {
 		std::cout << "矩阵A是奇异的，无法解决方程组." << std::endl;
@@ -756,13 +764,18 @@ void Object::PBDLOOP(int looptime) {
 
 
 	// 1. 初始化：将每个组的 Fbind 置零
+
 	for (auto& g : groups) {
 		g.Fbind = Eigen::VectorXd::Zero(3 * g.verticesMap.size()); // 假设 Group 类有一个方法来清除 Fbind
+		g.rotationTransSparse = g.rotationMatrix.transpose().sparseView();
 	}
 
 	// 2. 开始迭代
+
 	for (int iter = 0; iter < looptime; ++iter) {
 		// 每组计算 RHS
+		
+		
 		for (auto& g : groups) {
 			g.calRHS(); 
 			g.calDeltaX();

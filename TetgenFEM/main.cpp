@@ -1,3 +1,4 @@
+//#define EIGEN_USE_MKL_ALL
 #include <iostream>
 #include <vector>
 #include <cstring>  // for std::strcpy
@@ -125,7 +126,7 @@ int main() {
 	//for calculate frame rate
 	double lastTime = glfwGetTime();
 	int nbFrames = 0;
-	glfwSwapInterval(1); //垂直同步
+	glfwSwapInterval(0); //垂直同步
 
 	
 	while (!glfwWindowShouldClose(window)) {
@@ -155,13 +156,12 @@ int main() {
 		//std::cout << wKey << std::endl;// 当 W 被按下时的逻辑
 		//double aa = object.groups[0].tetrahedra[0]->calMassTetra(density);
 		
-		object.groups[0].calPrimeVec(wKey);
-		object.groups[0].calRotationMatrix();
+		//#pragma omp parallel for
+		for (int i = 0; i < groupNum; i++) {
+			object.groups[i].calPrimeVec(wKey);
+			object.groups[i].calRotationMatrix();
+		}
 		
-	
-
-		object.groups[1].calPrimeVec(wKey);
-		object.groups[1].calRotationMatrix();
 	
 		object.PBDLOOP(2);
 
