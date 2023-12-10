@@ -97,6 +97,24 @@ int main() {
 
 	}
 
+	/////////揪头发固定法
+	//float maxY = -std::numeric_limits<float>::infinity(); // 初始化为极小值
+	//Vertex* vertexWithMaxY = nullptr;
+	//// 查找 y 值最大的顶点
+	//for (Group& g : object.groups) {
+	//	for (const auto& vertexPair : g.verticesMap) {
+	//		Vertex* vertex = vertexPair.second;
+	//		if (vertex->y > maxY) {
+	//			maxY = vertex->y;
+	//			vertexWithMaxY = vertex;
+	//		}
+	//	}
+	//}
+	//// 将 y 值最大的顶点设为固定点
+	//if (vertexWithMaxY != nullptr) {
+	//	vertexWithMaxY->isFixed = true; // 假设有一个方法 setFixed 来设置顶点的固定状态
+	//}
+	/////////
 
 	for (int i = 0; i < object.groupNum; ++i) {
 		object.groups[i].calMassMatrix(density);
