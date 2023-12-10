@@ -19,9 +19,9 @@
  
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
-double youngs = 10000;
-double poisson = 0.49;
-double density = 1000;
+float youngs = 10000;
+float poisson = 0.49;
+float density = 1000;
 
 int wKey = 0;
 
@@ -56,7 +56,7 @@ int main() {
 	for (int i = 0; i < groupNum; ++i) {  // Loop over the groups
 		Group& group = object.getGroup(i);
 		std::cout << "Group " << i << " has " << group.tetrahedra.size() << " tetrahedra." << std::endl;
-		group.LHS_I = Eigen::MatrixXd::Identity(3 * group.verticesMap.size(), 3 * group.verticesMap.size()); //节省时间小能手
+		group.LHS_I = Eigen::MatrixXf::Identity(3 * group.verticesMap.size(), 3 * group.verticesMap.size()); //节省时间小能手
 	}
 
 

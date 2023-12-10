@@ -17,16 +17,16 @@
 
 class Vertex {
 public:
-	double x, y, z;
-	const double initx, inity, initz; //初始化后不可更改
+	float x, y, z;
+	const float initx, inity, initz; //初始化后不可更改
 	int index;  // global index
 	int localIndex; // 组内的本地索引
-	double vertexMass; // mass of vertices
-	double velx, vely, velz;//速度的三个分量
+	float vertexMass; // mass of vertices
+	float velx, vely, velz;//速度的三个分量
 	bool isFixed;
 
-	//Vertex(double x, double y, double z, int index) : x(x), y(y), z(z), index(index) {}
-	Vertex(double x, double y, double z, int index)
+	//Vertex(float x, float y, float z, int index) : x(x), y(y), z(z), index(index) {}
+	Vertex(float x, float y, float z, int index)
 		: initx(x), inity(y), initz(z), // 首先初始化const成员
 		x(x), y(y), z(z), // 然后是可变成员
 		index(index), vertexMass(1), // 其他成员可以直接赋值
@@ -56,9 +56,9 @@ class Tetrahedron {
 public:
 	Vertex* vertices[4];
 	Edge* edges[6];  // Each tetrahedron has six edges
-	double massTetra;
-	double volumeTetra;
-	Eigen::MatrixXd elementK;
+	float massTetra;
+	float volumeTetra;
+	Eigen::MatrixXf elementK;
 
 	Tetrahedron(Vertex* v1, Vertex* v2, Vertex* v3, Vertex* v4) {
 		vertices[0] = v1;
@@ -66,8 +66,8 @@ public:
 		vertices[2] = v3;
 		vertices[3] = v4;
 	}
-	Eigen::MatrixXd createElementK(double E, double nu, const Eigen::Vector3d& groupCenterOfMass);
-	double calMassTetra(double den);
+	Eigen::MatrixXf createElementK(float E, float nu, const Eigen::Vector3f& groupCenterOfMass);
+	float calMassTetra(float den);
 
 };
 
@@ -76,44 +76,44 @@ class Group {
 public:
 	std::vector<Tetrahedron*> tetrahedra;
 	std::unordered_map<int, Vertex*> verticesMap;
-	Eigen::Vector3d centerofMass;
-	double groupMass;//每组的质量
-	Eigen::MatrixXd massMatrix;//group mass matrix
-	Eigen::MatrixXd massDistribution;
-	Eigen::MatrixXd groupK;//group stiffness matrix
-	Eigen::VectorXd primeVec;
-	Eigen::VectorXd groupVelocity;
-	Eigen::VectorXd groupExf;
-	Eigen::MatrixXd rotationMatrix;
-	Eigen::VectorXd gravity;
-	Eigen::MatrixXd dampingMatrix;
-	Eigen::MatrixXd inverseTerm;
-	Eigen::Vector3d initCOM;//initial center of mass
-	Eigen::VectorXd initLocalPos;//initial position - center of mass
-	Eigen::MatrixXd FEMLHS;
-	Eigen::MatrixXd FEMLHS_Inv;
-	Eigen::VectorXd FEMRHS;
-	Eigen::VectorXd Fbind;
-	Eigen::VectorXd deltaX;
-	Eigen::SparseMatrix<double> rotationSparse;
-	Eigen::SparseMatrix<double> rotationTransSparse;//R^t sparse
-	Eigen::SparseMatrix<double> kSparse;
-	Eigen::SparseMatrix<double> massSparse;
-	Eigen::SparseMatrix<double> dampingSparse;
-	Eigen::SparseMatrix<double> massDistributionSparse;
-	Eigen::SparseMatrix<double> massDampingSparseInv; //(M+C').inv sparse
-	Eigen::VectorXd currentPosition;//计算bindf用的位置信息，不用做位置更新
+	Eigen::Vector3f centerofMass;
+	float groupMass;//每组的质量
+	Eigen::MatrixXf massMatrix;//group mass matrix
+	Eigen::MatrixXf massDistribution;
+	Eigen::MatrixXf groupK;//group stiffness matrix
+	Eigen::VectorXf primeVec;
+	Eigen::VectorXf groupVelocity;
+	Eigen::VectorXf groupExf;
+	Eigen::MatrixXf rotationMatrix;
+	Eigen::VectorXf gravity;
+	Eigen::MatrixXf dampingMatrix;
+	Eigen::MatrixXf inverseTerm;
+	Eigen::Vector3f initCOM;//initial center of mass
+	Eigen::VectorXf initLocalPos;//initial position - center of mass
+	Eigen::MatrixXf FEMLHS;
+	Eigen::MatrixXf FEMLHS_Inv;
+	Eigen::VectorXf FEMRHS;
+	Eigen::VectorXf Fbind;
+	Eigen::VectorXf deltaX;
+	Eigen::SparseMatrix<float> rotationSparse;
+	Eigen::SparseMatrix<float> rotationTransSparse;//R^t sparse
+	Eigen::SparseMatrix<float> kSparse;
+	Eigen::SparseMatrix<float> massSparse;
+	Eigen::SparseMatrix<float> dampingSparse;
+	Eigen::SparseMatrix<float> massDistributionSparse;
+	Eigen::SparseMatrix<float> massDampingSparseInv; //(M+C').inv sparse
+	Eigen::VectorXf currentPosition;//计算bindf用的位置信息，不用做位置更新
 
-	Eigen::MatrixXd LHS_I;
-	Eigen::MatrixXd LHS_A;
-	Eigen::MatrixXd LHS_B;
-	Eigen::MatrixXd LHS_C;
+	Eigen::MatrixXf LHS_I;
+	Eigen::MatrixXf LHS_A;
+	Eigen::MatrixXf LHS_B;
+	Eigen::MatrixXf LHS_C;
 
-	Eigen::VectorXd RHS_A;
-	Eigen::VectorXd RHS_B;
-	Eigen::VectorXd RHS_C;
-	Eigen::VectorXd RHS_D, RHS_AsubBplusC;
-	Eigen::SparseMatrix<double> RHS_E, RHS_F, RHS_G;
+	Eigen::VectorXf RHS_A;
+	Eigen::VectorXf RHS_B;
+	Eigen::VectorXf RHS_C;
+	Eigen::VectorXf RHS_D, RHS_AsubBplusC;
+	Eigen::SparseMatrix<float> RHS_E, RHS_F, RHS_G;
 
 
 	
@@ -121,27 +121,27 @@ public:
 	std::vector<Vertex*> getUniqueVertices();
 	void calCenterofMass();
 	void calMassGroup();
-	Eigen::MatrixXd calMassMatrix(double den);
+	Eigen::MatrixXf calMassMatrix(float den);
 	void setVertexMassesFromMassMatrix();
 	void calMassDistributionMatrix();
-	void calGroupK(double E, double nu);
+	void calGroupK(float E, float nu);
 	void calPrimeVec(int w);
 	void calDampingMatrix();
 	void calInitCOM();
 	void calRotationMatrix();
 	void calLocalPos();//calculate initial local position
-	Eigen::Vector3d axlAPD(Eigen::Matrix3d a);
-	Eigen::Vector3d clamp2(Eigen::Vector3d x, double y, double z);
-	Eigen::Quaterniond Exp2(Eigen::Vector3d a);
+	Eigen::Vector3f axlAPD(Eigen::Matrix3f a);
+	Eigen::Vector3f clamp2(Eigen::Vector3f x, float y, float z);
+	Eigen::Quaternionf Exp2(Eigen::Vector3f a);
 	void calLHS();
 	void calRHS();
 	void calDeltaX();
 	void calculateCurrentPositions();
 	void calFbind(const std::vector<Vertex*>& commonVerticesGroup1,
 		const std::vector<Vertex*>& commonVerticesGroup2,
-		const Eigen::VectorXd& currentPositionGroup1,
-		const Eigen::VectorXd& currentPositionGroup2,
-		double k);
+		const Eigen::VectorXf& currentPositionGroup1,
+		const Eigen::VectorXf& currentPositionGroup2,
+		float k);
 	void updatePosition();
 	void updateVelocity();
 	void initialize();
@@ -149,8 +149,8 @@ public:
 
 
 	Group()
-		: centerofMass(Eigen::Vector3d::Zero()),  // Initialize Eigen vector
-		groupMass(0.0),                         // Initialize double
+		: centerofMass(Eigen::Vector3f::Zero()),  // Initialize Eigen vector
+		groupMass(0.0),                         // Initialize float
 		verticesMap()
 		
 	{
