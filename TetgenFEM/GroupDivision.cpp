@@ -1,7 +1,7 @@
 ﻿#include "GroupDivision.h"
 
 
-const float timeStep = 0.01f;
+const float timeStep = 0.000001f;
 const float dampingConst = 16.0f;
 const float PI = 3.1415926535f;
 const float Gravity = -9.8f;
@@ -504,7 +504,7 @@ void Group::calPrimeVec(int w) {
 	groupVelocity += gravity * timeStep;
 
 	// 使用整个矩阵计算velocityUpdate
-	Eigen::VectorXf velocityUpdate = inverseTerm * (massMatrix * groupVelocity) * timeStep;
+	Eigen::VectorXf velocityUpdate = inverseTermSparse * (massMatrix * groupVelocity) * timeStep;
 
 	// 更新primeVec和顶点位置
 	for (auto& vertexPair : verticesMap) {
@@ -536,6 +536,7 @@ void Group::calLHS() {
 
 	// 计算逆矩阵 下面不属于LHS，顺便算
 	inverseTerm = (massMatrix + dampingMatrix * timeStep).inverse(); //顺顺便把这个算了
+	inverseTermSparse = inverseTerm.sparseView();
 	RHS_E = timeStep * timeStep * massDampingSparseInv * kSparse;
 	RHS_A = RHS_E * initLocalPos;
 

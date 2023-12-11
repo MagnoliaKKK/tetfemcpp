@@ -102,6 +102,7 @@ public:
 	Eigen::SparseMatrix<float> dampingSparse;
 	Eigen::SparseMatrix<float> massDistributionSparse;
 	Eigen::SparseMatrix<float> massDampingSparseInv; //(M+C').inv sparse
+	Eigen::SparseMatrix<float> inverseTermSparse;
 	Eigen::VectorXf currentPosition;//计算bindf用的位置信息，不用做位置更新
 
 	Eigen::MatrixXf LHS_I;
