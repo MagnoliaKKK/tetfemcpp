@@ -32,7 +32,7 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/bunnyLow.stl", in);
+	readSTL("stls/cube.stl", in);
 
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
@@ -43,7 +43,7 @@ int main() {
 	// Call TetGen to tetrahedralize the geometry
 	tetrahedralize(&behavior, &in, &out);
 
-	int groupNum = 2; //Object类和颜色都写死了 不能超出class Object {里的组数
+	int groupNum = 3; //Object类和颜色都写死了 不能超出class Object {里的组数
 	Object object;
 	object.groupNum = groupNum;
 	divideIntoGroups(out, object, groupNum); //convert tetgen to our data structure
@@ -86,6 +86,7 @@ int main() {
 	Eigen::Matrix4f mat;
 	initFontData();
 	object.commonPoints = object.findCommonVertices(object.groups[0], object.groups[1]);
+	object.commonPoints1 = object.findCommonVertices(object.groups[1], object.groups[2]);
 	for (Group& g : object.groups) {
 		// 遍历Group中的每个Vertex
 		for (const auto& vertexPair : g.verticesMap) {

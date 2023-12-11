@@ -5,6 +5,7 @@ const float timeStep = 0.01f;
 const float dampingConst = 16.0f;
 const float PI = 3.1415926535f;
 const float Gravity = -9.8f;
+const float bindForce = -533;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
 	for (Group& group : groups) {
@@ -582,6 +583,7 @@ void Group::calRHS() {
 
 }
 
+
 void Object::PBDLOOP(int looptime) {
 
 
@@ -616,8 +618,10 @@ void Object::PBDLOOP(int looptime) {
 
 		}
 
-		groups[0].calFbind(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition, -533);
-		groups[1].calFbind(commonPoints.second, commonPoints.first, groups[1].currentPosition, groups[0].currentPosition, -533);
+		groups[0].calFbind(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition, bindForce);
+		groups[1].calFbind(commonPoints.second, commonPoints.first, groups[1].currentPosition, groups[0].currentPosition, bindForce);
+		//groups[1].calFbind(commonPoints1.first, commonPoints1.second, groups[1].currentPosition, groups[2].currentPosition, bindForce);
+		groups[2].calFbind(commonPoints1.second, commonPoints1.first, groups[2].currentPosition, groups[1].currentPosition, bindForce);
 
 
 	}

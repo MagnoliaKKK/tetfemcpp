@@ -164,7 +164,7 @@ public:
 	Group groups[5]; // change this
 	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints;
 	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints1;
-	int groupNum;
+	int groupNum;// , groupNumX, groupNumY, groupNumZ;
 
 	Group& getGroup(int index);
 	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> findCommonVertices(const Group& group1, const Group& group2);// find common vertex
