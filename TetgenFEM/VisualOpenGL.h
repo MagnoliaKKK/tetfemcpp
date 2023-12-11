@@ -17,3 +17,4 @@ void drawEdge(Vertex* vertex1, Vertex* vertex2, float r, float g, float b);
 void drawAxis(float length);
 void XPrintString(const char* s);
 void initFontData();
+void hsvToRgb(float h, float s, float v, float& r, float& g, float& b);

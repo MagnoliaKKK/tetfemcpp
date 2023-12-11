@@ -138,3 +138,22 @@ void drawAxis(float length) {
 
 	glPopMatrix();  // 恢复之前保存的模型视图矩諄E
 }
+
+
+// Function to convert HSV to RGB
+void hsvToRgb(float h, float s, float v, float& r, float& g, float& b) {
+	int i = int(h / 60.0f) % 6;
+	float f = (h / 60.0f) - i;
+	float p = v * (1.0f - s);
+	float q = v * (1.0f - f * s);
+	float t = v * (1.0f - (1.0f - f) * s);
+
+	switch (i) {
+	case 0: r = v, g = t, b = p; break;
+	case 1: r = q, g = v, b = p; break;
+	case 2: r = p, g = v, b = t; break;
+	case 3: r = p, g = q, b = v; break;
+	case 4: r = t, g = p, b = v; break;
+	case 5: r = v, g = p, b = q; break;
+	}
+}

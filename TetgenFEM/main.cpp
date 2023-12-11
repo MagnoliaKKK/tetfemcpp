@@ -22,7 +22,7 @@ Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 float youngs = 10000;
 float poisson = 0.49;
 float density = 1000;
-
+int groupNum = 5; //Object类和颜色都写死了 不能超出class Object {里的组数
 int wKey = 0;
 
 
@@ -32,7 +32,7 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/cube.stl", in);
+	readSTL("stls/cubeLong.stl", in);
 
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
@@ -43,7 +43,7 @@ int main() {
 	// Call TetGen to tetrahedralize the geometry
 	tetrahedralize(&behavior, &in, &out);
 
-	int groupNum = 3; //Object类和颜色都写死了 不能超出class Object {里的组数
+	
 	Object object;
 	object.groupNum = groupNum;
 	divideIntoGroups(out, object, groupNum); //convert tetgen to our data structure
@@ -263,10 +263,10 @@ int main() {
 		glBegin(GL_LINES);
 
 
-
+		
 
 		//分组显示
-		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) { //这里也是写死了
+		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
 			Group& group = object.getGroup(groupIdx);
 			for (Tetrahedron* tet : group.tetrahedra) {
 				for (int edgeIdx = 0; edgeIdx < 6; ++edgeIdx) {  // Loop through each edge in the tetrahedron
@@ -275,31 +275,29 @@ int main() {
 					Vertex* vertex2 = edge->vertices[1];
 					bool isSurfaceEdge = edge->isBoundary;
 
-					float red = 0.0f, green = 0.0f, blue = 0.0f;
+					// Use HSV to RGB conversion to create a unique color for each group
+					float hue = (360.0f * groupIdx) / groupNum;  // Distribute hues evenly across the spectrum
+					float saturation = 1.0f;  // Full saturation
+					float value = 1.0f;      // Full brightness
 
-					// Assign color based on groupIdx
-					if (groupIdx == 0) {
-						red = 1.0f;  // Red for group 0
-					}
-					else if (groupIdx == 1) {
-						green = 1.0f;  // Green for group 1
-					}
-					else if (groupIdx == 2) {
-						blue = 1.0f;  // Blue for group 2
-					}
+					// Convert HSV to RGB
+					float red, green, blue;
+					hsvToRgb(hue, saturation, value, red, green, blue);
 
 					// If it's a boundary edge, you may want to adjust the color or keep as is
 					// For example, make the color brighter if it's a boundary edge
 					if (isSurfaceEdge) {
-						red = std::min(1.0f, red + 0.5f);
-						green = std::min(1.0f, green + 0.5f);
-						blue = std::min(1.0f, blue + 0.5f);
+						red = std::min(1.0f, red + 0.3f);
+						green = std::min(1.0f, green + 0.3f);
+						blue = std::min(1.0f, blue + 0.3f);
 					}
 
 					drawEdge(vertex1, vertex2, red, green, blue);
 				}
 			}
 		}
+
+		
 
 
 		glEnd();
