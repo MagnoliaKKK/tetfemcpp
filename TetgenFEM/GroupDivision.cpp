@@ -1,11 +1,11 @@
 ﻿#include "GroupDivision.h"
 
 
-const float timeStep = 0.000001f;
+const float timeStep = 0.01f;
 const float dampingConst = 16.0f;
 const float PI = 3.1415926535f;
 const float Gravity = -9.8f;
-const float bindForce = -220;
+const float bindForce = -320;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
 	for (Group& group : groups) {
@@ -121,8 +121,12 @@ void Group::initialize() {
 	Fbind = Eigen::VectorXf(3 * verticesMap.size());
 	currentPosition = Eigen::VectorXf::Zero(3 * verticesMap.size());;
 	gravity = Eigen::VectorXf::Zero(3 * verticesMap.size());
-}
 
+	verticesVector.reserve(verticesMap.size());
+	for (const auto& pair : verticesMap) {
+		verticesVector.push_back(pair.second);
+	}
+}
 void Group::addTetrahedron(Tetrahedron* tet) {
 	tetrahedra.push_back(tet);
 	//for (int i = 0; i < 4; ++i) {
@@ -472,29 +476,29 @@ void Group::calInitCOM() {
 void Group::calPrimeVec(int w) {
 	// 确保groupVelocity已经初始化且设置为正确的尺寸
 	//groupVelocity = Eigen::VectorXf::Zero(3 * verticesMap.size());
-	primeVec = Eigen::VectorXf::Zero(3 * verticesMap.size());
+	primeVec = Eigen::VectorXf::Zero(3 * verticesVector.size());
 	
 
-	gravity = Eigen::VectorXf::Zero(3 * verticesMap.size());
+	gravity = Eigen::VectorXf::Zero(3 * verticesVector.size());
 
 	// 初始化gravity向量
 	if (w == 4) {
-		for (int i = 0; i < 3 * verticesMap.size(); i += 3) {
+		for (int i = 0; i < 3 * verticesVector.size(); i += 3) {
 			gravity(i) = -Gravity; // y方向上设置重力 右
 		}
 	}
 	else if (w == 2) {
-		for (int i = 1; i < 3 * verticesMap.size(); i += 3) {
+		for (int i = 1; i < 3 * verticesVector.size(); i += 3) {
 			gravity(i) = Gravity; // y方向上设置重力 下
 		}
 	}
 	else if (w == 1) {
-		for (int i = 1; i < 3 * verticesMap.size(); i += 3) {
+		for (int i = 1; i < 3 * verticesVector.size(); i += 3) {
 			gravity(i) = -Gravity; // y方向上设置重力 上
 		}
 	}
 	else if (w == 3) {
-		for (int i = 0; i < 3 * verticesMap.size(); i += 3) {
+		for (int i = 0; i < 3 * verticesVector.size(); i += 3) {
 			gravity(i) = Gravity; // y方向上设置重力 左
 		}
 	}
@@ -507,8 +511,8 @@ void Group::calPrimeVec(int w) {
 	Eigen::VectorXf velocityUpdate = inverseTermSparse * (massMatrix * groupVelocity) * timeStep;
 
 	// 更新primeVec和顶点位置
-	for (auto& vertexPair : verticesMap) {
-		Vertex* vertex = vertexPair.second;
+	for (auto& vertexPair : verticesVector) {
+		Vertex* vertex = vertexPair;
 		int localPi = vertex->localIndex; // 使用局部索引
 
 		// 获取当前顶点的速度更新部分
@@ -614,6 +618,8 @@ void Object::PBDLOOP(int looptime) {
 		groups[13].calFbind(commonPoints12.second, commonPoints12.first, groups[13].currentPosition, groups[12].currentPosition, bindForce);
 		groups[14].calFbind(commonPoints13.second, commonPoints13.first, groups[14].currentPosition, groups[13].currentPosition, bindForce);
 		groups[15].calFbind(commonPoints14.second, commonPoints14.first, groups[15].currentPosition, groups[14].currentPosition, bindForce);
+
+	
 
 
 	}

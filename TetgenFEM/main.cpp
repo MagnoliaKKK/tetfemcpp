@@ -32,12 +32,12 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/dragonHD.stl", in);
+	readSTL("stls/cubeTall.stl", in);
 
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.414a1"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
+	char args[] = "pq1.414a0.0005"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
 	behavior.parse_commandline(args);
 
 	// Call TetGen to tetrahedralize the geometry
@@ -192,7 +192,7 @@ int main() {
 		}
 		//
 	
-		//object.PBDLOOP(10);
+		object.PBDLOOP(10);
 
 		
 		
@@ -281,42 +281,42 @@ int main() {
 
 		
 		// Draw edges
-		//glBegin(GL_LINES);
+		glBegin(GL_LINES);
 
 
-		//
+		
 
-		////分组显示
-		//for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
-		//	Group& group = object.getGroup(groupIdx);
-		//	for (Tetrahedron* tet : group.tetrahedra) {
-		//		for (int edgeIdx = 0; edgeIdx < 6; ++edgeIdx) {  // Loop through each edge in the tetrahedron
-		//			Edge* edge = tet->edges[edgeIdx];
-		//			Vertex* vertex1 = edge->vertices[0];
-		//			Vertex* vertex2 = edge->vertices[1];
-		//			bool isSurfaceEdge = edge->isBoundary;
+		//分组显示
+		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
+			Group& group = object.getGroup(groupIdx);
+			for (Tetrahedron* tet : group.tetrahedra) {
+				for (int edgeIdx = 0; edgeIdx < 6; ++edgeIdx) {  // Loop through each edge in the tetrahedron
+					Edge* edge = tet->edges[edgeIdx];
+					Vertex* vertex1 = edge->vertices[0];
+					Vertex* vertex2 = edge->vertices[1];
+					bool isSurfaceEdge = edge->isBoundary;
 
-		//			// Use HSV to RGB conversion to create a unique color for each group
-		//			float hue = (360.0f * groupIdx) / groupNum;  // Distribute hues evenly across the spectrum
-		//			float saturation = 1.0f;  // Full saturation
-		//			float value = 1.0f;      // Full brightness
+					// Use HSV to RGB conversion to create a unique color for each group
+					float hue = (360.0f * groupIdx) / groupNum;  // Distribute hues evenly across the spectrum
+					float saturation = 1.0f;  // Full saturation
+					float value = 1.0f;      // Full brightness
 
-		//			// Convert HSV to RGB
-		//			float red, green, blue;
-		//			hsvToRgb(hue, saturation, value, red, green, blue);
+					// Convert HSV to RGB
+					float red, green, blue;
+					hsvToRgb(hue, saturation, value, red, green, blue);
 
-		//			// If it's a boundary edge, you may want to adjust the color or keep as is
-		//			// For example, make the color brighter if it's a boundary edge
-		//			if (isSurfaceEdge) {
-		//				red = std::min(1.0f, red + 0.3f);
-		//				green = std::min(1.0f, green + 0.3f);
-		//				blue = std::min(1.0f, blue + 0.3f);
-		//			}
+					// If it's a boundary edge, you may want to adjust the color or keep as is
+					// For example, make the color brighter if it's a boundary edge
+					if (isSurfaceEdge) {
+						red = std::min(1.0f, red + 0.3f);
+						green = std::min(1.0f, green + 0.3f);
+						blue = std::min(1.0f, blue + 0.3f);
+					}
 
-		//			drawEdge(vertex1, vertex2, red, green, blue);
-		//		}
-		//	}
-		//}
+					drawEdge(vertex1, vertex2, red, green, blue);
+				}
+			}
+		}
 
 		
 

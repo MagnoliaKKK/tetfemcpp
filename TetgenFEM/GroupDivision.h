@@ -76,6 +76,7 @@ class Group {
 public:
 	std::vector<Tetrahedron*> tetrahedra;
 	std::unordered_map<int, Vertex*> verticesMap;
+	std::vector<Vertex*> verticesVector;
 	Eigen::Vector3f centerofMass;
 	float groupMass;//每组的质量
 	Eigen::MatrixXf massMatrix;//group mass matrix
