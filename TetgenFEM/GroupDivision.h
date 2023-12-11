@@ -161,10 +161,23 @@ public:
 
 class Object {
 public:
-	Group groups[5]; // change this
+	std::vector<Group> groups; // change this
 	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints;
 	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints1;
-	int groupNum;// , groupNumX, groupNumY, groupNumZ;
+	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints2;
+	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints3;
+	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints4;
+	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints5;
+	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints6;
+	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints7;
+	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints8;
+	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints9;
+	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints10;
+	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints11;
+	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints12;
+	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints13;
+	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints14;
+	int groupNum, groupNumX, groupNumY, groupNumZ;
 
 	Group& getGroup(int index);
 	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> findCommonVertices(const Group& group1, const Group& group2);// find common vertex
@@ -175,4 +188,4 @@ public:
 };
 
 void findBoundaryEdges(tetgenio& out);
-void divideIntoGroups(tetgenio& out, Object& object, int numGroups);
+void divideIntoGroups(tetgenio& out, Object& object, int numX, int numY, int numZ);

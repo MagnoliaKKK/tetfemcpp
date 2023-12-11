@@ -5,7 +5,7 @@ const float timeStep = 0.01f;
 const float dampingConst = 16.0f;
 const float PI = 3.1415926535f;
 const float Gravity = -9.8f;
-const float bindForce = -533;
+const float bindForce = -220;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
 	for (Group& group : groups) {
@@ -519,30 +519,7 @@ void Group::calPrimeVec(int w) {
 
 		// 更新primeVec
 		primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
-		//if (vertex->isFixed) {
-		//	// 对于固定点，将位置设置为初始位置
-		//	primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = Eigen::Vector3f(vertex->initx, vertex->inity, vertex->initz);
 
-		//	// 保持顶点位置不变
-		//	vertex->x = vertex->initx;
-		//	vertex->y = vertex->inity;
-		//	vertex->z = vertex->initz;
-		//}
-		//else {
-		//	// 获取当前顶点的速度更新部分
-		//	Eigen::Vector3f currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
-
-		//	// 计算新的位置
-		//	Eigen::Vector3f newPosition = Eigen::Vector3f(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate;
-
-		//	// 更新primeVec
-		//	primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
-
-		//	// 更新顶点位置
-		//	vertex->x = newPosition.x();
-		//	vertex->y = newPosition.y();
-		//	vertex->z = newPosition.z();
-		//}
 	}
 
 }
@@ -591,6 +568,7 @@ void Object::PBDLOOP(int looptime) {
 	//#pragma omp parallel for
 	float reference = 0.0f; // float类型的参考值
 	float epsilon = std::numeric_limits<float>::epsilon(); // float类型的epsilon
+#pragma omp parallel for
 	for (int i = 0; i < groupNum; ++i) {
 		auto& g = groups[i];
 		g.Fbind = Eigen::VectorXf::Zero(3 * g.verticesMap.size()); // 假设 Group 类有一个方法来清除 Fbind
@@ -620,14 +598,28 @@ void Object::PBDLOOP(int looptime) {
 
 		groups[0].calFbind(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition, bindForce);
 		groups[1].calFbind(commonPoints.second, commonPoints.first, groups[1].currentPosition, groups[0].currentPosition, bindForce);
-		//groups[1].calFbind(commonPoints1.first, commonPoints1.second, groups[1].currentPosition, groups[2].currentPosition, bindForce);
 		groups[2].calFbind(commonPoints1.second, commonPoints1.first, groups[2].currentPosition, groups[1].currentPosition, bindForce);
+		groups[3].calFbind(commonPoints2.second, commonPoints2.first, groups[3].currentPosition, groups[2].currentPosition, bindForce);
+		groups[4].calFbind(commonPoints3.second, commonPoints3.first, groups[4].currentPosition, groups[3].currentPosition, bindForce);
+		groups[5].calFbind(commonPoints4.second, commonPoints4.first, groups[5].currentPosition, groups[4].currentPosition, bindForce);
+		groups[6].calFbind(commonPoints5.second, commonPoints5.first, groups[6].currentPosition, groups[5].currentPosition, bindForce);
+		groups[7].calFbind(commonPoints6.second, commonPoints6.first, groups[7].currentPosition, groups[6].currentPosition, bindForce);
+
+		groups[8].calFbind(commonPoints7.second, commonPoints7.first, groups[8].currentPosition, groups[7].currentPosition, bindForce);
+		groups[9].calFbind(commonPoints8.second, commonPoints8.first, groups[9].currentPosition, groups[8].currentPosition, bindForce);
+		groups[10].calFbind(commonPoints9.second, commonPoints9.first, groups[10].currentPosition, groups[9].currentPosition, bindForce);
+		groups[11].calFbind(commonPoints10.second, commonPoints10.first, groups[11].currentPosition, groups[10].currentPosition, bindForce);
+		groups[12].calFbind(commonPoints11.second, commonPoints11.first, groups[12].currentPosition, groups[11].currentPosition, bindForce);
+		groups[13].calFbind(commonPoints12.second, commonPoints12.first, groups[13].currentPosition, groups[12].currentPosition, bindForce);
+		groups[14].calFbind(commonPoints13.second, commonPoints13.first, groups[14].currentPosition, groups[13].currentPosition, bindForce);
+		groups[15].calFbind(commonPoints14.second, commonPoints14.first, groups[15].currentPosition, groups[14].currentPosition, bindForce);
 
 
 	}
 	//std::cout << "Bind is" << std::endl << groups[0].Fbind(58) << std::endl;
-	for (auto& g : groups)
-	{
+//#pragma omp parallel for
+	for (int i = 0; i < groupNum; ++i) {
+		auto& g = groups[i];
 		g.updateVelocity();
 		g.updatePosition();
 
@@ -841,22 +833,25 @@ void findBoundaryEdges(tetgenio& out) {
 	}
 }
 
-void divideIntoGroups(tetgenio& out, Object& object, int numGroups) {
+void divideIntoGroups(tetgenio& out, Object& object, int numX, int numY, int numZ) {
+	//findBoundaryEdges(out);  // Populate the boundaryEdgesSet
 
-	findBoundaryEdges(out);  // Populate the boundaryEdgesSet
-
-	float minX = out.pointlist[0];
-	float maxX = out.pointlist[0];
-
-	// Find min and max X coordinates
+	// Find min and max coordinates in all directions
+	float minX = out.pointlist[0], minY = out.pointlist[1], minZ = out.pointlist[2];
+	float maxX = minX, maxY = minY, maxZ = minZ;
 	for (int i = 0; i < out.numberofpoints; ++i) {
 		float x = out.pointlist[i * 3];
-		if (x < minX) minX = x;
-		if (x > maxX) maxX = x;
+		float y = out.pointlist[i * 3 + 1];
+		float z = out.pointlist[i * 3 + 2];
+		if (x < minX) minX = x; if (x > maxX) maxX = x;
+		if (y < minY) minY = y; if (y > maxY) maxY = y;
+		if (z < minZ) minZ = z; if (z > maxZ) maxZ = z;
 	}
 
-	float range = maxX - minX;
-	float groupRange = range / numGroups;
+	// Calculate group ranges for each direction
+	float groupRangeX = (maxX - minX) / numX;
+	float groupRangeY = (maxY - minY) / numY;
+	float groupRangeZ = (maxZ - minZ) / numZ;
 
 	// Create vertices
 	std::vector<Vertex*> vertices;
@@ -867,22 +862,28 @@ void divideIntoGroups(tetgenio& out, Object& object, int numGroups) {
 		vertices.push_back(new Vertex(x, y, z, i));
 	}
 
-	// Create tetrahedra and assign to groups
+	// Resize groups vector
+	object.groups.resize(numX * numY * numZ);
+
+	// Create tetrahedra and assign to groups based on XYZ coordinates
 	for (int i = 0; i < out.numberoftetrahedra; ++i) {
 		Vertex* v1 = vertices[out.tetrahedronlist[i * 4] - 1];
 		Vertex* v2 = vertices[out.tetrahedronlist[i * 4 + 1] - 1];
 		Vertex* v3 = vertices[out.tetrahedronlist[i * 4 + 2] - 1];
 		Vertex* v4 = vertices[out.tetrahedronlist[i * 4 + 3] - 1];
+		Tetrahedron* tet = new Tetrahedron(v1, v2, v3, v4); // Pack vertices into tetrahedron
 
-		Tetrahedron* tet = new Tetrahedron(v1, v2, v3, v4); //把vertex打包进四面体
-
-
-		// Determine group based on average X coordinate
+		// Determine group based on average coordinates
 		float avgX = (v1->x + v2->x + v3->x + v4->x) / 4;
-		int groupIndex = (avgX - minX) / groupRange;
-		if (groupIndex >= numGroups) groupIndex = numGroups - 1;  // Update here
+		float avgY = (v1->y + v2->y + v3->y + v4->y) / 4;
+		float avgZ = (v1->z + v2->z + v3->z + v4->z) / 4;
 
-		object.getGroup(groupIndex).addTetrahedron(tet); //把四面体打包进group
+		int groupIndexX = std::min(static_cast<int>((avgX - minX) / groupRangeX), numX - 1);
+		int groupIndexY = std::min(static_cast<int>((avgY - minY) / groupRangeY), numY - 1);
+		int groupIndexZ = std::min(static_cast<int>((avgZ - minZ) / groupRangeZ), numZ - 1);
+
+		int groupIndex = groupIndexZ * numX * numY + groupIndexY * numX + groupIndexX;
+		object.groups[groupIndex].addTetrahedron(tet); // Pack tetrahedron into group
 
 		// Set up edges for each tetrahedron
 		static int edgeIndices[6][2] = { {0, 1}, {1, 2}, {2, 0}, {0, 3}, {1, 3}, {2, 3} };
@@ -890,11 +891,9 @@ void divideIntoGroups(tetgenio& out, Object& object, int numGroups) {
 			Vertex* vertex1 = tet->vertices[edgeIndices[j][0]];
 			Vertex* vertex2 = tet->vertices[edgeIndices[j][1]];
 			Edge* edge = new Edge(vertex1, vertex2);
-
 			std::string edgeKey = vertex1->index < vertex2->index ?
 				std::to_string(vertex1->index) + "-" + std::to_string(vertex2->index) :
 				std::to_string(vertex2->index) + "-" + std::to_string(vertex1->index);
-
 			edge->isBoundary = boundaryEdgesSet.count(edgeKey) > 0;
 			tet->edges[j] = edge;
 		}

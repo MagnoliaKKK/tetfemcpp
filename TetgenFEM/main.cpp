@@ -22,7 +22,7 @@ Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 float youngs = 10000;
 float poisson = 0.49;
 float density = 1000;
-int groupNum = 5; //Object类和颜色都写死了 不能超出class Object {里的组数
+int groupNum, groupNumX = 1, groupNumY = 16, groupNumZ = 1; //Object类和颜色都写死了 不能超出class Object {里的组数
 int wKey = 0;
 
 
@@ -37,7 +37,7 @@ int main() {
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.414a0.001"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
+	char args[] = "pq1.414a0.0002"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
 	behavior.parse_commandline(args);
 
 	// Call TetGen to tetrahedralize the geometry
@@ -45,14 +45,19 @@ int main() {
 
 	
 	Object object;
+	groupNum = groupNumX * groupNumY * groupNumZ;
 	object.groupNum = groupNum;
-	divideIntoGroups(out, object, groupNum); //convert tetgen to our data structure
+	object.groupNumX = groupNumX;
+	object.groupNumY = groupNumY;
+	object.groupNumZ = groupNumZ;
+	divideIntoGroups(out, object, groupNumX, groupNumY, groupNumZ); //convert tetgen to our data structure
 	object.updateIndices(); // 每个点分配一个独立index，重复的改新的index
 	object.assignLocalIndicesToAllGroups(); //分配Local index
 	object.generateUniqueVertices();//产生UniqueVertices
 
 	
 	// Accessing and printing the groups and their tetrahedra
+#pragma omp parallel for
 	for (int i = 0; i < groupNum; ++i) {  // Loop over the groups
 		Group& group = object.getGroup(i);
 		std::cout << "Group " << i << " has " << group.tetrahedra.size() << " tetrahedra." << std::endl;
@@ -87,6 +92,22 @@ int main() {
 	initFontData();
 	object.commonPoints = object.findCommonVertices(object.groups[0], object.groups[1]);
 	object.commonPoints1 = object.findCommonVertices(object.groups[1], object.groups[2]);
+	object.commonPoints2 = object.findCommonVertices(object.groups[2], object.groups[3]);
+	object.commonPoints3 = object.findCommonVertices(object.groups[3], object.groups[4]);
+
+	object.commonPoints4 = object.findCommonVertices(object.groups[4], object.groups[5]);
+	object.commonPoints5 = object.findCommonVertices(object.groups[5], object.groups[6]);
+	object.commonPoints6 = object.findCommonVertices(object.groups[6], object.groups[7]);
+
+	object.commonPoints7 = object.findCommonVertices(object.groups[7], object.groups[8]);
+	object.commonPoints8 = object.findCommonVertices(object.groups[8], object.groups[9]);
+	object.commonPoints9 = object.findCommonVertices(object.groups[9], object.groups[10]);
+	object.commonPoints10 = object.findCommonVertices(object.groups[10], object.groups[11]);
+	object.commonPoints11 = object.findCommonVertices(object.groups[11], object.groups[12]);
+	object.commonPoints12 = object.findCommonVertices(object.groups[12], object.groups[13]);
+	object.commonPoints13 = object.findCommonVertices(object.groups[13], object.groups[14]);
+	object.commonPoints14 = object.findCommonVertices(object.groups[14], object.groups[15]);
+
 	for (Group& g : object.groups) {
 		// 遍历Group中的每个Vertex
 		for (const auto& vertexPair : g.verticesMap) {
@@ -117,6 +138,7 @@ int main() {
 	//}
 	/////////
 
+#pragma omp parallel for
 	for (int i = 0; i < object.groupNum; ++i) {
 		object.groups[i].calMassMatrix(density);
 		object.groups[i].calDampingMatrix();
@@ -163,8 +185,7 @@ int main() {
 		//std::cout << wKey << std::endl;// 当 W 被按下时的逻辑
 		//double aa = object.groups[0].tetrahedra[0]->calMassTetra(density);
 		
-		//#pragma omp parallel for
-
+		#pragma omp parallel for
 		for (int i = 0; i < groupNum; i++) {
 			object.groups[i].calPrimeVec(wKey);
 			object.groups[i].calRotationMatrix();
@@ -209,54 +230,54 @@ int main() {
 		glEnd();
 
 
-		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) { //写点的标号，画字
-			Group& group = object.getGroup(groupIdx);
+		//for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) { //写点的标号，画字
+		//	Group& group = object.getGroup(groupIdx);
 
-			//画不重复的版本
-			//std::vector<Vertex*> uniqueVertices = group.getUniqueVertices();
-			//for (size_t i = 0; i < uniqueVertices.size(); ++i) {
-			//	Vertex* vertex = uniqueVertices[i];
-			//	char buffer[5]; // 分配足够大的缓冲区
-			//	sprintf_s(buffer, "%d", vertex->index); // 将int转换为char*
-			//	glColor3f(1, 0.0f, 0.0f);
-			//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
-			//	XPrintString(buffer);
-			//}
-
-
-			//画重复的版本
+		//	//画不重复的版本
+		//	//std::vector<Vertex*> uniqueVertices = group.getUniqueVertices();
+		//	//for (size_t i = 0; i < uniqueVertices.size(); ++i) {
+		//	//	Vertex* vertex = uniqueVertices[i];
+		//	//	char buffer[5]; // 分配足够大的缓冲区
+		//	//	sprintf_s(buffer, "%d", vertex->index); // 将int转换为char*
+		//	//	glColor3f(1, 0.0f, 0.0f);
+		//	//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
+		//	//	XPrintString(buffer);
+		//	//}
 
 
-			for (Tetrahedron* tetra : group.tetrahedra) { // 遍历组中的每个四面体
-				for (int i = 0; i < 4; ++i) { // 遍历四面体的每个顶点
-					Vertex* vertex = tetra->vertices[i];
-					char buffer[5]; // 分配足够大的缓冲区
-					sprintf_s(buffer, "%d", vertex->index); // 将int转换为char*
-					//if (groupIdx == 0) {
-					//	glColor3f(1, 0.0f, 0.0f);
-					//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
-					//	XPrintString(buffer);
-					//}
-						
-					//if(groupIdx == 1)
-					//{
-					//	glColor3f(0, 1, 0.0f);
-					//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
-					//	XPrintString(buffer);
-					//}
-					//	
+		//	//画重复的版本
 
-					//std::default_random_engine generator(vertex->index);//随机数发生器，用于字符偏移防重叠
-					//std::uniform_real_distribution<float> distribution(0, 0.05);
-					//float random_number = distribution(generator);
-					glColor3f(1, 0.0f, 0.0f);
-					glRasterPos3f(vertex->x + 0, vertex->y + 0, vertex->z + 0);
-					XPrintString(buffer);
-					
-				}
-			}
 
-		}
+		//	for (Tetrahedron* tetra : group.tetrahedra) { // 遍历组中的每个四面体
+		//		for (int i = 0; i < 4; ++i) { // 遍历四面体的每个顶点
+		//			Vertex* vertex = tetra->vertices[i];
+		//			char buffer[5]; // 分配足够大的缓冲区
+		//			sprintf_s(buffer, "%d", vertex->index); // 将int转换为char*
+		//			//if (groupIdx == 0) {
+		//			//	glColor3f(1, 0.0f, 0.0f);
+		//			//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
+		//			//	XPrintString(buffer);
+		//			//}
+		//				
+		//			//if(groupIdx == 1)
+		//			//{
+		//			//	glColor3f(0, 1, 0.0f);
+		//			//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
+		//			//	XPrintString(buffer);
+		//			//}
+		//			//	
+
+		//			//std::default_random_engine generator(vertex->index);//随机数发生器，用于字符偏移防重叠
+		//			//std::uniform_real_distribution<float> distribution(0, 0.05);
+		//			//float random_number = distribution(generator);
+		//			glColor3f(1, 0.0f, 0.0f);
+		//			glRasterPos3f(vertex->x + 0, vertex->y + 0, vertex->z + 0);
+		//			XPrintString(buffer);
+		//			
+		//		}
+		//	}
+
+		//}
 
 		
 		// Draw edges
