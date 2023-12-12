@@ -2,10 +2,10 @@
 
 
 const float timeStep = 0.01f;
-const float dampingConst = 16.0f;
+const float dampingConst = 800.0f;
 const float PI = 3.1415926535f;
 const float Gravity = -9.8f;
-const float bindForce = -320;
+const float bindForce = -10;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
 	for (Group& group : groups) {
@@ -603,9 +603,9 @@ void Object::PBDLOOP(int looptime) {
 
 		groups[0].calFbind(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition, bindForce);
 		groups[1].calFbind(commonPoints.second, commonPoints.first, groups[1].currentPosition, groups[0].currentPosition, bindForce);
-		groups[2].calFbind(commonPoints1.second, commonPoints1.first, groups[2].currentPosition, groups[1].currentPosition, bindForce);
-		groups[3].calFbind(commonPoints2.second, commonPoints2.first, groups[3].currentPosition, groups[2].currentPosition, bindForce);
-		groups[4].calFbind(commonPoints3.second, commonPoints3.first, groups[4].currentPosition, groups[3].currentPosition, bindForce);
+		groups[2].calFbind(commonPoints1.second, commonPoints1.first, groups[2].currentPosition, groups[1].currentPosition,0.8f * bindForce);
+		//groups[3].calFbind(commonPoints2.second, commonPoints2.first, groups[3].currentPosition, groups[2].currentPosition, bindForce);
+		/*groups[4].calFbind(commonPoints3.second, commonPoints3.first, groups[4].currentPosition, groups[3].currentPosition, bindForce);
 		groups[5].calFbind(commonPoints4.second, commonPoints4.first, groups[5].currentPosition, groups[4].currentPosition, bindForce);
 		groups[6].calFbind(commonPoints5.second, commonPoints5.first, groups[6].currentPosition, groups[5].currentPosition, bindForce);
 		groups[7].calFbind(commonPoints6.second, commonPoints6.first, groups[7].currentPosition, groups[6].currentPosition, bindForce);
@@ -617,7 +617,7 @@ void Object::PBDLOOP(int looptime) {
 		groups[12].calFbind(commonPoints11.second, commonPoints11.first, groups[12].currentPosition, groups[11].currentPosition, bindForce);
 		groups[13].calFbind(commonPoints12.second, commonPoints12.first, groups[13].currentPosition, groups[12].currentPosition, bindForce);
 		groups[14].calFbind(commonPoints13.second, commonPoints13.first, groups[14].currentPosition, groups[13].currentPosition, bindForce);
-		groups[15].calFbind(commonPoints14.second, commonPoints14.first, groups[15].currentPosition, groups[14].currentPosition, bindForce);
+		groups[15].calFbind(commonPoints14.second, commonPoints14.first, groups[15].currentPosition, groups[14].currentPosition, bindForce);*/
 
 	
 
