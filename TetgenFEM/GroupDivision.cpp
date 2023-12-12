@@ -1,11 +1,11 @@
 ﻿#include "GroupDivision.h"
 
 
-const float timeStep = 0.01f;
-const float dampingConst = 800.0f;
+const float timeStep = 0.00001f;
+const float dampingConst = 1.0f;
 const float PI = 3.1415926535f;
 const float Gravity = -9.8f;
-const float bindForce = -10000;
+const float bindForce = -10;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
 	for (Group& group : groups) {
