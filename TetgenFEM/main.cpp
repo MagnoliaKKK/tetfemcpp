@@ -192,7 +192,7 @@ int main() {
 		}
 		//
 	
-		object.PBDLOOP(10);
+		object.PBDLOOP(5);
 
 		
 		
