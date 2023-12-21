@@ -34,7 +34,7 @@ public:
 		isFixed(false) // 默认不是固定点
 	{}
 	void setFixedIfBelowThreshold() {
-		if (initx < -0.619) {
+		if (initx < -0.619) {//-0.619
 			isFixed = true;
 		}
 
@@ -105,6 +105,8 @@ public:
 	Eigen::SparseMatrix<float> massDampingSparseInv; //(M+C').inv sparse
 	Eigen::SparseMatrix<float> inverseTermSparse;
 	Eigen::VectorXf currentPosition;//计算bindf用的位置信息，不用做位置更新
+	std::array<int, 6> adjacentGroupIDs;
+	int groupIndex;//每组的编号
 
 	Eigen::MatrixXf LHS_I;
 	Eigen::MatrixXf LHS_A;
@@ -153,7 +155,8 @@ public:
 	Group()
 		: centerofMass(Eigen::Vector3f::Zero()),  // Initialize Eigen vector
 		groupMass(0.0),                         // Initialize float
-		verticesMap()
+		verticesMap(),
+		adjacentGroupIDs({ 0, 0, 0, 0, 0, 0 })
 		
 	{
 		// Additional initialization logic, if needed
@@ -187,6 +190,9 @@ public:
 	void updateIndices();
 	void generateUniqueVertices();//generate unique vertices
 	void PBDLOOP(int looptime);
+
+	
+	void updateAdjacentGroupIndices(int numX, int numY, int numZ);
 };
 
 void findBoundaryEdges(tetgenio& out);

@@ -1,11 +1,11 @@
 ﻿#include "GroupDivision.h"
 
 
-const float timeStep = 0.00001f;
-const float dampingConst = 1.0f;
+const float timeStep = 0.01f;
+const float dampingConst = 10.0f;
 const float PI = 3.1415926535f;
-const float Gravity = -9.8f;
-const float bindForce = -10;
+const float Gravity = -5.0f;
+const float bindForce = -2000.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
 	for (Group& group : groups) {
@@ -566,10 +566,9 @@ void Group::calRHS() {
 }
 
 
+
 void Object::PBDLOOP(int looptime) {
-
-
-	// 1. 初始化：将每个组的 Fbind 置零
+// 1. 初始化：将每个组的 Fbind 置零
 	//#pragma omp parallel for
 	float reference = 0.0f; // float类型的参考值
 	float epsilon = std::numeric_limits<float>::epsilon(); // float类型的epsilon
@@ -603,7 +602,7 @@ void Object::PBDLOOP(int looptime) {
 
 		groups[0].calFbind(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition, bindForce);
 		groups[1].calFbind(commonPoints.second, commonPoints.first, groups[1].currentPosition, groups[0].currentPosition, bindForce);
-		groups[2].calFbind(commonPoints1.second, commonPoints1.first, groups[2].currentPosition, groups[1].currentPosition,0.0005f * bindForce);
+		groups[2].calFbind(commonPoints1.second, commonPoints1.first, groups[2].currentPosition, groups[1].currentPosition,3.0f * bindForce);
 		//groups[3].calFbind(commonPoints2.second, commonPoints2.first, groups[3].currentPosition, groups[2].currentPosition, bindForce);
 		/*groups[4].calFbind(commonPoints3.second, commonPoints3.first, groups[4].currentPosition, groups[3].currentPosition, bindForce);
 		groups[5].calFbind(commonPoints4.second, commonPoints4.first, groups[5].currentPosition, groups[4].currentPosition, bindForce);
@@ -822,7 +821,29 @@ Group& Object::getGroup(int index) {
 	return groups[index];
 }
 
+void Object::updateAdjacentGroupIndices(int numX, int numY, int numZ) {
+	for (int z = 0; z < numZ; ++z) {
+		for (int y = 0; y < numY; ++y) {
+			for (int x = 0; x < numX; ++x) {
+				int groupIdx = z * numX * numY + y * numX + x;
+				Group& currentGroup = groups[groupIdx];
 
+				// +x方向
+				if (x < numX - 1) currentGroup.adjacentGroupIDs[0] = groupIdx + 1;
+				// -x方向
+				if (x > 0) currentGroup.adjacentGroupIDs[1] = groupIdx - 1;
+				// +y方向
+				if (y < numY - 1) currentGroup.adjacentGroupIDs[2] = groupIdx + numX;
+				// -y方向
+				if (y > 0) currentGroup.adjacentGroupIDs[3] = groupIdx - numX;
+				// +z方向
+				if (z < numZ - 1) currentGroup.adjacentGroupIDs[4] = groupIdx + numX * numY;
+				// -z方向
+				if (z > 0) currentGroup.adjacentGroupIDs[5] = groupIdx - numX * numY;
+			}
+		}
+	}
+}
 
 std::unordered_set<std::string> boundaryEdgesSet;  // Set to store boundary edges
 
@@ -889,8 +910,9 @@ void divideIntoGroups(tetgenio& out, Object& object, int numX, int numY, int num
 		int groupIndexY = std::min(static_cast<int>((avgY - minY) / groupRangeY), numY - 1);
 		int groupIndexZ = std::min(static_cast<int>((avgZ - minZ) / groupRangeZ), numZ - 1);
 
-		int groupIndex = groupIndexZ * numX * numY + groupIndexY * numX + groupIndexX;
-		object.groups[groupIndex].addTetrahedron(tet); // Pack tetrahedron into group
+		int groupIdx = groupIndexZ * numX * numY + groupIndexY * numX + groupIndexX;
+		object.groups[groupIdx].addTetrahedron(tet); // Pack tetrahedron into group
+		object.groups[groupIdx].groupIndex = groupIdx;
 
 		// Set up edges for each tetrahedron
 		static int edgeIndices[6][2] = { {0, 1}, {1, 2}, {2, 0}, {0, 3}, {1, 3}, {2, 3} };

@@ -19,10 +19,10 @@
  
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
-float youngs = 10000;
-float poisson = 0.3;
+float youngs = 100000;
+float poisson = 0.49;
 float density = 1000;
-int groupNum, groupNumX = 3, groupNumY = 1, groupNumZ = 1; //Object类和颜色都写死了 不能超出class Object {里的组数
+int groupNum, groupNumX = 3, groupNumY = 1, groupNumZ = 2; //Object类和颜色都写死了 不能超出class Object {里的组数
 int wKey = 0;
 
 
@@ -32,12 +32,12 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/bunny.stl", in);
+	readSTL("stls/cubeLong.stl", in);
 
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.414a0.1"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
+	char args[] = "pq1.414a0.001"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
 	behavior.parse_commandline(args);
 
 	// Call TetGen to tetrahedralize the geometry
@@ -54,7 +54,8 @@ int main() {
 	object.updateIndices(); // 每个点分配一个独立index，重复的改新的index
 	object.assignLocalIndicesToAllGroups(); //分配Local index
 	object.generateUniqueVertices();//产生UniqueVertices
-
+	
+	object.updateAdjacentGroupIndices(groupNumX, groupNumY, groupNumZ);
 	
 	// Accessing and printing the groups and their tetrahedra
 #pragma omp parallel for
@@ -151,7 +152,7 @@ int main() {
 		object.groups[i].calMassDistributionMatrix();
 		object.groups[i].calLHS();
 	}
-	
+
 	//for calculate frame rate
 	double lastTime = glfwGetTime();
 	int nbFrames = 0;
