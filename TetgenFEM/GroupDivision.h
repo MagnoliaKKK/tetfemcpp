@@ -107,6 +107,7 @@ public:
 	Eigen::VectorXf currentPosition;//计算bindf用的位置信息，不用做位置更新
 	std::array<int, 6> adjacentGroupIDs;
 	int groupIndex;//每组的编号
+	std::vector<std::pair<std::vector<Vertex*>, std::vector<Vertex*>>> commonVerticesInDirections;//各个相邻组的共同点
 
 	Eigen::MatrixXf LHS_I;
 	Eigen::MatrixXf LHS_A;
@@ -141,11 +142,7 @@ public:
 	void calRHS();
 	void calDeltaX();
 	void calculateCurrentPositions();
-	void calFbind(const std::vector<Vertex*>& commonVerticesGroup1,
-		const std::vector<Vertex*>& commonVerticesGroup2,
-		const Eigen::VectorXf& currentPositionGroup1,
-		const Eigen::VectorXf& currentPositionGroup2,
-		float k);
+	void calFbind(const std::vector<Group>& allGroups, float k);
 	void updatePosition();
 	void updateVelocity();
 	void initialize();
@@ -185,7 +182,7 @@ public:
 	int groupNum, groupNumX, groupNumY, groupNumZ;
 
 	Group& getGroup(int index);
-	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> findCommonVertices(const Group& group1, const Group& group2);// find common vertex
+	void findCommonVertices();// find common vertex
 	void assignLocalIndicesToAllGroups(); // local Index
 	void updateIndices();
 	void generateUniqueVertices();//generate unique vertices

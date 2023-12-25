@@ -22,7 +22,7 @@ Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 float youngs = 100000;
 float poisson = 0.49;
 float density = 1000;
-int groupNum, groupNumX = 3, groupNumY = 1, groupNumZ = 2; //Object类和颜色都写死了 不能超出class Object {里的组数
+int groupNum, groupNumX = 3, groupNumY = 1, groupNumZ = 1; //Object类和颜色都写死了 不能超出class Object {里的组数
 int wKey = 0;
 
 
@@ -91,23 +91,7 @@ int main() {
 
 	Eigen::Matrix4f mat;
 	initFontData();
-	object.commonPoints = object.findCommonVertices(object.groups[0], object.groups[1]);
-	object.commonPoints1 = object.findCommonVertices(object.groups[1], object.groups[2]);
-	//object.commonPoints2 = object.findCommonVertices(object.groups[2], object.groups[3]);
-	/*object.commonPoints3 = object.findCommonVertices(object.groups[3], object.groups[4]);
-
-	object.commonPoints4 = object.findCommonVertices(object.groups[4], object.groups[5]);
-	object.commonPoints5 = object.findCommonVertices(object.groups[5], object.groups[6]);
-	object.commonPoints6 = object.findCommonVertices(object.groups[6], object.groups[7]);
-
-	object.commonPoints7 = object.findCommonVertices(object.groups[7], object.groups[8]);
-	object.commonPoints8 = object.findCommonVertices(object.groups[8], object.groups[9]);
-	object.commonPoints9 = object.findCommonVertices(object.groups[9], object.groups[10]);
-	object.commonPoints10 = object.findCommonVertices(object.groups[10], object.groups[11]);
-	object.commonPoints11 = object.findCommonVertices(object.groups[11], object.groups[12]);
-	object.commonPoints12 = object.findCommonVertices(object.groups[12], object.groups[13]);
-	object.commonPoints13 = object.findCommonVertices(object.groups[13], object.groups[14]);
-	object.commonPoints14 = object.findCommonVertices(object.groups[14], object.groups[15]);*/
+	object.findCommonVertices();
 
 	for (Group& g : object.groups) {
 		// 遍历Group中的每个Vertex

@@ -93,28 +93,65 @@ void Object::generateUniqueVertices() { //执行这个函数以后，verticesMap
 
 }
 
-std::pair<std::vector<Vertex*>, std::vector<Vertex*>> Object::findCommonVertices(const Group& group1, const Group& group2) { //寻找共同点
-	std::vector<Vertex*> commonVerticesGroup1;
-	std::vector<Vertex*> commonVerticesGroup2;
+//std::pair<std::vector<Vertex*>, std::vector<Vertex*>> Object::findCommonVertices(const Group& group1, const Group& group2) { //寻找共同点
+//	std::vector<Vertex*> commonVerticesGroup1;
+//	std::vector<Vertex*> commonVerticesGroup2;
+//
+//	// 遍历group1的verticesMap中的所有顶点
+//	for (auto& mapEntry1 : group1.verticesMap) {
+//		Vertex* vertex1 = mapEntry1.second;
+//
+//		// 遍历group2的verticesMap中的所有顶点
+//		for (auto& mapEntry2 : group2.verticesMap) {
+//			Vertex* vertex2 = mapEntry2.second;
+//
+//			// 检查坐标是否相同
+//			if (vertex1->x == vertex2->x && vertex1->y == vertex2->y && vertex1->z == vertex2->z) {
+//				commonVerticesGroup1.push_back(vertex1);
+//				commonVerticesGroup2.push_back(vertex2);
+//			}
+//		}
+//	}
+//
+//	return { commonVerticesGroup1, commonVerticesGroup2 };
+//}
 
-	// 遍历group1的verticesMap中的所有顶点
-	for (auto& mapEntry1 : group1.verticesMap) {
-		Vertex* vertex1 = mapEntry1.second;
+void Object::findCommonVertices() {
+	// Assuming 'groups' is a member of Object class and contains all groups
+	for (Group& group : groups) {
+		// Initialize commonVerticesInDirections for the current group
+		group.commonVerticesInDirections = std::vector<std::pair<std::vector<Vertex*>, std::vector<Vertex*>>>(6);
 
-		// 遍历group2的verticesMap中的所有顶点
-		for (auto& mapEntry2 : group2.verticesMap) {
-			Vertex* vertex2 = mapEntry2.second;
+		// Iterate through all possible directions
+		for (int direction = 0; direction < 6; ++direction) {
+			int adjacentGroupIdx = group.adjacentGroupIDs[direction];
 
-			// 检查坐标是否相同
-			if (vertex1->x == vertex2->x && vertex1->y == vertex2->y && vertex1->z == vertex2->z) {
-				commonVerticesGroup1.push_back(vertex1);
-				commonVerticesGroup2.push_back(vertex2);
+			// Check if there is an adjacent group in this direction
+			if (adjacentGroupIdx != -1) {
+				Group& adjacentGroup = groups[adjacentGroupIdx];
+
+				std::vector<Vertex*> commonVerticesCurrentGroup;
+				std::vector<Vertex*> commonVerticesAdjacentGroup;
+
+				// Find common vertices between group and adjacentGroup
+				for (auto& vertexCurrent : group.verticesMap) {
+					for (auto& vertexAdjacent : adjacentGroup.verticesMap) {
+						if (vertexCurrent.second->x == vertexAdjacent.second->x &&
+							vertexCurrent.second->y == vertexAdjacent.second->y &&
+							vertexCurrent.second->z == vertexAdjacent.second->z) {
+							commonVerticesCurrentGroup.push_back(vertexCurrent.second);
+							commonVerticesAdjacentGroup.push_back(vertexAdjacent.second);
+						}
+					}
+				}
+
+				// Store the common vertices in the appropriate direction
+				group.commonVerticesInDirections[direction] = { commonVerticesCurrentGroup, commonVerticesAdjacentGroup };
 			}
 		}
 	}
-
-	return { commonVerticesGroup1, commonVerticesGroup2 };
 }
+
 
 void Group::initialize() {
 	groupVelocity = Eigen::VectorXf::Zero(3 * verticesMap.size());
@@ -600,23 +637,11 @@ void Object::PBDLOOP(int looptime) {
 
 		}
 
-		groups[0].calFbind(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition, bindForce);
-		groups[1].calFbind(commonPoints.second, commonPoints.first, groups[1].currentPosition, groups[0].currentPosition, bindForce);
-		groups[2].calFbind(commonPoints1.second, commonPoints1.first, groups[2].currentPosition, groups[1].currentPosition,3.0f * bindForce);
-		//groups[3].calFbind(commonPoints2.second, commonPoints2.first, groups[3].currentPosition, groups[2].currentPosition, bindForce);
-		/*groups[4].calFbind(commonPoints3.second, commonPoints3.first, groups[4].currentPosition, groups[3].currentPosition, bindForce);
-		groups[5].calFbind(commonPoints4.second, commonPoints4.first, groups[5].currentPosition, groups[4].currentPosition, bindForce);
-		groups[6].calFbind(commonPoints5.second, commonPoints5.first, groups[6].currentPosition, groups[5].currentPosition, bindForce);
-		groups[7].calFbind(commonPoints6.second, commonPoints6.first, groups[7].currentPosition, groups[6].currentPosition, bindForce);
-
-		groups[8].calFbind(commonPoints7.second, commonPoints7.first, groups[8].currentPosition, groups[7].currentPosition, bindForce);
-		groups[9].calFbind(commonPoints8.second, commonPoints8.first, groups[9].currentPosition, groups[8].currentPosition, bindForce);
-		groups[10].calFbind(commonPoints9.second, commonPoints9.first, groups[10].currentPosition, groups[9].currentPosition, bindForce);
-		groups[11].calFbind(commonPoints10.second, commonPoints10.first, groups[11].currentPosition, groups[10].currentPosition, bindForce);
-		groups[12].calFbind(commonPoints11.second, commonPoints11.first, groups[12].currentPosition, groups[11].currentPosition, bindForce);
-		groups[13].calFbind(commonPoints12.second, commonPoints12.first, groups[13].currentPosition, groups[12].currentPosition, bindForce);
-		groups[14].calFbind(commonPoints13.second, commonPoints13.first, groups[14].currentPosition, groups[13].currentPosition, bindForce);
-		groups[15].calFbind(commonPoints14.second, commonPoints14.first, groups[15].currentPosition, groups[14].currentPosition, bindForce);*/
+		for (auto g : groups)
+		{
+			g.calFbind(groups, bindForce);
+		}
+		
 
 	
 
@@ -707,45 +732,77 @@ void Group::calculateCurrentPositions() {
 //	}
 //}
 
-void Group::calFbind(const std::vector<Vertex*>& commonVerticesGroup1,
-	const std::vector<Vertex*>& commonVerticesGroup2,
-	const Eigen::VectorXf& currentPositionGroup1,
-	const Eigen::VectorXf& currentPositionGroup2,
-	float k) {
-	// Initialize Fbind, with a length three times the number of vertices in the group
+//void Group::calFbind(const std::vector<Vertex*>& commonVerticesGroup1,
+//	const std::vector<Vertex*>& commonVerticesGroup2,
+//	const Eigen::VectorXf& currentPositionGroup1,
+//	const Eigen::VectorXf& currentPositionGroup2,
+//	float k) {
+//	// Initialize Fbind, with a length three times the number of vertices in the group
+//	Fbind = Eigen::VectorXf::Zero(verticesMap.size() * 3);
+//	Eigen::Vector3f posThisGroup;
+//	Eigen::Vector3f posOtherGroup;
+//	Eigen::Vector3f avgPosition;
+//	Eigen::Vector3f posDifference;
+//	Eigen::Vector3f force;
+//	posThisGroup = Eigen::Vector3f::Zero();
+//	posOtherGroup = Eigen::Vector3f::Zero();
+//	avgPosition = Eigen::Vector3f::Zero();
+//	posDifference = Eigen::Vector3f::Zero();
+//	force = Eigen::Vector3f::Zero();
+//	// Iterate through all common vertices
+//	for (size_t i = 0; i < commonVerticesGroup1.size(); ++i) {
+//		// Get the common vertex in this group and the other group
+//		Vertex* vertexThisGroup = commonVerticesGroup1[i];
+//		Vertex* vertexOtherGroup = commonVerticesGroup2[i];
+//
+//		// Directly use x, y, z from the Vertex objects for position
+//		/*Eigen::Vector3f posThisGroup(vertexThisGroup->x, vertexThisGroup->y, vertexThisGroup->z);
+//		Eigen::Vector3f posOtherGroup(vertexOtherGroup->x, vertexOtherGroup->y, vertexOtherGroup->z);*/
+//		posThisGroup = currentPositionGroup1.segment<3>(3 * vertexThisGroup->localIndex);
+//		posOtherGroup = currentPositionGroup2.segment<3>(3 * vertexOtherGroup->localIndex);
+//		avgPosition = (posThisGroup + posOtherGroup) / 2;
+//		// Compute the position difference between the current vertex and the other group's vertex
+//		posDifference = posThisGroup - avgPosition;
+//		// Compute the constraint force
+//		force = k * posDifference;
+//		// Place the constraint force in Fbind at the appropriate position using the local index
+//		Fbind.segment<3>(3 * vertexThisGroup->localIndex) = force;
+//	}
+//	
+//}
+
+void Group::calFbind(const std::vector<Group>& allGroups, float k) {
+	// Initialize Fbind with a length three times the number of vertices in the group
 	Fbind = Eigen::VectorXf::Zero(verticesMap.size() * 3);
-	Eigen::Vector3f posThisGroup;
-	Eigen::Vector3f posOtherGroup;
-	Eigen::Vector3f avgPosition;
-	Eigen::Vector3f posDifference;
-	Eigen::Vector3f force;
-	posThisGroup = Eigen::Vector3f::Zero();
-	posOtherGroup = Eigen::Vector3f::Zero();
-	avgPosition = Eigen::Vector3f::Zero();
-	posDifference = Eigen::Vector3f::Zero();
-	force = Eigen::Vector3f::Zero();
-	// Iterate through all common vertices
-	for (size_t i = 0; i < commonVerticesGroup1.size(); ++i) {
-		// Get the common vertex in this group and the other group
-		Vertex* vertexThisGroup = commonVerticesGroup1[i];
-		Vertex* vertexOtherGroup = commonVerticesGroup2[i];
 
-		// Directly use x, y, z from the Vertex objects for position
-		/*Eigen::Vector3f posThisGroup(vertexThisGroup->x, vertexThisGroup->y, vertexThisGroup->z);
-		Eigen::Vector3f posOtherGroup(vertexOtherGroup->x, vertexOtherGroup->y, vertexOtherGroup->z);*/
-		posThisGroup = currentPositionGroup1.segment<3>(3 * vertexThisGroup->localIndex);
-		posOtherGroup = currentPositionGroup2.segment<3>(3 * vertexOtherGroup->localIndex);
-		avgPosition = (posThisGroup + posOtherGroup) / 2;
-		// Compute the position difference between the current vertex and the other group's vertex
-		posDifference = posThisGroup - avgPosition;
-		// Compute the constraint force
-		force = k * posDifference;
-		// Place the constraint force in Fbind at the appropriate position using the local index
-		Fbind.segment<3>(3 * vertexThisGroup->localIndex) = force;
+	// Iterate through all six directions
+	for (int direction = 0; direction < 6; ++direction) {
+		int adjacentGroupIdx = adjacentGroupIDs[direction];
+
+		// Check if there is an adjacent group in this direction
+		if (adjacentGroupIdx != -1) {
+			const Group& adjacentGroup = allGroups[adjacentGroupIdx];
+			const auto& commonVerticesPair = commonVerticesInDirections[direction];
+
+			// Iterate through all common vertices in this direction
+			for (size_t i = 0; i < commonVerticesPair.first.size(); ++i) {
+				Vertex* vertexThisGroup = commonVerticesPair.first[i];
+				Vertex* vertexOtherGroup = commonVerticesPair.second[i];
+
+				// Calculate the position vectors of the vertices in this group and the adjacent group
+				Eigen::Vector3f posThisGroup = Eigen::Vector3f(vertexThisGroup->x, vertexThisGroup->y, vertexThisGroup->z);
+				Eigen::Vector3f posOtherGroup = Eigen::Vector3f(vertexOtherGroup->x, vertexOtherGroup->y, vertexOtherGroup->z);
+
+				// Compute the position difference and the constraint force
+				Eigen::Vector3f posDifference = posThisGroup - posOtherGroup;
+				Eigen::Vector3f force = k * posDifference;
+
+				// Add the constraint force to Fbind at the appropriate position using the local index
+				Fbind.segment<3>(3 * vertexThisGroup->localIndex) += force;
+			}
+		}
 	}
-	
 }
-
 
 
 void Group::updatePosition() {
