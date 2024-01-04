@@ -147,7 +147,11 @@ public:
 	void updateVelocity();
 	void initialize();
 	//void updateVertexPositions();
-
+	void calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
+		const std::vector<Vertex*>& commonVerticesGroup2,
+		const Eigen::VectorXf& currentPositionGroup1,
+		const Eigen::VectorXf& currentPositionGroup2,
+		float k);
 
 	Group()
 		: centerofMass(Eigen::Vector3f::Zero()),  // Initialize Eigen vector
@@ -188,7 +192,7 @@ public:
 	void generateUniqueVertices();//generate unique vertices
 	void PBDLOOP(int looptime);
 
-	
+	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> findCommonVertices1(const Group& group1, const Group& group2);
 	void updateAdjacentGroupIndices(int numX, int numY, int numZ);
 };
 

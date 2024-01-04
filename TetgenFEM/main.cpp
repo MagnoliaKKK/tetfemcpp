@@ -19,10 +19,10 @@
  
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
-float youngs = 100000;
+float youngs = 1000000;
 float poisson = 0.49;
 float density = 1000;
-int groupNum, groupNumX = 3, groupNumY = 1, groupNumZ = 1; //Object类和颜色都写死了 不能超出class Object {里的组数
+int groupNum, groupNumX = 2, groupNumY = 1, groupNumZ = 1; //Object类和颜色都写死了 不能超出class Object {里的组数
 int wKey = 0;
 
 
@@ -92,6 +92,7 @@ int main() {
 	Eigen::Matrix4f mat;
 	initFontData();
 	object.findCommonVertices();
+	object.commonPoints = object.findCommonVertices1(object.groups[0], object.groups[1]);
 
 	for (Group& g : object.groups) {
 		// 遍历Group中的每个Vertex
@@ -177,7 +178,7 @@ int main() {
 		}
 		//
 	
-		object.PBDLOOP(2);
+		object.PBDLOOP(5);
 
 		
 		
