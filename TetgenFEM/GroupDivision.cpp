@@ -5,7 +5,7 @@ const float timeStep = 0.01f;
 const float dampingConst = 10.0f;
 const float PI = 3.1415926535f;
 const float Gravity = -5.0f;
-const float bindForce = -5000.0f;
+const float bindForce = -6000.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
 	for (Group& group : groups) {
@@ -637,13 +637,13 @@ void Object::PBDLOOP(int looptime) {
 
 		}
 
-		for (auto g : groups)
+		/*for (auto g : groups)
 		{
 			g.calFbind(groups, bindForce);
-		}
+		}*/
 		
-		/*groups[0].calFbind1(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition, bindForce);
-		groups[1].calFbind1(commonPoints.second, commonPoints.first, groups[1].currentPosition, groups[0].currentPosition, bindForce);*/
+		groups[0].calFbind1(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition, bindForce);
+		groups[1].calFbind1(commonPoints.second, commonPoints.first, groups[1].currentPosition, groups[0].currentPosition, bindForce);
 	
 
 
@@ -775,7 +775,16 @@ void Group::calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
 void Group::calFbind(const std::vector<Group>& allGroups, float k) {
 	// Initialize Fbind with a length three times the number of vertices in the group
 	Fbind = Eigen::VectorXf::Zero(verticesMap.size() * 3);
-
+	Eigen::Vector3f posThisGroup;
+	Eigen::Vector3f posOtherGroup;
+	Eigen::Vector3f avgPosition;
+	Eigen::Vector3f posDifference;
+	Eigen::Vector3f force;
+	posThisGroup = Eigen::Vector3f::Zero();
+	posOtherGroup = Eigen::Vector3f::Zero();
+	avgPosition = Eigen::Vector3f::Zero();
+	posDifference = Eigen::Vector3f::Zero();
+	force = Eigen::Vector3f::Zero();
 	// Iterate through all six directions
 	for (int direction = 0; direction < 6; ++direction) {
 		int adjacentGroupIdx = adjacentGroupIDs[direction];
@@ -793,15 +802,15 @@ void Group::calFbind(const std::vector<Group>& allGroups, float k) {
 				// Calculate the position vectors of the vertices in this group and the adjacent group
 				/*Eigen::Vector3f posThisGroup = Eigen::Vector3f(vertexThisGroup->x, vertexThisGroup->y, vertexThisGroup->z);
 				Eigen::Vector3f posOtherGroup = Eigen::Vector3f(vertexOtherGroup->x, vertexOtherGroup->y, vertexOtherGroup->z);*/
-				Eigen::Vector3f posThisGroup = currentPosition.segment<3>(3 * vertexThisGroup->localIndex);
-				Eigen::Vector3f posOtherGroup = adjacentGroup.currentPosition.segment<3>(3 * vertexOtherGroup->localIndex);
-				Eigen::Vector3f avgPosition = (posThisGroup + posOtherGroup) / 2;
+				posThisGroup = currentPosition.segment<3>(3 * vertexThisGroup->localIndex);
+				posOtherGroup = adjacentGroup.currentPosition.segment<3>(3 * vertexOtherGroup->localIndex);
+				avgPosition = (posThisGroup + posOtherGroup) / 2;
 				// Compute the position difference and the constraint force
-				Eigen::Vector3f posDifference = posThisGroup - avgPosition;
-				Eigen::Vector3f force = k * posDifference;
+				posDifference = posThisGroup - avgPosition;
+				force = k * posDifference;
 
 				// Add the constraint force to Fbind at the appropriate position using the local index
-				Fbind.segment<3>(3 * vertexThisGroup->localIndex) += force;
+				Fbind.segment<3>(3 * vertexThisGroup->localIndex) = force;
 				
 			}
 		}
