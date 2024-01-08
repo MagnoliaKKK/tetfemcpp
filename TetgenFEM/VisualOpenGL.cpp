@@ -116,10 +116,34 @@ void drawEdge(Vertex* vertex1, Vertex* vertex2, float r, float g, float b) {
 		vertex2->z
 	);
 }
-
 void drawAxis(float length) {
 	glPushMatrix();  // 保存当前的模型视图矩諄E
 	glTranslatef(-length * 3, -length * 3, 0);  // 将坐眮E嵩阋贫酱翱诘挠蚁陆?
+	
+
+	glBegin(GL_LINES);
+	// X axis in red
+	glColor3f(1.0f, 0.0f, 0.0f);
+	glVertex3f(0.0f, 0.0f, 0.0f);
+	glVertex3f(length, 0.0f, 0.0f);
+	// Y axis in green
+	glColor3f(0.0f, 1.0f, 0.0f);
+	glVertex3f(0.0f, 0.0f, 0.0f);
+	glVertex3f(0.0f, length, 0.0f);
+	// Z axis in blue
+	glColor3f(0.0f, 0.0f, 1.0f);
+	glVertex3f(0.0f, 0.0f, 0.0f);
+	glVertex3f(0.0f, 0.0f, length);
+	glEnd();
+
+	glPopMatrix();
+}
+void drawAxis1(float length, const Eigen::Matrix3f& rotationMatrix) {
+	glPushMatrix();  // 保存当前的模型视图矩諄E
+	glTranslatef(-length * 3, -length * 3, 0);  // 将坐眮E嵩阋贫酱翱诘挠蚁陆?
+	Eigen::Matrix4f matrix4f = Eigen::Matrix4f::Identity(); // 创建一个4x4单位矩阵
+	matrix4f.block<3, 3>(0, 0) = rotationMatrix;
+	glMultMatrixf(matrix4f.data());//旋转坐标轴
 
 	glBegin(GL_LINES);
 	// X axis in red

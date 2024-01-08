@@ -86,6 +86,7 @@ public:
 	Eigen::VectorXf groupVelocity;
 	Eigen::VectorXf groupExf;
 	Eigen::MatrixXf rotationMatrix;
+	Eigen::Matrix3f rotate_matrix;//3*3的旋转矩阵，扩展成组的旋转矩阵
 	Eigen::VectorXf gravity;
 	Eigen::MatrixXf dampingMatrix;
 	Eigen::MatrixXf inverseTerm;

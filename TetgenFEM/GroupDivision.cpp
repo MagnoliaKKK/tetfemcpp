@@ -2,7 +2,7 @@
 
 
 const float timeStep = 0.01f;
-const float dampingConst = 10.0f;
+const float dampingConst = 100.0f;
 const float PI = 3.1415926535f;
 const float Gravity = -5.0f;
 const float bindForce = -1000.0f;
@@ -257,7 +257,7 @@ void Group::calRotationMatrix() {
 	// 初始化四元数和旋转矩阵
 	Eigen::Vector3f omega = Eigen::Vector3f::Identity();
 	Eigen::Quaternionf quaternion(Eigen::Quaternionf::Identity());
-	Eigen::Matrix3f rotate_matrix = Eigen::Matrix3f::Identity();
+	rotate_matrix = Eigen::Matrix3f::Identity();
 	Eigen::Vector3f gradR = Eigen::Vector3f::Zero();
 	Eigen::Matrix3f HesseR = Eigen::Matrix3f::Zero();
 	Eigen::Matrix3f S = Eigen::Matrix3f::Zero();
@@ -637,17 +637,27 @@ void Object::PBDLOOP(int looptime) {
 
 		}
 
-		/*for (auto g : groups)
-		{
-			g.calFbind(groups, bindForce);
-		}*/
-		
-		groups[0].calFbind1(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition, 2 * bindForce);
-
-		groups[1].calFbind1(commonPoints.second, commonPoints.first, groups[1].currentPosition, groups[0].currentPosition, 2 * bindForce);
+		groups[0].calFbind(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition,  bindForce);
+		groups[1].calFbind(commonPoints.second, commonPoints.first, groups[1].currentPosition, groups[0].currentPosition, bindForce);
 		auto fbindtmp = groups[1].Fbind;
-		groups[1].calFbind1(commonPoints1.first, commonPoints1.second, groups[1].currentPosition, groups[2].currentPosition, 2 * bindForce);
+		groups[1].calFbind(commonPoints1.first, commonPoints1.second, groups[1].currentPosition, groups[2].currentPosition,2.0f * bindForce);
 		groups[1].Fbind += fbindtmp;
+		groups[2].calFbind(commonPoints1.second, commonPoints1.first, groups[2].currentPosition, groups[1].currentPosition,2.0f * bindForce);
+		//groups[2].Fbind += fbindtmp;
+		//groups[3].calFbind(commonPoints2.second, commonPoints2.first, groups[3].currentPosition, groups[2].currentPosition, bindForce);
+		/*groups[4].calFbind(commonPoints3.second, commonPoints3.first, groups[4].currentPosition, groups[3].currentPosition, bindForce);
+		groups[5].calFbind(commonPoints4.second, commonPoints4.first, groups[5].currentPosition, groups[4].currentPosition, bindForce);
+		groups[6].calFbind(commonPoints5.second, commonPoints5.first, groups[6].currentPosition, groups[5].currentPosition, bindForce);
+		groups[7].calFbind(commonPoints6.second, commonPoints6.first, groups[7].currentPosition, groups[6].currentPosition, bindForce);
+
+		groups[8].calFbind(commonPoints7.second, commonPoints7.first, groups[8].currentPosition, groups[7].currentPosition, bindForce);
+		groups[9].calFbind(commonPoints8.second, commonPoints8.first, groups[9].currentPosition, groups[8].currentPosition, bindForce);
+		groups[10].calFbind(commonPoints9.second, commonPoints9.first, groups[10].currentPosition, groups[9].currentPosition, bindForce);
+		groups[11].calFbind(commonPoints10.second, commonPoints10.first, groups[11].currentPosition, groups[10].currentPosition, bindForce);
+		groups[12].calFbind(commonPoints11.second, commonPoints11.first, groups[12].currentPosition, groups[11].currentPosition, bindForce);
+		groups[13].calFbind(commonPoints12.second, commonPoints12.first, groups[13].currentPosition, groups[12].currentPosition, bindForce);
+		groups[14].calFbind(commonPoints13.second, commonPoints13.first, groups[14].currentPosition, groups[13].currentPosition, bindForce);
+		groups[15].calFbind(commonPoints14.second, commonPoints14.first, groups[15].currentPosition, groups[14].currentPosition, bindForce);*/
 
 		groups[2].calFbind1(commonPoints1.second, commonPoints1.first, groups[2].currentPosition, groups[1].currentPosition, 2 * bindForce);
 	
