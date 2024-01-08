@@ -4,8 +4,9 @@
 const float timeStep = 0.01f;
 const float dampingConst = 100.0f;
 const float PI = 3.1415926535f;
-const float Gravity = -5.0f;
-const float bindForce = -1000.0f;
+const float Gravity = -10.0f;
+const float bindForce = -4000.0f;
+const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
 	for (Group& group : groups) {
@@ -637,12 +638,12 @@ void Object::PBDLOOP(int looptime) {
 
 		}
 
-		groups[0].calFbind(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition,  bindForce);
-		groups[1].calFbind(commonPoints.second, commonPoints.first, groups[1].currentPosition, groups[0].currentPosition, bindForce);
+		groups[0].calFbind1(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition, groups[0].groupVelocity, groups[1].groupVelocity, bindForce, bindVelocity);
+		groups[1].calFbind1(commonPoints.second, commonPoints.first, groups[1].currentPosition, groups[0].currentPosition, groups[1].groupVelocity, groups[0].groupVelocity, bindForce, bindVelocity);
 		auto fbindtmp = groups[1].Fbind;
-		groups[1].calFbind(commonPoints1.first, commonPoints1.second, groups[1].currentPosition, groups[2].currentPosition,2.0f * bindForce);
+		groups[1].calFbind1(commonPoints1.first, commonPoints1.second, groups[1].currentPosition, groups[2].currentPosition, groups[1].groupVelocity, groups[2].groupVelocity, 0.5f * bindForce, bindVelocity);
 		groups[1].Fbind += fbindtmp;
-		groups[2].calFbind(commonPoints1.second, commonPoints1.first, groups[2].currentPosition, groups[1].currentPosition,2.0f * bindForce);
+		groups[2].calFbind1(commonPoints1.second, commonPoints1.first, groups[2].currentPosition, groups[1].currentPosition, groups[2].groupVelocity, groups[1].groupVelocity, 0.5f * bindForce, bindVelocity);
 		//groups[2].Fbind += fbindtmp;
 		//groups[3].calFbind(commonPoints2.second, commonPoints2.first, groups[3].currentPosition, groups[2].currentPosition, bindForce);
 		/*groups[4].calFbind(commonPoints3.second, commonPoints3.first, groups[4].currentPosition, groups[3].currentPosition, bindForce);
@@ -659,7 +660,7 @@ void Object::PBDLOOP(int looptime) {
 		groups[14].calFbind(commonPoints13.second, commonPoints13.first, groups[14].currentPosition, groups[13].currentPosition, bindForce);
 		groups[15].calFbind(commonPoints14.second, commonPoints14.first, groups[15].currentPosition, groups[14].currentPosition, bindForce);*/
 
-		groups[2].calFbind1(commonPoints1.second, commonPoints1.first, groups[2].currentPosition, groups[1].currentPosition, 2 * bindForce);
+		//groups[2].calFbind1(commonPoints1.second, commonPoints1.first, groups[2].currentPosition, groups[1].currentPosition, 2 * bindForce);
 	
 
 
@@ -752,19 +753,22 @@ void Group::calculateCurrentPositions() {
 void Group::calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
 	const std::vector<Vertex*>& commonVerticesGroup2,
 	const Eigen::VectorXf& currentPositionGroup1,
-	const Eigen::VectorXf& currentPositionGroup2,
-	float k) {
+	const Eigen::VectorXf& currentPositionGroup2,const Eigen::VectorXf& velGroup1,
+	const Eigen::VectorXf& velGroup2,
+	float k, float m) {
 	// Initialize Fbind, with a length three times the number of vertices in the group
 	Fbind = Eigen::VectorXf::Zero(verticesMap.size() * 3);
 	Eigen::Vector3f posThisGroup;
 	Eigen::Vector3f posOtherGroup;
 	Eigen::Vector3f avgPosition;
 	Eigen::Vector3f posDifference;
+	Eigen::Vector3f velDifference;
 	Eigen::Vector3f force;
 	posThisGroup = Eigen::Vector3f::Zero();
 	posOtherGroup = Eigen::Vector3f::Zero();
 	avgPosition = Eigen::Vector3f::Zero();
 	posDifference = Eigen::Vector3f::Zero();
+	velDifference = Eigen::Vector3f::Zero();;
 	force = Eigen::Vector3f::Zero();
 	// Iterate through all common vertices
 	for (size_t i = 0; i < commonVerticesGroup1.size(); ++i) {
@@ -782,6 +786,8 @@ void Group::calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
 		posDifference = posThisGroup - avgPosition;
 		// Compute the constraint force
 		force = k * posDifference;
+		velDifference = velGroup1.segment<3>(3 * vertexThisGroup->localIndex) - velGroup2.segment<3>(3 * vertexOtherGroup->localIndex);
+		force += m * velDifference;
 		// Place the constraint force in Fbind at the appropriate position using the local index
 		Fbind.segment<3>(3 * vertexThisGroup->localIndex) = force;
 	}

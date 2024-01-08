@@ -152,7 +152,9 @@ public:
 		const std::vector<Vertex*>& commonVerticesGroup2,
 		const Eigen::VectorXf& currentPositionGroup1,
 		const Eigen::VectorXf& currentPositionGroup2,
-		float k);
+		const Eigen::VectorXf& velGroup1,
+		const Eigen::VectorXf& velGroup2,
+		float k, float m);
 
 	Group()
 		: centerofMass(Eigen::Vector3f::Zero()),  // Initialize Eigen vector
