@@ -2,7 +2,7 @@
 
 
 const float timeStep = 0.01f;
-const float dampingConst = 10.0f;
+const float dampingConst = 100.0f;
 const float PI = 3.1415926535f;
 const float Gravity = -5.0f;
 const float bindForce = -2000.0f;
@@ -220,7 +220,7 @@ void Group::calRotationMatrix() {
 	// 初始化四元数和旋转矩阵
 	Eigen::Vector3f omega = Eigen::Vector3f::Identity();
 	Eigen::Quaternionf quaternion(Eigen::Quaternionf::Identity());
-	Eigen::Matrix3f rotate_matrix = Eigen::Matrix3f::Identity();
+	rotate_matrix = Eigen::Matrix3f::Identity();
 	Eigen::Vector3f gradR = Eigen::Vector3f::Zero();
 	Eigen::Matrix3f HesseR = Eigen::Matrix3f::Zero();
 	Eigen::Matrix3f S = Eigen::Matrix3f::Zero();
@@ -600,9 +600,13 @@ void Object::PBDLOOP(int looptime) {
 
 		}
 
-		groups[0].calFbind(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition, bindForce);
+		groups[0].calFbind(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition,  bindForce);
 		groups[1].calFbind(commonPoints.second, commonPoints.first, groups[1].currentPosition, groups[0].currentPosition, bindForce);
-		groups[2].calFbind(commonPoints1.second, commonPoints1.first, groups[2].currentPosition, groups[1].currentPosition,3.0f * bindForce);
+		auto fbindtmp = groups[1].Fbind;
+		groups[1].calFbind(commonPoints1.first, commonPoints1.second, groups[1].currentPosition, groups[2].currentPosition,2.0f * bindForce);
+		groups[1].Fbind += fbindtmp;
+		groups[2].calFbind(commonPoints1.second, commonPoints1.first, groups[2].currentPosition, groups[1].currentPosition,2.0f * bindForce);
+		//groups[2].Fbind += fbindtmp;
 		//groups[3].calFbind(commonPoints2.second, commonPoints2.first, groups[3].currentPosition, groups[2].currentPosition, bindForce);
 		/*groups[4].calFbind(commonPoints3.second, commonPoints3.first, groups[4].currentPosition, groups[3].currentPosition, bindForce);
 		groups[5].calFbind(commonPoints4.second, commonPoints4.first, groups[5].currentPosition, groups[4].currentPosition, bindForce);

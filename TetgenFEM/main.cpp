@@ -19,10 +19,10 @@
  
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
-float youngs = 100000;
+float youngs = 10000000;
 float poisson = 0.49;
 float density = 1000;
-int groupNum, groupNumX = 3, groupNumY = 1, groupNumZ = 2; //Object类和颜色都写死了 不能超出class Object {里的组数
+int groupNum, groupNumX = 3, groupNumY = 1, groupNumZ = 1; //Object类和颜色都写死了 不能超出class Object {里的组数
 int wKey = 0;
 
 
@@ -190,18 +190,20 @@ int main() {
 		for (int i = 0; i < groupNum; i++) {
 			object.groups[i].calPrimeVec(wKey);
 			object.groups[i].calRotationMatrix();
+			
 		}
 		//
 	
-		object.PBDLOOP(2);
+		object.PBDLOOP(5);
 
 		
 		
 		// Render here
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
+		drawAxis1(0.3f, object.groups[0].rotate_matrix);
 		// 绘制坐眮E丒
-		drawAxis(0.3f);
+		//drawAxis(0.3f);
 
 		// Enable wireframe mode
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
