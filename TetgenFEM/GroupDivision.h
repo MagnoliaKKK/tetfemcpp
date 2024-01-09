@@ -197,6 +197,7 @@ public:
 
 	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> findCommonVertices1(const Group& group1, const Group& group2);
 	void updateAdjacentGroupIndices(int numX, int numY, int numZ);
+	void calDistance(std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonpoints);
 };
 
 void findBoundaryEdges(tetgenio& out);

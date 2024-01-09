@@ -287,6 +287,7 @@ void Group::calRotationMatrix() {
 
 	// 构建旋转矩阵的3N x 3N版本
 	rotationMatrix = Eigen::MatrixXf::Zero(3 * verticesMap.size(), 3 * verticesMap.size());
+	//rotationMatrix = Eigen::MatrixXf::Identity(3 * verticesMap.size(), 3 * verticesMap.size());
 	for (unsigned int pi = 0; pi < verticesMap.size(); pi++) {
 		rotationMatrix.block<3, 3>(3 * pi, 3 * pi) = rotate_matrix;
 	}
@@ -673,6 +674,8 @@ void Object::PBDLOOP(int looptime) {
 		g.updatePosition();
 
 	}
+	//calDistance(commonPoints);
+	//calDistance(commonPoints1);
 	// 迭代完成后更新位置和速度
 	//for (int i = 0; i < 3; ++i) {
 	//	// 更新位置，这里可能需要一些逻辑来获取最后一次迭代的结果
@@ -1035,4 +1038,29 @@ float Tetrahedron::calMassTetra(float den) {
 	return massTetra;
 
 	
+}
+
+void Object::calDistance(std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints) {
+	const auto& verticesGroup1 = commonPoints.first;
+	const auto& verticesGroup2 = commonPoints.second;
+
+	// 确保两组点的数量相等
+	if (verticesGroup1.size() != verticesGroup2.size()) {
+		// 处理错误情况或返回
+		return;
+	}
+
+	// 遍历顶点对并计算距离
+	for (size_t i = 0; i < verticesGroup1.size(); ++i) {
+		Vertex* vertex1 = verticesGroup1[i];
+		Vertex* vertex2 = verticesGroup2[i];
+
+		// 计算两点之间的欧几里得距离
+		double distance = std::sqrt(std::pow(vertex1->x - vertex2->x, 2) +
+			std::pow(vertex1->y - vertex2->y, 2) +
+			std::pow(vertex1->z - vertex2->z, 2));
+
+	
+		std::cout << "Distance of: "<< i << "is" << distance << std::endl;
+	}
 }

@@ -19,3 +19,4 @@ void drawAxis1(float length, const Eigen::Matrix3f& rotationMatrix);
 void XPrintString(const char* s);
 void initFontData();
 void hsvToRgb(float h, float s, float v, float& r, float& g, float& b);
+float getRotationAngleZ(const Eigen::Matrix3f& rotationmatrix);

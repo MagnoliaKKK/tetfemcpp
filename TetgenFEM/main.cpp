@@ -187,10 +187,10 @@ int main() {
 		// Render here
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
-		//drawAxis1(0.3f, object.groups[0].rotate_matrix);
+		drawAxis1(0.3f, object.groups[0].rotate_matrix);
 		// ªÊ÷∆◊¯±ÅEÅE
-		drawAxis(0.3f);
-
+		//drawAxis(0.3f);
+		std::cout << getRotationAngleZ(object.groups[0].rotate_matrix) << std::endl;;
 		// Enable wireframe mode
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		glMatrixMode(GL_MODELVIEW);

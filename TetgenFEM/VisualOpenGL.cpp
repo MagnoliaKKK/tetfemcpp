@@ -162,6 +162,15 @@ void drawAxis1(float length, const Eigen::Matrix3f& rotationMatrix) {
 
 	glPopMatrix();  // 恢复之前保存的模型视图矩諄E
 }
+float getRotationAngleZ(const Eigen::Matrix3f& rotationmatrix) {
+	// 使用 atan2 函数来计算角度
+	float angle = std::atan2(rotationmatrix(1, 0), rotationmatrix(0, 0));
+
+	// 将角度从弧度转换为度数，如果需要的话
+	angle = angle * (180.0 / 3.1415926535f);
+
+	return angle; // 返回弧度值
+}
 
 
 // Function to convert HSV to RGB
