@@ -655,7 +655,22 @@ void Group::calRHS() {
 
 }
 
+void Group::calRInvLocalPos() {
+	curLocalPos.resize(3 * verticesMap.size());
+	RInvPos.resize(3 * verticesMap.size());
 
+	for (const auto& vertexPair : verticesMap) {
+		const Vertex* vertex = vertexPair.second;
+		Eigen::Vector3f local_position(vertex->x, vertex->y, vertex->z);
+		// 计算初始位置与初始重心的差值
+		Eigen::Vector3f positiondifference = local_position - centerofMass;
+
+		// 将局部位置存储在initLocalPos中，注意index需要乘以3因为每个顶点有3个坐标值
+		curLocalPos.segment<3>(vertex->localIndex * 3) = positiondifference;
+	}
+	RInvPos = rotationMatrix.inverse() * curLocalPos;
+	std::cout << RInvPos << std::endl;
+}
 
 void Object::PBDLOOP(int looptime) {
 // 1. 初始化：将每个组的 Fbind 置零
@@ -723,8 +738,9 @@ void Object::PBDLOOP(int looptime) {
 		auto& g = groups[i];
 		g.updateVelocity();
 		g.updatePosition();
-
+		g.calRInvLocalPos();
 	}
+
 	//calDistance(commonPoints);
 	//calDistance(commonPoints1);
 	// 迭代完成后更新位置和速度

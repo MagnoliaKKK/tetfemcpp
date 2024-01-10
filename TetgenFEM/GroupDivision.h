@@ -120,6 +120,8 @@ public:
 	Eigen::VectorXf RHS_C;
 	Eigen::VectorXf RHS_D, RHS_AsubBplusC;
 	Eigen::SparseMatrix<float> RHS_E, RHS_F, RHS_G;
+	Eigen::VectorXf curLocalPos;
+	Eigen::VectorXf RInvPos;
 
 
 	
@@ -156,6 +158,7 @@ public:
 		const Eigen::VectorXf& velGroup1,
 		const Eigen::VectorXf& velGroup2,
 		float k, float m);
+	void calRInvLocalPos();
 
 	Group()
 		: centerofMass(Eigen::Vector3f::Zero()),  // Initialize Eigen vector
