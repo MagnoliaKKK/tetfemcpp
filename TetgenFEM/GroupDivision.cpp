@@ -4,7 +4,7 @@
 const float timeStep = 0.01f;
 const float dampingConst = 100.0f;
 const float PI = 3.1415926535f;
-const float Gravity = -10.0f;
+const float Gravity = -5.0f;
 const float bindForce = -4000.0f;
 const float bindVelocity = -0.0f;
 
@@ -511,6 +511,57 @@ void Group::calInitCOM() {
 		initCOM = Eigen::Vector3f(0.0, 0.0, 0.0);
 	}
 }
+void Group::calPrimeVec1(int w) {
+	// Assuming Gravity and timeStep are defined elsewhere
+	primeVec = Eigen::VectorXf::Zero(3 * verticesVector.size());
+	gravity = Eigen::VectorXf::Zero(3 * verticesVector.size());
+
+	// Find min and max x-values
+	float minX = std::numeric_limits<float>::max();
+	float maxX = std::numeric_limits<float>::lowest();
+	for (const auto& vertex : verticesVector) {
+		if (vertex->x < minX) minX = vertex->x;
+		if (vertex->x > maxX) maxX = vertex->x;
+	}
+
+	// Calculate the midpoint of the x-axis
+	float midX = (minX + maxX) / 2;
+
+	// Apply forces based on position relative to the midpoint
+	for (size_t i = 0; i < verticesVector.size(); ++i) {
+		float x = verticesVector[i]->x;
+		int yIndex = 3 * i + 1; // Index for the y-component in the gravity vector
+
+		if (x <= midX) {
+			// Front half, apply +y force
+			gravity(yIndex) = Gravity;
+		}
+		else {
+			// Back half, apply -y force
+			gravity(yIndex) = -Gravity;
+		}
+	}
+
+	// Update groupVelocity
+	groupVelocity += gravity * timeStep;
+
+	// Compute velocityUpdate
+	Eigen::VectorXf velocityUpdate = inverseTermSparse * (massMatrix * groupVelocity) * timeStep;
+
+	// Update primeVec and vertex positions
+	for (auto& vertex : verticesVector) {
+		int localPi = vertex->localIndex; // Use local index
+
+		// Get the current vertex's velocity update part
+		Eigen::Vector3f currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
+
+		// Calculate new position
+		Eigen::Vector3f newPosition = Eigen::Vector3f(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate;
+
+		// Update primeVec
+		primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
+	}
+}
 
 void Group::calPrimeVec(int w) {
 	// 确保groupVelocity已经初始化且设置为正确的尺寸
@@ -639,12 +690,12 @@ void Object::PBDLOOP(int looptime) {
 
 		}
 
-		groups[0].calFbind1(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition, groups[0].groupVelocity, groups[1].groupVelocity, bindForce, bindVelocity);
+		/*groups[0].calFbind1(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition, groups[0].groupVelocity, groups[1].groupVelocity, bindForce, bindVelocity);
 		groups[1].calFbind1(commonPoints.second, commonPoints.first, groups[1].currentPosition, groups[0].currentPosition, groups[1].groupVelocity, groups[0].groupVelocity, bindForce, bindVelocity);
 		auto fbindtmp = groups[1].Fbind;
 		groups[1].calFbind1(commonPoints1.first, commonPoints1.second, groups[1].currentPosition, groups[2].currentPosition, groups[1].groupVelocity, groups[2].groupVelocity, 0.5f * bindForce, bindVelocity);
 		groups[1].Fbind += fbindtmp;
-		groups[2].calFbind1(commonPoints1.second, commonPoints1.first, groups[2].currentPosition, groups[1].currentPosition, groups[2].groupVelocity, groups[1].groupVelocity, 0.5f * bindForce, bindVelocity);
+		groups[2].calFbind1(commonPoints1.second, commonPoints1.first, groups[2].currentPosition, groups[1].currentPosition, groups[2].groupVelocity, groups[1].groupVelocity, 0.5f * bindForce, bindVelocity);*/
 		//groups[2].Fbind += fbindtmp;
 		//groups[3].calFbind(commonPoints2.second, commonPoints2.first, groups[3].currentPosition, groups[2].currentPosition, bindForce);
 		/*groups[4].calFbind(commonPoints3.second, commonPoints3.first, groups[4].currentPosition, groups[3].currentPosition, bindForce);
