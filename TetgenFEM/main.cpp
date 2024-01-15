@@ -190,7 +190,7 @@ int main() {
 		drawAxis1(0.3f, object.groups[0].rotate_matrix);
 		// »æÖÆ×ø±EE
 		//drawAxis(0.3f);
-		std::cout << getRotationAngleZ(object.groups[0].rotate_matrix) << std::endl;;
+		//std::cout << getRotationAngleZ(object.groups[0].rotate_matrix) << std::endl;;
 		// Enable wireframe mode
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		glMatrixMode(GL_MODELVIEW);
