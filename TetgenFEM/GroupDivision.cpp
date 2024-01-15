@@ -287,6 +287,9 @@ void Group::calRotationMatrix() {
 
 	// 构建旋转矩阵的3N x 3N版本
 	rotationMatrix = Eigen::MatrixXf::Zero(3 * verticesMap.size(), 3 * verticesMap.size());
+	Eigen::JacobiSVD<Eigen::Matrix3f> svd(rotationMatrix, Eigen::ComputeFullU | Eigen::ComputeFullV);
+	double cond = svd.singularValues()(0) / svd.singularValues()(2); // 3x3矩阵，索引从0到2
+	std::cout << "Condition number: " << cond << std::endl;
 	//rotationMatrix = Eigen::MatrixXf::Identity(3 * verticesMap.size(), 3 * verticesMap.size());
 	for (unsigned int pi = 0; pi < verticesMap.size(); pi++) {
 		rotationMatrix.block<3, 3>(3 * pi, 3 * pi) = rotate_matrix;
