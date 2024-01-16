@@ -19,10 +19,10 @@
  
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
-float youngs = 100000;
+float youngs = 1000000;
 float poisson = 0.49;
 float density = 1000;
-int groupNum, groupNumX = 1, groupNumY = 1, groupNumZ = 1; //Object类和颜色都写死了 不能超出class Object {里的组数
+int groupNum, groupNumX = 5, groupNumY = 1, groupNumZ = 1; //Object类和颜色都写死了 不能超出class Object {里的组数
 int wKey = 0;
 
 
@@ -37,7 +37,7 @@ int main() {
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.414a0.01"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
+	char args[] = "pq1.414a0.001"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
 	behavior.parse_commandline(args);
 
 	// Call TetGen to tetrahedralize the geometry
@@ -92,19 +92,20 @@ int main() {
 	Eigen::Matrix4f mat;
 	initFontData();
 	//object.findCommonVertices();
-	//object.commonPoints = object.findCommonVertices1(object.groups[0], object.groups[1]);
-	//object.commonPoints1 = object.findCommonVertices1(object.groups[1], object.groups[2]);
+	object.commonPoints = object.findCommonVertices1(object.groups[0], object.groups[1]);
+	object.commonPoints1 = object.findCommonVertices1(object.groups[1], object.groups[2]);
+	object.commonPoints2 = object.findCommonVertices1(object.groups[2], object.groups[3]);
+	object.commonPoints3 = object.findCommonVertices1(object.groups[3], object.groups[4]);
+	for (Group& g : object.groups) {
+		 //遍历Group中的每个Vertex
+		for (const auto& vertexPair : g.verticesMap) {
+			// 对每个顶点调用setFixedIfBelowThreshold方法
+			Vertex* vertex = vertexPair.second;
 
-	//for (Group& g : object.groups) {
-	//	 //遍历Group中的每个Vertex
-	//	for (const auto& vertexPair : g.verticesMap) {
-	//		// 对每个顶点调用setFixedIfBelowThreshold方法
-	//		Vertex* vertex = vertexPair.second;
+			vertex->setFixedIfBelowThreshold();
+		}
 
-	//		vertex->setFixedIfBelowThreshold();
-	//	}
-
-	//}
+	}
 
 	/////////揪头发固定法
 	//float maxY = -std::numeric_limits<float>::infinity(); // 初始化为极小值
@@ -174,7 +175,7 @@ int main() {
 		
 		#pragma omp parallel for
 		for (int i = 0; i < groupNum; i++) {
-			object.groups[i].calPrimeVec1(wKey);
+			object.groups[i].calPrimeVec(wKey);
 			object.groups[i].calRotationMatrix();
 			
 		}
