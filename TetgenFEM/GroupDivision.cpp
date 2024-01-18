@@ -2,10 +2,10 @@
 
 
 const float timeStep = 0.01f;
-const float dampingConst = 100.0f;
+const float dampingConst = 1000.0f;
 const float PI = 3.1415926535f;
 const float Gravity = -5.0f;
-const float bindForce = -1000.0f;
+const float bindForce = -5000.0f;
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -430,9 +430,30 @@ void Group::calGroupK(float E, float nu) {
 			}
 		}
 	}
+	
 	kSparse = groupK.sparseView();
 }
+void Group::modalAnalysis(Eigen::MatrixXf K, Eigen::MatrixXf M) {
+	Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::MatrixXf> solver(K, M);
 
+	// 确保求解器成功
+	if (solver.info() != Eigen::Success) {
+		throw std::runtime_error("Eigenvalue solver failed");
+	}
+
+	// 获取特征值和特征向量
+	Eigen::MatrixXf eigenvalues = solver.eigenvalues();
+	Eigen::MatrixXf eigenvectors = solver.eigenvectors();
+
+	// 计算对角化后的刚度矩阵
+	Eigen::MatrixXf diagK = eigenvectors.transpose() * K * eigenvectors;
+
+	// 如果你想要更新 groupK 为对角化后的刚度矩阵
+	groupK = diagK;
+
+	// 同样可以更新 kSparse 为对角化后的稀疏刚度矩阵
+	kSparse = diagK.sparseView();
+}
 
 void Group::calMassGroup() {
 	groupMass = 0.0; // 初始化组的质量为0
@@ -719,23 +740,23 @@ void Object::PBDLOOP(int looptime) {
 
 		groups[0].calFbind1(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition, groups[0].groupVelocity, groups[1].groupVelocity, bindForce, bindVelocity);
 		groups[1].calFbind1(commonPoints.second, commonPoints.first, groups[1].currentPosition, groups[0].currentPosition, groups[1].groupVelocity, groups[0].groupVelocity, bindForce, bindVelocity);
-		auto fbindtmp = groups[1].Fbind;
-		groups[1].calFbind1(commonPoints1.first, commonPoints1.second, groups[1].currentPosition, groups[2].currentPosition, groups[1].groupVelocity, groups[2].groupVelocity, bindForce, bindVelocity);
-		groups[1].Fbind += fbindtmp;
-		groups[2].calFbind1(commonPoints1.second, commonPoints1.first, groups[2].currentPosition, groups[1].currentPosition, groups[2].groupVelocity, groups[1].groupVelocity,  bindForce, bindVelocity);
-		// Calculate binding force between groups 2 and 3
-		auto fbindtmp2 = groups[2].Fbind;
-		groups[2].calFbind1(commonPoints2.first, commonPoints2.second, groups[2].currentPosition, groups[3].currentPosition, groups[2].groupVelocity, groups[3].groupVelocity,  bindForce, bindVelocity);
-		groups[2].Fbind += fbindtmp2;
+		//auto fbindtmp = groups[1].Fbind;
+		//groups[1].calFbind1(commonPoints1.first, commonPoints1.second, groups[1].currentPosition, groups[2].currentPosition, groups[1].groupVelocity, groups[2].groupVelocity, bindForce, bindVelocity);
+		//groups[1].Fbind += fbindtmp;
+		//groups[2].calFbind1(commonPoints1.second, commonPoints1.first, groups[2].currentPosition, groups[1].currentPosition, groups[2].groupVelocity, groups[1].groupVelocity,  bindForce, bindVelocity);
+		//// Calculate binding force between groups 2 and 3
+		//auto fbindtmp2 = groups[2].Fbind;
+		//groups[2].calFbind1(commonPoints2.first, commonPoints2.second, groups[2].currentPosition, groups[3].currentPosition, groups[2].groupVelocity, groups[3].groupVelocity,  bindForce, bindVelocity);
+		//groups[2].Fbind += fbindtmp2;
 
 		// Apply binding force to group 3, from its connection with group 2
-		groups[3].calFbind1(commonPoints2.second, commonPoints2.first, groups[3].currentPosition, groups[2].currentPosition, groups[3].groupVelocity, groups[2].groupVelocity,  bindForce, bindVelocity);
-		auto fbindtmp3 = groups[3].Fbind;
-		groups[3].calFbind1(commonPoints3.first, commonPoints3.second, groups[3].currentPosition, groups[4].currentPosition, groups[3].groupVelocity, groups[4].groupVelocity, bindForce, bindVelocity);
-		groups[3].Fbind += fbindtmp3;
+		//groups[3].calFbind1(commonPoints2.second, commonPoints2.first, groups[3].currentPosition, groups[2].currentPosition, groups[3].groupVelocity, groups[2].groupVelocity,  bindForce, bindVelocity);
+		//auto fbindtmp3 = groups[3].Fbind;
+		//groups[3].calFbind1(commonPoints3.first, commonPoints3.second, groups[3].currentPosition, groups[4].currentPosition, groups[3].groupVelocity, groups[4].groupVelocity, bindForce, bindVelocity);
+		//groups[3].Fbind += fbindtmp3;
 
-		// Apply binding force to group 4, from its connection with group 3
-		groups[4].calFbind1(commonPoints3.second, commonPoints3.first, groups[4].currentPosition, groups[3].currentPosition, groups[4].groupVelocity, groups[3].groupVelocity,  0.0f*bindForce, 0.0f * bindVelocity);
+		//// Apply binding force to group 4, from its connection with group 3
+		//groups[4].calFbind1(commonPoints3.second, commonPoints3.first, groups[4].currentPosition, groups[3].currentPosition, groups[4].groupVelocity, groups[3].groupVelocity,  0.0f*bindForce, 0.0f * bindVelocity);
 		//groups[2].Fbind += fbindtmp;
 		//groups[3].calFbind(commonPoints2.second, commonPoints2.first, groups[3].currentPosition, groups[2].currentPosition, bindForce);
 		/*groups[4].calFbind(commonPoints3.second, commonPoints3.first, groups[4].currentPosition, groups[3].currentPosition, bindForce);
