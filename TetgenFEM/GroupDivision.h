@@ -11,6 +11,7 @@
 #include <Eigen/Geometry>
 #include "Eigen/Sparse"
 #include "GMRES.h"
+#include <Eigen/Dense>
 #include "Eigen/IterativeLinearSolvers"
 
 
@@ -159,6 +160,7 @@ public:
 		const Eigen::VectorXf& velGroup2,
 		float k, float m);
 	void calRInvLocalPos();
+	Eigen::MatrixXd modalTransformation(const Eigen::MatrixXd& stiffnessMatrix, const Eigen::MatrixXd& massMatrix, int numModes);
 
 	Group()
 		: centerofMass(Eigen::Vector3f::Zero()),  // Initialize Eigen vector
