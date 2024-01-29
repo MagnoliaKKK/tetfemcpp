@@ -706,8 +706,8 @@ void Object::PBDLOOP(int looptime) {
 		}
 
 		/*groups[0].calFbind1(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition, groups[0].groupVelocity, groups[1].groupVelocity, bindForce, bindVelocity);
-		groups[1].calFbind1(commonPoints.second, commonPoints.first, groups[1].currentPosition, groups[0].currentPosition, groups[1].groupVelocity, groups[0].groupVelocity, bindForce, bindVelocity);
-		auto fbindtmp = groups[1].Fbind;
+		groups[1].calFbind1(commonPoints.second, commonPoints.first, groups[1].currentPosition, groups[0].currentPosition, groups[1].groupVelocity, groups[0].groupVelocity, bindForce, bindVelocity);*/
+		/*auto fbindtmp = groups[1].Fbind;
 		groups[1].calFbind1(commonPoints1.first, commonPoints1.second, groups[1].currentPosition, groups[2].currentPosition, groups[1].groupVelocity, groups[2].groupVelocity, 0.5f * bindForce, bindVelocity);
 		groups[1].Fbind += fbindtmp;
 		groups[2].calFbind1(commonPoints1.second, commonPoints1.first, groups[2].currentPosition, groups[1].currentPosition, groups[2].groupVelocity, groups[1].groupVelocity, 0.5f * bindForce, bindVelocity);*/
@@ -738,7 +738,7 @@ void Object::PBDLOOP(int looptime) {
 		auto& g = groups[i];
 		g.updateVelocity();
 		g.updatePosition();
-		g.calRInvLocalPos();
+		//g.calRInvLocalPos();
 	}
 
 	//calDistance(commonPoints);
@@ -771,7 +771,7 @@ void Group::calDeltaX() {
 	//solver.compute(sparseFEMLHS);
 	//deltaX = solver.solve(FEMRHS);
 
-	deltaX = rotationMatrix.transpose() * deltaX;
+	deltaX = rotationMatrix * deltaX;
 }
 
 void Group::calculateCurrentPositions() {

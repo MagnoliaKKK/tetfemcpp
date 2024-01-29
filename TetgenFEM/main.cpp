@@ -95,16 +95,16 @@ int main() {
 	//object.commonPoints = object.findCommonVertices1(object.groups[0], object.groups[1]);
 	//object.commonPoints1 = object.findCommonVertices1(object.groups[1], object.groups[2]);
 
-	//for (Group& g : object.groups) {
-	//	 //遍历Group中的每个Vertex
-	//	for (const auto& vertexPair : g.verticesMap) {
-	//		// 对每个顶点调用setFixedIfBelowThreshold方法
-	//		Vertex* vertex = vertexPair.second;
+	for (Group& g : object.groups) {
+		 //遍历Group中的每个Vertex
+		for (const auto& vertexPair : g.verticesMap) {
+			// 对每个顶点调用setFixedIfBelowThreshold方法
+			Vertex* vertex = vertexPair.second;
 
-	//		vertex->setFixedIfBelowThreshold();
-	//	}
+			vertex->setFixedIfBelowThreshold();
+		}
 
-	//}
+	}
 
 	/////////揪头发固定法
 	//float maxY = -std::numeric_limits<float>::infinity(); // 初始化为极小值
@@ -174,7 +174,7 @@ int main() {
 		
 		#pragma omp parallel for
 		for (int i = 0; i < groupNum; i++) {
-			object.groups[i].calPrimeVec1(wKey);
+			object.groups[i].calPrimeVec(wKey);
 			object.groups[i].calRotationMatrix();
 			
 		}
