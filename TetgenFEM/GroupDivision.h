@@ -163,11 +163,8 @@ public:
 		const Eigen::VectorXf& velGroup2,
 		float k, float m);
 	void calRInvLocalPos();
-<<<<<<< HEAD
-	void modalAnalysis(Eigen::MatrixXf K, Eigen::MatrixXf M);
-=======
-	Eigen::MatrixXd modalTransformation(const Eigen::MatrixXd& stiffnessMatrix, const Eigen::MatrixXd& massMatrix, int numModes);
->>>>>>> 1c097bc65d830b04fbd5544c829ff1c99a3c147e
+
+
 
 	Group()
 		: centerofMass(Eigen::Vector3f::Zero()),  // Initialize Eigen vector

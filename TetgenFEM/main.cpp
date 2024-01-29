@@ -102,21 +102,9 @@ int main() {
 			// 对每个顶点调用setFixedIfBelowThreshold方法
 			Vertex* vertex = vertexPair.second;
 
-			//vertex->setFixedIfBelowThreshold();
-		}
-
-<<<<<<< HEAD
-	for (Group& g : object.groups) {
-		 //遍历Group中的每个Vertex
-		for (const auto& vertexPair : g.verticesMap) {
-			// 对每个顶点调用setFixedIfBelowThreshold方法
-			Vertex* vertex = vertexPair.second;
-
 			vertex->setFixedIfBelowThreshold();
 		}
 
-=======
->>>>>>> 92fcba85205f20a4440e0a17a40b8971112db625
 	}
 
 	/////////揪头发固定法
