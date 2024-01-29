@@ -11,7 +11,11 @@
 #include <Eigen/Geometry>
 #include "Eigen/Sparse"
 #include "GMRES.h"
+#include <Eigen/Dense>
 #include "Eigen/IterativeLinearSolvers"
+#include <Eigen/Dense>
+#include <Eigen/Sparse>
+#include <Eigen/Eigenvalues>
 
 
 
@@ -34,7 +38,7 @@ public:
 		isFixed(false) // 默认不是固定点
 	{}
 	void setFixedIfBelowThreshold() {
-		if (initx < -0.629) {//-0.619
+		if (initx < -0.619) {//-0.619
 			isFixed = true;
 		}
 
@@ -159,6 +163,11 @@ public:
 		const Eigen::VectorXf& velGroup2,
 		float k, float m);
 	void calRInvLocalPos();
+<<<<<<< HEAD
+	void modalAnalysis(Eigen::MatrixXf K, Eigen::MatrixXf M);
+=======
+	Eigen::MatrixXd modalTransformation(const Eigen::MatrixXd& stiffnessMatrix, const Eigen::MatrixXd& massMatrix, int numModes);
+>>>>>>> 1c097bc65d830b04fbd5544c829ff1c99a3c147e
 
 	Group()
 		: centerofMass(Eigen::Vector3f::Zero()),  // Initialize Eigen vector

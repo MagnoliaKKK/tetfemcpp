@@ -19,10 +19,10 @@
  
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
-float youngs = 100000;
+float youngs = 1000000;
 float poisson = 0.49;
 float density = 1000;
-int groupNum, groupNumX = 1, groupNumY = 1, groupNumZ = 1; //Object类和颜色都写死了 不能超出class Object {里的组数
+int groupNum, groupNumX = 2, groupNumY = 1, groupNumZ = 1; //Object类和颜色都写死了 不能超出class Object {里的组数
 int wKey = 0;
 
 
@@ -92,9 +92,20 @@ int main() {
 	Eigen::Matrix4f mat;
 	initFontData();
 	//object.findCommonVertices();
-	//object.commonPoints = object.findCommonVertices1(object.groups[0], object.groups[1]);
+	object.commonPoints = object.findCommonVertices1(object.groups[0], object.groups[1]);
 	//object.commonPoints1 = object.findCommonVertices1(object.groups[1], object.groups[2]);
+	//object.commonPoints2 = object.findCommonVertices1(object.groups[2], object.groups[3]);
+	//object.commonPoints3 = object.findCommonVertices1(object.groups[3], object.groups[4]);
+	for (Group& g : object.groups) {
+		 //遍历Group中的每个Vertex
+		for (const auto& vertexPair : g.verticesMap) {
+			// 对每个顶点调用setFixedIfBelowThreshold方法
+			Vertex* vertex = vertexPair.second;
 
+			//vertex->setFixedIfBelowThreshold();
+		}
+
+<<<<<<< HEAD
 	for (Group& g : object.groups) {
 		 //遍历Group中的每个Vertex
 		for (const auto& vertexPair : g.verticesMap) {
@@ -104,6 +115,8 @@ int main() {
 			vertex->setFixedIfBelowThreshold();
 		}
 
+=======
+>>>>>>> 92fcba85205f20a4440e0a17a40b8971112db625
 	}
 
 	/////////揪头发固定法
@@ -133,6 +146,7 @@ int main() {
 		object.groups[i].calInitCOM();
 		object.groups[i].calLocalPos(); // 计算初始位置与初始重心的差值
 		object.groups[i].calGroupK(youngs, poisson);
+		
 		object.groups[i].setVertexMassesFromMassMatrix();
 		object.groups[i].calMassGroup();
 		object.groups[i].calMassDistributionMatrix();
@@ -180,7 +194,7 @@ int main() {
 		}
 		//
 	
-		object.PBDLOOP(5);
+		object.PBDLOOP(10);
 
 		
 		

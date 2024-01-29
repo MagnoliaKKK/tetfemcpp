@@ -2,10 +2,10 @@
 
 
 const float timeStep = 0.01f;
-const float dampingConst = 100.0f;
+const float dampingConst = 1000.0f;
 const float PI = 3.1415926535f;
 const float Gravity = -5.0f;
-const float bindForce = -4000.0f;
+const float bindForce = -5000.0f;
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -239,7 +239,7 @@ Eigen::Quaternionf Group::Exp2(Eigen::Vector3f a) {
 	return  qq;
 }
 void Group::calRotationMatrix() {
-	Eigen::Matrix3f Apq = Eigen::Matrix3f::Zero();
+	Eigen::MatrixXf Apq = Eigen::MatrixXf::Zero(9, 9);
 	Eigen::Matrix3f tempA = Eigen::Matrix3f::Zero();
 	Eigen::Vector3f center_grid = Eigen::Vector3f::Zero();
 	
@@ -250,9 +250,34 @@ void Group::calRotationMatrix() {
 	}
 	// 计算Apq矩阵
 	for (const auto& vertexEntry : verticesMap) {
-		
-		tempA = (primeVec.block<3, 1>(3 * vertexEntry.second->localIndex, 0) - center_grid) * initLocalPos.block<3, 1>(3 * vertexEntry.second->localIndex, 0).transpose();
-		Apq += massMatrix(3 * vertexEntry.second->localIndex, 3 * vertexEntry.second->localIndex) * tempA;
+		Eigen::VectorXf p_bar(9);
+		p_bar << initLocalPos(3 * vertexEntry.second->localIndex),
+			initLocalPos(3 * vertexEntry.second->localIndex + 1),
+			initLocalPos(3 * vertexEntry.second->localIndex + 2),
+			std::pow(initLocalPos(3 * vertexEntry.second->localIndex), 2), // (qx)^2
+			std::pow(initLocalPos(3 * vertexEntry.second->localIndex + 1), 2), // (qy)^2
+			std::pow(initLocalPos(3 * vertexEntry.second->localIndex + 2), 2), // (qz)^2
+			initLocalPos(3 * vertexEntry.second->localIndex)* initLocalPos(3 * vertexEntry.second->localIndex + 1), // qx*qy
+			initLocalPos(3 * vertexEntry.second->localIndex + 1)* initLocalPos(3 * vertexEntry.second->localIndex + 2), // qy*qz
+			initLocalPos(3 * vertexEntry.second->localIndex)* initLocalPos(3 * vertexEntry.second->localIndex + 2); // qx*qz
+		 //从p_bar构造一个3x3矩阵，其中包括p_bar的前三个线性项
+		Eigen::Matrix3f p_bar_matrix;
+		p_bar_matrix.col(0) = p_bar.segment<3>(0); // 前三个元素，线性项
+		p_bar_matrix.col(1) = p_bar.segment<3>(3); // 下一个三个元素，二次项
+		p_bar_matrix.col(2) = p_bar.segment<3>(6); // 最后三个元素，二次项
+
+		Eigen::Vector3f vec = primeVec.block<3, 1>(3 * vertexEntry.second->localIndex, 0) - center_grid;
+		Eigen::MatrixXf diagMatrix9x9 = Eigen::MatrixXf::Zero(9, 9);
+
+		 //将向量vec的元素填充到9x9对角矩阵的对角线上
+		diagMatrix9x9.diagonal() << vec(0), vec(1), vec(2), vec(0), vec(1), vec(2), vec(0), vec(1), vec(2);
+
+
+		auto tempB = diagMatrix9x9 * p_bar_matrix.transpose();
+		/*tempA = (primeVec.block<3, 1>(3 * vertexEntry.second->localIndex, 0) - center_grid) * initLocalPos.block<3, 1>(3 * vertexEntry.second->localIndex, 0).transpose();
+		auto m = massMatrix(3 * vertexEntry.second->localIndex, 3 * vertexEntry.second->localIndex);
+		Apq += m * tempA;*/
+		Apq += massMatrix(3 * vertexEntry.second->localIndex, 3 * vertexEntry.second->localIndex) * tempB;
 	}
 
 	// 初始化四元数和旋转矩阵
@@ -287,6 +312,18 @@ void Group::calRotationMatrix() {
 
 	// 构建旋转矩阵的3N x 3N版本
 	rotationMatrix = Eigen::MatrixXf::Zero(3 * verticesMap.size(), 3 * verticesMap.size());
+	//Eigen::JacobiSVD<Eigen::Matrix3f> svd(rotationMatrix, Eigen::ComputeFullU | Eigen::ComputeFullV);
+	//double cond = svd.singularValues()(0) / svd.singularValues()(2); // 3x3矩阵，索引从0到2
+	//std::cout << "Condition number: " << cond << std::endl;
+	// Eigen::JacobiSVD<Eigen::MatrixXd> svd(matrix, Eigen::ComputeThinU | Eigen::ComputeThinV);
+
+    // 获取奇异值
+	//Eigen::JacobiSVD<Eigen::MatrixXf> svd(rotate_matrix, Eigen::ComputeThinU | Eigen::ComputeThinV);
+	//Eigen::VectorXf singularValues = svd.singularValues();
+
+	//// 打印奇异值
+	//std::cout << "Singular values:" << std::endl;
+	//std::cout << singularValues << std::endl;
 	//rotationMatrix = Eigen::MatrixXf::Identity(3 * verticesMap.size(), 3 * verticesMap.size());
 	for (unsigned int pi = 0; pi < verticesMap.size(); pi++) {
 		rotationMatrix.block<3, 3>(3 * pi, 3 * pi) = rotate_matrix;
@@ -418,9 +455,30 @@ void Group::calGroupK(float E, float nu) {
 			}
 		}
 	}
+	
 	kSparse = groupK.sparseView();
 }
+void Group::modalAnalysis(Eigen::MatrixXf K, Eigen::MatrixXf M) {
+	Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::MatrixXf> solver(K, M);
 
+	// 确保求解器成功
+	if (solver.info() != Eigen::Success) {
+		throw std::runtime_error("Eigenvalue solver failed");
+	}
+
+	// 获取特征值和特征向量
+	Eigen::MatrixXf eigenvalues = solver.eigenvalues();
+	Eigen::MatrixXf eigenvectors = solver.eigenvectors();
+
+	// 计算对角化后的刚度矩阵
+	Eigen::MatrixXf diagK = eigenvectors.transpose() * K * eigenvectors;
+
+	// 如果你想要更新 groupK 为对角化后的刚度矩阵
+	groupK = diagK;
+
+	// 同样可以更新 kSparse 为对角化后的稀疏刚度矩阵
+	kSparse = diagK.sparseView();
+}
 
 void Group::calMassGroup() {
 	groupMass = 0.0; // 初始化组的质量为0
@@ -705,12 +763,34 @@ void Object::PBDLOOP(int looptime) {
 
 		}
 
+<<<<<<< HEAD
 		/*groups[0].calFbind1(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition, groups[0].groupVelocity, groups[1].groupVelocity, bindForce, bindVelocity);
 		groups[1].calFbind1(commonPoints.second, commonPoints.first, groups[1].currentPosition, groups[0].currentPosition, groups[1].groupVelocity, groups[0].groupVelocity, bindForce, bindVelocity);*/
 		/*auto fbindtmp = groups[1].Fbind;
 		groups[1].calFbind1(commonPoints1.first, commonPoints1.second, groups[1].currentPosition, groups[2].currentPosition, groups[1].groupVelocity, groups[2].groupVelocity, 0.5f * bindForce, bindVelocity);
 		groups[1].Fbind += fbindtmp;
 		groups[2].calFbind1(commonPoints1.second, commonPoints1.first, groups[2].currentPosition, groups[1].currentPosition, groups[2].groupVelocity, groups[1].groupVelocity, 0.5f * bindForce, bindVelocity);*/
+=======
+		groups[0].calFbind1(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition, groups[0].groupVelocity, groups[1].groupVelocity, bindForce, bindVelocity);
+		groups[1].calFbind1(commonPoints.second, commonPoints.first, groups[1].currentPosition, groups[0].currentPosition, groups[1].groupVelocity, groups[0].groupVelocity, bindForce, bindVelocity);
+		//auto fbindtmp = groups[1].Fbind;
+		//groups[1].calFbind1(commonPoints1.first, commonPoints1.second, groups[1].currentPosition, groups[2].currentPosition, groups[1].groupVelocity, groups[2].groupVelocity, bindForce, bindVelocity);
+		//groups[1].Fbind += fbindtmp;
+		//groups[2].calFbind1(commonPoints1.second, commonPoints1.first, groups[2].currentPosition, groups[1].currentPosition, groups[2].groupVelocity, groups[1].groupVelocity,  bindForce, bindVelocity);
+		//// Calculate binding force between groups 2 and 3
+		//auto fbindtmp2 = groups[2].Fbind;
+		//groups[2].calFbind1(commonPoints2.first, commonPoints2.second, groups[2].currentPosition, groups[3].currentPosition, groups[2].groupVelocity, groups[3].groupVelocity,  bindForce, bindVelocity);
+		//groups[2].Fbind += fbindtmp2;
+
+		// Apply binding force to group 3, from its connection with group 2
+		groups[3].calFbind1(commonPoints2.second, commonPoints2.first, groups[3].currentPosition, groups[2].currentPosition, groups[3].groupVelocity, groups[2].groupVelocity,  bindForce, bindVelocity);
+		auto fbindtmp3 = groups[3].Fbind;
+		groups[3].calFbind1(commonPoints3.first, commonPoints3.second, groups[3].currentPosition, groups[4].currentPosition, groups[3].groupVelocity, groups[4].groupVelocity, bindForce, bindVelocity);
+		groups[3].Fbind += fbindtmp3;
+
+		// Apply binding force to group 4, from its connection with group 3
+		groups[4].calFbind1(commonPoints3.second, commonPoints3.first, groups[4].currentPosition, groups[3].currentPosition, groups[4].groupVelocity, groups[3].groupVelocity,  0.0f*bindForce, 0.0f * bindVelocity);
+>>>>>>> 92fcba85205f20a4440e0a17a40b8971112db625
 		//groups[2].Fbind += fbindtmp;
 		//groups[3].calFbind(commonPoints2.second, commonPoints2.first, groups[3].currentPosition, groups[2].currentPosition, bindForce);
 		/*groups[4].calFbind(commonPoints3.second, commonPoints3.first, groups[4].currentPosition, groups[3].currentPosition, bindForce);
