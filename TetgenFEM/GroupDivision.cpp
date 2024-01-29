@@ -2,10 +2,10 @@
 
 
 const float timeStep = 0.01f;
-const float dampingConst = 1000.0f;
+const float dampingConst = 10.0f;
 const float PI = 3.1415926535f;
 const float Gravity = -5.0f;
-const float bindForce = -5000.0f;
+const float bindForce = -2500.0f;
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -250,34 +250,12 @@ void Group::calRotationMatrix() {
 	}
 	// 计算Apq矩阵
 	for (const auto& vertexEntry : verticesMap) {
-		Eigen::VectorXf p_bar(9);
-		p_bar << initLocalPos(3 * vertexEntry.second->localIndex),
-			initLocalPos(3 * vertexEntry.second->localIndex + 1),
-			initLocalPos(3 * vertexEntry.second->localIndex + 2),
-			std::pow(initLocalPos(3 * vertexEntry.second->localIndex), 2), // (qx)^2
-			std::pow(initLocalPos(3 * vertexEntry.second->localIndex + 1), 2), // (qy)^2
-			std::pow(initLocalPos(3 * vertexEntry.second->localIndex + 2), 2), // (qz)^2
-			initLocalPos(3 * vertexEntry.second->localIndex)* initLocalPos(3 * vertexEntry.second->localIndex + 1), // qx*qy
-			initLocalPos(3 * vertexEntry.second->localIndex + 1)* initLocalPos(3 * vertexEntry.second->localIndex + 2), // qy*qz
-			initLocalPos(3 * vertexEntry.second->localIndex)* initLocalPos(3 * vertexEntry.second->localIndex + 2); // qx*qz
-		 //从p_bar构造一个3x3矩阵，其中包括p_bar的前三个线性项
-		Eigen::Matrix3f p_bar_matrix;
-		p_bar_matrix.col(0) = p_bar.segment<3>(0); // 前三个元素，线性项
-		p_bar_matrix.col(1) = p_bar.segment<3>(3); // 下一个三个元素，二次项
-		p_bar_matrix.col(2) = p_bar.segment<3>(6); // 最后三个元素，二次项
-
-		Eigen::Vector3f vec = primeVec.block<3, 1>(3 * vertexEntry.second->localIndex, 0) - center_grid;
-		Eigen::MatrixXf diagMatrix9x9 = Eigen::MatrixXf::Zero(9, 9);
-
-		 //将向量vec的元素填充到9x9对角矩阵的对角线上
-		diagMatrix9x9.diagonal() << vec(0), vec(1), vec(2), vec(0), vec(1), vec(2), vec(0), vec(1), vec(2);
-
-
-		auto tempB = diagMatrix9x9 * p_bar_matrix.transpose();
-		/*tempA = (primeVec.block<3, 1>(3 * vertexEntry.second->localIndex, 0) - center_grid) * initLocalPos.block<3, 1>(3 * vertexEntry.second->localIndex, 0).transpose();
-		auto m = massMatrix(3 * vertexEntry.second->localIndex, 3 * vertexEntry.second->localIndex);
-		Apq += m * tempA;*/
-		Apq += massMatrix(3 * vertexEntry.second->localIndex, 3 * vertexEntry.second->localIndex) * tempB;
+		
+		
+		tempA = (primeVec.block<3, 1>(3 * vertexEntry.second->localIndex, 0) - center_grid) * initLocalPos.block<3, 1>(3 * vertexEntry.second->localIndex, 0).transpose();
+		//auto m = massMatrix(3 * vertexEntry.second->localIndex, 3 * vertexEntry.second->localIndex);
+		
+		Apq += massMatrix(3 * vertexEntry.second->localIndex, 3 * vertexEntry.second->localIndex) * tempA;
 	}
 
 	// 初始化四元数和旋转矩阵
@@ -744,15 +722,14 @@ void Object::PBDLOOP(int looptime) {
 		}
 
 
-		/*groups[0].calFbind1(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition, groups[0].groupVelocity, groups[1].groupVelocity, bindForce, bindVelocity);
-		groups[1].calFbind1(commonPoints.second, commonPoints.first, groups[1].currentPosition, groups[0].currentPosition, groups[1].groupVelocity, groups[0].groupVelocity, bindForce, bindVelocity);*/
+		groups[0].calFbind1(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition, groups[0].groupVelocity, groups[1].groupVelocity, bindForce, bindVelocity);
+		groups[1].calFbind1(commonPoints.second, commonPoints.first, groups[1].currentPosition, groups[0].currentPosition, groups[1].groupVelocity, groups[0].groupVelocity, bindForce, bindVelocity);
 		/*auto fbindtmp = groups[1].Fbind;
 		groups[1].calFbind1(commonPoints1.first, commonPoints1.second, groups[1].currentPosition, groups[2].currentPosition, groups[1].groupVelocity, groups[2].groupVelocity, 0.5f * bindForce, bindVelocity);
 		groups[1].Fbind += fbindtmp;
 		groups[2].calFbind1(commonPoints1.second, commonPoints1.first, groups[2].currentPosition, groups[1].currentPosition, groups[2].groupVelocity, groups[1].groupVelocity, 0.5f * bindForce, bindVelocity);*/
 
-		groups[0].calFbind1(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition, groups[0].groupVelocity, groups[1].groupVelocity, bindForce, bindVelocity);
-		groups[1].calFbind1(commonPoints.second, commonPoints.first, groups[1].currentPosition, groups[0].currentPosition, groups[1].groupVelocity, groups[0].groupVelocity, bindForce, bindVelocity);
+		
 		//auto fbindtmp = groups[1].Fbind;
 		//groups[1].calFbind1(commonPoints1.first, commonPoints1.second, groups[1].currentPosition, groups[2].currentPosition, groups[1].groupVelocity, groups[2].groupVelocity, bindForce, bindVelocity);
 		//groups[1].Fbind += fbindtmp;
