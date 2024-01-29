@@ -37,7 +37,7 @@ int main() {
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.414a0.001"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
+	char args[] = "pq1.414a0.01"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
 	behavior.parse_commandline(args);
 
 	// Call TetGen to tetrahedralize the geometry
@@ -102,7 +102,7 @@ int main() {
 			// 对每个顶点调用setFixedIfBelowThreshold方法
 			Vertex* vertex = vertexPair.second;
 
-			vertex->setFixedIfBelowThreshold();
+			//vertex->setFixedIfBelowThreshold();
 		}
 
 	}
@@ -134,7 +134,7 @@ int main() {
 		object.groups[i].calInitCOM();
 		object.groups[i].calLocalPos(); // 计算初始位置与初始重心的差值
 		object.groups[i].calGroupK(youngs, poisson);
-		object.groups[i].modalAnalysis(object.groups[i].groupK, object.groups[i].massMatrix);
+		
 		object.groups[i].setVertexMassesFromMassMatrix();
 		object.groups[i].calMassGroup();
 		object.groups[i].calMassDistributionMatrix();
@@ -176,13 +176,13 @@ int main() {
 		
 		#pragma omp parallel for
 		for (int i = 0; i < groupNum; i++) {
-			object.groups[i].calPrimeVec(wKey);
+			object.groups[i].calPrimeVec1(wKey);
 			object.groups[i].calRotationMatrix();
 			
 		}
 		//
 	
-		object.PBDLOOP(5);
+		object.PBDLOOP(10);
 
 		
 		
