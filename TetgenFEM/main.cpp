@@ -22,7 +22,7 @@ Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 float youngs = 1000000;
 float poisson = 0.49;
 float density = 1000;
-int groupNum, groupNumX = 2, groupNumY = 1, groupNumZ = 1; //Object类和颜色都写死了 不能超出class Object {里的组数
+int groupNum, groupNumX = 2, groupNumY = 2, groupNumZ = 2; //Object类和颜色都写死了 不能超出class Object {里的组数
 int wKey = 0;
 
 
@@ -32,7 +32,7 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/bunnyLow.stl", in);
+	readSTL("stls/cubeLong.stl", in);
 
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
@@ -269,7 +269,25 @@ int main() {
 		//	}
 
 		//}
+		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
+			Group& group = object.getGroup(groupIdx);
 
+			// 使用组中已经计算好的质心
+			Eigen::Vector3f& center = group.centerofMass;
+
+			// 将组索引转换为字符串
+			char groupNumber[10];
+			sprintf_s(groupNumber, "%d", groupIdx);
+
+			// 为组编号设置颜色
+			glColor3f(1, 0.0f, 0.0f); // 白色用于文本
+
+			// 设置组编号的位置并绘制
+			glRasterPos3f(center[0], center[1], center[2]);
+			XPrintString(groupNumber);
+
+			// ... [绘制边缘和顶点的其余代码] ...
+		}
 		
 		// Draw edges
 		glBegin(GL_LINES);
@@ -310,6 +328,7 @@ int main() {
 		}
 
 		
+
 
 
 		glEnd();
