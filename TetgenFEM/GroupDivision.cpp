@@ -239,7 +239,7 @@ Eigen::Quaternionf Group::Exp2(Eigen::Vector3f a) {
 	return  qq;
 }
 void Group::calRotationMatrix() {
-	Eigen::MatrixXf Apq = Eigen::MatrixXf::Zero(9, 9);
+	Eigen::MatrixXf Apq = Eigen::MatrixXf::Zero(3, 3);
 	Eigen::Matrix3f tempA = Eigen::Matrix3f::Zero();
 	Eigen::Vector3f center_grid = Eigen::Vector3f::Zero();
 	
