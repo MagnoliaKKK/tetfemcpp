@@ -4,8 +4,8 @@
 const float timeStep = 0.01f;
 const float dampingConst = 10.0f;
 const float PI = 3.1415926535f;
-const float Gravity = -5.0f;
-const float bindForce = -2500.0f;
+const float Gravity = -5000.0f;
+const float bindForce = -500.0f;
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -578,7 +578,42 @@ void Group::calPrimeVec1(int w) {
 		primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
 	}
 }
+void Group::calPrimeVec2(int w) {
+	// ... [现有代码] ...
+	primeVec = Eigen::VectorXf::Zero(3 * verticesVector.size());
 
+
+	gravity = Eigen::VectorXf::Zero(3 * verticesVector.size());
+	// 设置指定点的 gravity
+	int localPi = 32; // 指定的 localIndex
+	if (localPi < verticesVector.size()) {
+		int gravityIndex = 3 * localPi + 1; // 假设在 y 方向上施加力
+		if (w == 1 || w == 2) {
+			gravity(gravityIndex) = (w == 1) ? Gravity : -Gravity; // 根据 w 的值决定力的方向
+		}
+	}
+	groupVelocity += gravity * timeStep;
+
+	// 使用整个矩阵计算velocityUpdate
+	Eigen::VectorXf velocityUpdate = inverseTermSparse * (massMatrix * groupVelocity) * timeStep;
+
+	// 更新primeVec和顶点位置
+	for (auto& vertexPair : verticesVector) {
+		Vertex* vertex = vertexPair;
+		int localPi = vertex->localIndex; // 使用局部索引
+
+		// 获取当前顶点的速度更新部分
+		Eigen::Vector3f currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
+
+		// 计算新的位置
+		Eigen::Vector3f newPosition = Eigen::Vector3f(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate;
+
+		// 更新primeVec
+		primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
+
+	}
+	// ... [更新 groupVelocity 和 primeVec 的代码] ...
+}
 void Group::calPrimeVec(int w) {
 	// 确保groupVelocity已经初始化且设置为正确的尺寸
 	//groupVelocity = Eigen::VectorXf::Zero(3 * verticesMap.size());
@@ -590,22 +625,22 @@ void Group::calPrimeVec(int w) {
 	// 初始化gravity向量
 	if (w == 4) {
 		for (int i = 0; i < 3 * verticesVector.size(); i += 3) {
-			gravity(i) = -Gravity; // y方向上设置重力 右
+			gravity(i) = -0; // y方向上设置重力 右
 		}
 	}
 	else if (w == 2) {
 		for (int i = 1; i < 3 * verticesVector.size(); i += 3) {
-			gravity(i) = Gravity; // y方向上设置重力 下
+			gravity(i) = 0; // y方向上设置重力 下
 		}
 	}
 	else if (w == 1) {
 		for (int i = 1; i < 3 * verticesVector.size(); i += 3) {
-			gravity(i) = -Gravity; // y方向上设置重力 上
+			gravity(i) = -0; // y方向上设置重力 上
 		}
 	}
 	else if (w == 3) {
 		for (int i = 0; i < 3 * verticesVector.size(); i += 3) {
-			gravity(i) = Gravity; // y方向上设置重力 左
+			gravity(i) = 0; // y方向上设置重力 左
 		}
 	}
 	

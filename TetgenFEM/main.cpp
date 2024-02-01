@@ -19,10 +19,10 @@
  
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
-float youngs = 1000000;
+float youngs = 10000;
 float poisson = 0.49;
 float density = 1000;
-int groupNum, groupNumX = 2, groupNumY = 2, groupNumZ = 2; //Object类和颜色都写死了 不能超出class Object {里的组数
+int groupNum, groupNumX = 2, groupNumY = 1, groupNumZ = 1; //Object类和颜色都写死了 不能超出class Object {里的组数
 int wKey = 0;
 
 
@@ -174,13 +174,19 @@ int main() {
 		//std::cout << wKey << std::endl;// 当 W 被按下时的逻辑
 		//double aa = object.groups[0].tetrahedra[0]->calMassTetra(density);
 		
-		#pragma omp parallel for
-		for (int i = 0; i < groupNum; i++) {
-			object.groups[i].calPrimeVec(wKey);
-			object.groups[i].calRotationMatrix();
-			
-		}
+		//#pragma omp parallel for
+		/*for (int i = 0; i < groupNum; i++) {
+			object.groups[0].calPrimeVec(wKey);
+			object.groups[0].calRotationMatrix();
+			object.groups[1].calPrimeVec2(wKey);
+			object.groups[1].calRotationMatrix();
+		}*/
 		//
+		object.groups[0].calPrimeVec(wKey);
+		
+		object.groups[1].calPrimeVec2(wKey);
+		object.groups[0].calRotationMatrix();
+		object.groups[1].calRotationMatrix();
 	
 		object.PBDLOOP(5);
 
@@ -221,54 +227,54 @@ int main() {
 		glEnd();
 
 
-		//for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) { //写点的标号，画字
-		//	Group& group = object.getGroup(groupIdx);
+		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) { //写点的标号，画字
+			Group& group = object.getGroup(groupIdx);
 
-		//	//画不重复的版本
-		//	//std::vector<Vertex*> uniqueVertices = group.getUniqueVertices();
-		//	//for (size_t i = 0; i < uniqueVertices.size(); ++i) {
-		//	//	Vertex* vertex = uniqueVertices[i];
-		//	//	char buffer[5]; // 分配足够大的缓冲区
-		//	//	sprintf_s(buffer, "%d", vertex->index); // 将int转换为char*
-		//	//	glColor3f(1, 0.0f, 0.0f);
-		//	//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
-		//	//	XPrintString(buffer);
-		//	//}
-
-
-		//	//画重复的版本
+			//画不重复的版本
+			std::vector<Vertex*> uniqueVertices = group.getUniqueVertices();
+			for (size_t i = 0; i < uniqueVertices.size(); ++i) {
+				Vertex* vertex = uniqueVertices[i];
+				char buffer[5]; // 分配足够大的缓冲区
+				sprintf_s(buffer, "%d", vertex->index); // 将int转换为char*
+				glColor3f(1, 0.0f, 0.0f);
+				glRasterPos3f(vertex->x, vertex->y, vertex->z);
+				XPrintString(buffer);
+			}
 
 
-		//	for (Tetrahedron* tetra : group.tetrahedra) { // 遍历组中的每个四面体
-		//		for (int i = 0; i < 4; ++i) { // 遍历四面体的每个顶点
-		//			Vertex* vertex = tetra->vertices[i];
-		//			char buffer[5]; // 分配足够大的缓冲区
-		//			sprintf_s(buffer, "%d", vertex->index); // 将int转换为char*
-		//			//if (groupIdx == 0) {
-		//			//	glColor3f(1, 0.0f, 0.0f);
-		//			//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
-		//			//	XPrintString(buffer);
-		//			//}
-		//				
-		//			//if(groupIdx == 1)
-		//			//{
-		//			//	glColor3f(0, 1, 0.0f);
-		//			//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
-		//			//	XPrintString(buffer);
-		//			//}
-		//			//	
+			//画重复的版本
 
-		//			//std::default_random_engine generator(vertex->index);//随机数发生器，用于字符偏移防重叠
-		//			//std::uniform_real_distribution<float> distribution(0, 0.05);
-		//			//float random_number = distribution(generator);
-		//			glColor3f(1, 0.0f, 0.0f);
-		//			glRasterPos3f(vertex->x + 0, vertex->y + 0, vertex->z + 0);
-		//			XPrintString(buffer);
-		//			
-		//		}
-		//	}
 
-		//}
+			for (Tetrahedron* tetra : group.tetrahedra) { // 遍历组中的每个四面体
+				for (int i = 0; i < 4; ++i) { // 遍历四面体的每个顶点
+					Vertex* vertex = tetra->vertices[i];
+					char buffer[5]; // 分配足够大的缓冲区
+					sprintf_s(buffer, "%d", vertex->index); // 将int转换为char*
+					//if (groupIdx == 0) {
+					//	glColor3f(1, 0.0f, 0.0f);
+					//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
+					//	XPrintString(buffer);
+					//}
+						
+					//if(groupIdx == 1)
+					//{
+					//	glColor3f(0, 1, 0.0f);
+					//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
+					//	XPrintString(buffer);
+					//}
+					//	
+
+					//std::default_random_engine generator(vertex->index);//随机数发生器，用于字符偏移防重叠
+					//std::uniform_real_distribution<float> distribution(0, 0.05);
+					//float random_number = distribution(generator);
+					glColor3f(1, 0.0f, 0.0f);
+					glRasterPos3f(vertex->x + 0, vertex->y + 0, vertex->z + 0);
+					XPrintString(buffer);
+					
+				}
+			}
+
+		}
 		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
 			Group& group = object.getGroup(groupIdx);
 

@@ -154,6 +154,7 @@ public:
 	void updatePosition();
 	void updateVelocity();
 	void initialize();
+	void calPrimeVec2(int w);
 	//void updateVertexPositions();
 	void calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
 		const std::vector<Vertex*>& commonVerticesGroup2,
