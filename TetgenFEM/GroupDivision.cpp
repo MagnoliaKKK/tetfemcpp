@@ -4,8 +4,8 @@
 const float timeStep = 0.01f;
 const float dampingConst = 10.0f;
 const float PI = 3.1415926535f;
-const float Gravity = -5000.0f;
-const float bindForce = -500.0f;
+const float Gravity = -5.0f;
+const float bindForce = -1.0f;
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -121,7 +121,7 @@ void Object::findCommonVertices() {
 	// Assuming 'groups' is a member of Object class and contains all groups
 	for (Group& group : groups) {
 		// Initialize commonVerticesInDirections for the current group
-		group.commonVerticesInDirections = std::vector<std::pair<std::vector<Vertex*>, std::vector<Vertex*>>>(6);
+		//group.commonVerticesInDirections = std::vector<std::pair<std::vector<Vertex*>, std::vector<Vertex*>>>(6);
 
 		// Iterate through all possible directions
 		for (int direction = 0; direction < 6; ++direction) {
@@ -151,6 +151,44 @@ void Object::findCommonVertices() {
 			}
 		}
 	}
+}
+void Object::storeAdjacentGroupsCommonVertices(int groupIndex) {
+	// 确保指定的组索引在有效范围内
+	if (groupIndex < 0 || groupIndex >= groups.size()) {
+		std::cerr << "Invalid group index." << std::endl;
+		return;
+	}
+
+	// 存储共同顶点的结构，每个条目对应一个方向的相邻组
+	//std::vector<std::pair<std::vector<Vertex*>, std::vector<Vertex*>>> commonVerticesInDirections(6);
+
+	// 获取当前组
+	Group& currentGroup = groups[groupIndex];
+
+	// 遍历所有6个方向的相邻组
+	for (int direction = 0; direction < 6; ++direction) {
+		int adjacentGroupIdx = currentGroup.adjacentGroupIDs[direction];
+
+		// 检查是否存在相邻组
+		if (adjacentGroupIdx != -1) {
+			Group& adjacentGroup = groups[adjacentGroupIdx];
+
+			// 使用 findCommonVertices1 函数找到共同顶点
+			std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonVertices = findCommonVertices1(currentGroup, adjacentGroup);
+
+			// 存储找到的共同顶点
+			currentGroup.commonVerticesInDirections[direction] = commonVertices;
+		}
+	}
+
+	// 将找到的共同顶点与当前组相关联并存储起来
+	// 这里假设有一个成员变量来存储这些信息，例如:
+	// std::vector<std::vector<std::pair<std::vector<Vertex*>, std::vector<Vertex*>>>> commonVerticesForGroups;
+	// 确保 commonVerticesForGroups 大小足够
+	/*if (commonVerticesForGroups.size() <= groupIndex) {
+		commonVerticesForGroups.resize(groupIndex + 1);
+	}
+	commonVerticesForGroups[groupIndex] = commonVerticesInAllDirections;*/
 }
 
 
@@ -625,22 +663,22 @@ void Group::calPrimeVec(int w) {
 	// 初始化gravity向量
 	if (w == 4) {
 		for (int i = 0; i < 3 * verticesVector.size(); i += 3) {
-			gravity(i) = -0; // y方向上设置重力 右
+			gravity(i) = -Gravity; // y方向上设置重力 右
 		}
 	}
 	else if (w == 2) {
 		for (int i = 1; i < 3 * verticesVector.size(); i += 3) {
-			gravity(i) = 0; // y方向上设置重力 下
+			gravity(i) = Gravity; // y方向上设置重力 下
 		}
 	}
 	else if (w == 1) {
 		for (int i = 1; i < 3 * verticesVector.size(); i += 3) {
-			gravity(i) = -0; // y方向上设置重力 上
+			gravity(i) = -Gravity; // y方向上设置重力 上
 		}
 	}
 	else if (w == 3) {
 		for (int i = 0; i < 3 * verticesVector.size(); i += 3) {
-			gravity(i) = 0; // y方向上设置重力 左
+			gravity(i) = Gravity; // y方向上设置重力 左
 		}
 	}
 	
@@ -753,54 +791,9 @@ void Object::PBDLOOP(int looptime) {
 			g.calRHS();
 			g.calDeltaX();
 			g.calculateCurrentPositions();
+			g.calFbind(allGroup, bindForce);
 
 		}
-
-
-		groups[0].calFbind1(commonPoints.first, commonPoints.second, groups[0].currentPosition, groups[1].currentPosition, groups[0].groupVelocity, groups[1].groupVelocity, bindForce, bindVelocity);
-		groups[1].calFbind1(commonPoints.second, commonPoints.first, groups[1].currentPosition, groups[0].currentPosition, groups[1].groupVelocity, groups[0].groupVelocity, bindForce, bindVelocity);
-		/*auto fbindtmp = groups[1].Fbind;
-		groups[1].calFbind1(commonPoints1.first, commonPoints1.second, groups[1].currentPosition, groups[2].currentPosition, groups[1].groupVelocity, groups[2].groupVelocity, 0.5f * bindForce, bindVelocity);
-		groups[1].Fbind += fbindtmp;
-		groups[2].calFbind1(commonPoints1.second, commonPoints1.first, groups[2].currentPosition, groups[1].currentPosition, groups[2].groupVelocity, groups[1].groupVelocity, 0.5f * bindForce, bindVelocity);*/
-
-		
-		//auto fbindtmp = groups[1].Fbind;
-		//groups[1].calFbind1(commonPoints1.first, commonPoints1.second, groups[1].currentPosition, groups[2].currentPosition, groups[1].groupVelocity, groups[2].groupVelocity, bindForce, bindVelocity);
-		//groups[1].Fbind += fbindtmp;
-		//groups[2].calFbind1(commonPoints1.second, commonPoints1.first, groups[2].currentPosition, groups[1].currentPosition, groups[2].groupVelocity, groups[1].groupVelocity,  bindForce, bindVelocity);
-		//// Calculate binding force between groups 2 and 3
-		//auto fbindtmp2 = groups[2].Fbind;
-		//groups[2].calFbind1(commonPoints2.first, commonPoints2.second, groups[2].currentPosition, groups[3].currentPosition, groups[2].groupVelocity, groups[3].groupVelocity,  bindForce, bindVelocity);
-		//groups[2].Fbind += fbindtmp2;
-
-		// Apply binding force to group 3, from its connection with group 2
-//		groups[3].calFbind1(commonPoints2.second, commonPoints2.first, groups[3].currentPosition, groups[2].currentPosition, groups[3].groupVelocity, groups[2].groupVelocity,  bindForce, bindVelocity);
-//		auto fbindtmp3 = groups[3].Fbind;
-//		groups[3].calFbind1(commonPoints3.first, commonPoints3.second, groups[3].currentPosition, groups[4].currentPosition, groups[3].groupVelocity, groups[4].groupVelocity, bindForce, bindVelocity);
-//		groups[3].Fbind += fbindtmp3;
-//
-//		// Apply binding force to group 4, from its connection with group 3
-//		groups[4].calFbind1(commonPoints3.second, commonPoints3.first, groups[4].currentPosition, groups[3].currentPosition, groups[4].groupVelocity, groups[3].groupVelocity,  0.0f*bindForce, 0.0f * bindVelocity);
-//>>>>>>> 92fcba85205f20a4440e0a17a40b8971112db625
-		//groups[2].Fbind += fbindtmp;
-		//groups[3].calFbind(commonPoints2.second, commonPoints2.first, groups[3].currentPosition, groups[2].currentPosition, bindForce);
-		/*groups[4].calFbind(commonPoints3.second, commonPoints3.first, groups[4].currentPosition, groups[3].currentPosition, bindForce);
-		groups[5].calFbind(commonPoints4.second, commonPoints4.first, groups[5].currentPosition, groups[4].currentPosition, bindForce);
-		groups[6].calFbind(commonPoints5.second, commonPoints5.first, groups[6].currentPosition, groups[5].currentPosition, bindForce);
-		groups[7].calFbind(commonPoints6.second, commonPoints6.first, groups[7].currentPosition, groups[6].currentPosition, bindForce);
-
-		groups[8].calFbind(commonPoints7.second, commonPoints7.first, groups[8].currentPosition, groups[7].currentPosition, bindForce);
-		groups[9].calFbind(commonPoints8.second, commonPoints8.first, groups[9].currentPosition, groups[8].currentPosition, bindForce);
-		groups[10].calFbind(commonPoints9.second, commonPoints9.first, groups[10].currentPosition, groups[9].currentPosition, bindForce);
-		groups[11].calFbind(commonPoints10.second, commonPoints10.first, groups[11].currentPosition, groups[10].currentPosition, bindForce);
-		groups[12].calFbind(commonPoints11.second, commonPoints11.first, groups[12].currentPosition, groups[11].currentPosition, bindForce);
-		groups[13].calFbind(commonPoints12.second, commonPoints12.first, groups[13].currentPosition, groups[12].currentPosition, bindForce);
-		groups[14].calFbind(commonPoints13.second, commonPoints13.first, groups[14].currentPosition, groups[13].currentPosition, bindForce);
-		groups[15].calFbind(commonPoints14.second, commonPoints14.first, groups[15].currentPosition, groups[14].currentPosition, bindForce);*/
-
-		//groups[2].calFbind1(commonPoints1.second, commonPoints1.first, groups[2].currentPosition, groups[1].currentPosition, 2 * bindForce);
-	
 
 
 	}
@@ -974,7 +967,7 @@ void Group::calFbind(const std::vector<Group>& allGroups, float k) {
 				force = k * posDifference;
 
 				// Add the constraint force to Fbind at the appropriate position using the local index
-				Fbind.segment<3>(3 * vertexThisGroup->localIndex) = force;
+				Fbind.segment<3>(3 * vertexThisGroup->localIndex)  += force;
 				
 			}
 		}
@@ -1053,6 +1046,14 @@ void Group::updateVelocity() {
 
 Group& Object::getGroup(int index) {
 	return groups[index];
+}
+
+void Object::storeAllGroups() {
+	allGroup.reserve(groupNum);
+	for (int i = 0; i < groupNum; ++i) {
+		Group& group = getGroup(i); // 获取第 i 个 Group 对象的引用
+		allGroup.push_back(group); // 将 Group 对象添加到集合中
+	}
 }
 
 void Object::updateAdjacentGroupIndices(int numX, int numY, int numZ) {

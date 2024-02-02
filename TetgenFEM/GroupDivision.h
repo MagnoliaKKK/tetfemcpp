@@ -171,7 +171,8 @@ public:
 		: centerofMass(Eigen::Vector3f::Zero()),  // Initialize Eigen vector
 		groupMass(0.0),                         // Initialize float
 		verticesMap(),
-		adjacentGroupIDs({ 0, 0, 0, 0, 0, 0 })
+		adjacentGroupIDs({ -1, -1, -1, -1, -1, -1 }),
+		commonVerticesInDirections(6)
 		
 	{
 		// Additional initialization logic, if needed
@@ -182,22 +183,10 @@ public:
 class Object {
 public:
 	std::vector<Group> groups; // change this
-	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints;
-	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints1;
-	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints2;
-	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints3;
-	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints4;
-	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints5;
-	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints6;
-	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints7;
-	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints8;
-	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints9;
-	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints10;
-	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints11;
-	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints12;
-	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints13;
-	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints14;
+	//std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints;
+	
 	int groupNum, groupNumX, groupNumY, groupNumZ;
+	std::vector<Group> allGroup;
 
 	Group& getGroup(int index);
 	void findCommonVertices();// find common vertex
@@ -205,10 +194,12 @@ public:
 	void updateIndices();
 	void generateUniqueVertices();//generate unique vertices
 	void PBDLOOP(int looptime);
-
+	void storeAllGroups();
 	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> findCommonVertices1(const Group& group1, const Group& group2);
 	void updateAdjacentGroupIndices(int numX, int numY, int numZ);
 	void calDistance(std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonpoints);
+	void storeAdjacentGroupsCommonVertices(int groupIndex);
+
 };
 
 void findBoundaryEdges(tetgenio& out);
