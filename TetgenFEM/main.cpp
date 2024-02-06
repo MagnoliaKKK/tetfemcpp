@@ -22,7 +22,7 @@ Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 float youngs = 10000;
 float poisson = 0.49;
 float density = 1000;
-int groupNum, groupNumX = 2, groupNumY = 2, groupNumZ = 2; //Object类和颜色都写死了 不能超出class Object {里的组数
+int groupNum, groupNumX = 2, groupNumY = 1, groupNumZ = 1; //Object类和颜色都写死了 不能超出class Object {里的组数
 int wKey = 0;
 
 
@@ -37,7 +37,7 @@ int main() {
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "'pq1.414a0.01"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
+	char args[] = "'pq10a0.01"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
 	behavior.parse_commandline(args);
 
 	// Call TetGen to tetrahedralize the geometry
@@ -100,6 +100,7 @@ int main() {
 	//object.commonPoints1 = object.findCommonVertices1(object.groups[1], object.groups[2]);
 	//object.commonPoints2 = object.findCommonVertices1(object.groups[2], object.groups[3]);
 	//object.commonPoints3 = object.findCommonVertices1(object.groups[3], object.groups[4]);
+	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonVertices2 = object.findCommonVertices1(object.groups[0], object.groups[1]);
 	for (Group& g : object.groups) {
 		 //遍历Group中的每个Vertex
 		for (const auto& vertexPair : g.verticesMap) {
@@ -194,9 +195,9 @@ int main() {
 		// Render here
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
-		drawAxis1(0.3f, object.groups[0].rotate_matrix);
+		//drawAxis1(0.3f, object.groups[0].rotate_matrix);
 		// 绘制坐眮E丒
-		//drawAxis(0.3f);
+		drawAxis(0.3f);
 		//std::cout << getRotationAngleZ(object.groups[0].rotate_matrix) << std::endl;;
 		// Enable wireframe mode
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -244,34 +245,34 @@ int main() {
 			//画重复的版本
 
 
-			for (Tetrahedron* tetra : group.tetrahedra) { // 遍历组中的每个四面体
-				for (int i = 0; i < 4; ++i) { // 遍历四面体的每个顶点
-					Vertex* vertex = tetra->vertices[i];
-					char buffer[5]; // 分配足够大的缓冲区
-					sprintf_s(buffer, "%d", vertex->index); // 将int转换为char*
-					//if (groupIdx == 0) {
-					//	glColor3f(1, 0.0f, 0.0f);
-					//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
-					//	XPrintString(buffer);
-					//}
-						
-					//if(groupIdx == 1)
-					//{
-					//	glColor3f(0, 1, 0.0f);
-					//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
-					//	XPrintString(buffer);
-					//}
-					//	
+			//for (Tetrahedron* tetra : group.tetrahedra) { // 遍历组中的每个四面体
+			//	for (int i = 0; i < 4; ++i) { // 遍历四面体的每个顶点
+			//		Vertex* vertex = tetra->vertices[i];
+			//		char buffer[5]; // 分配足够大的缓冲区
+			//		sprintf_s(buffer, "%d", vertex->index); // 将int转换为char*
+			//		//if (groupIdx == 0) {
+			//		//	glColor3f(1, 0.0f, 0.0f);
+			//		//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
+			//		//	XPrintString(buffer);
+			//		//}
+			//			
+			//		//if(groupIdx == 1)
+			//		//{
+			//		//	glColor3f(0, 1, 0.0f);
+			//		//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
+			//		//	XPrintString(buffer);
+			//		//}
+			//		//	
 
-					//std::default_random_engine generator(vertex->index);//随机数发生器，用于字符偏移防重叠
-					//std::uniform_real_distribution<float> distribution(0, 0.05);
-					//float random_number = distribution(generator);
-					glColor3f(1, 0.0f, 0.0f);
-					glRasterPos3f(vertex->x + 0, vertex->y + 0, vertex->z + 0);
-					XPrintString(buffer);
-					
-				}
-			}
+			//		//std::default_random_engine generator(vertex->index);//随机数发生器，用于字符偏移防重叠
+			//		//std::uniform_real_distribution<float> distribution(0, 0.05);
+			//		//float random_number = distribution(generator);
+			//		glColor3f(1, 0.0f, 0.0f);
+			//		glRasterPos3f(vertex->x + 0, vertex->y + 0, vertex->z + 0);
+			//		XPrintString(buffer);
+			//		
+			//	}
+			//}
 
 		}
 		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
