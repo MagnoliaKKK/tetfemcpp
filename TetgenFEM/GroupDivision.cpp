@@ -5,7 +5,7 @@ const float timeStep = 0.01f;
 const float dampingConst = 10.0f;
 const float PI = 3.1415926535f;
 const float Gravity = -5.0f;
-const float bindForce = -.0f;
+const float bindForce = -50.0f;
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -932,7 +932,7 @@ void Group::calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
 
 void Group::calFbind(const std::vector<Group>& allGroups, float k) {
 	// Initialize Fbind with a length three times the number of vertices in the group
-	Fbind = Eigen::VectorXf::Zero(verticesMap.size() * 3);
+	//Fbind = Eigen::VectorXf::Zero(verticesMap.size() * 3);
 	Eigen::Vector3f posThisGroup;
 	Eigen::Vector3f posOtherGroup;
 	Eigen::Vector3f avgPosition;
