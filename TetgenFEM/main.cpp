@@ -22,7 +22,7 @@ Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 float youngs = 10000;
 float poisson = 0.49;
 float density = 1000;
-int groupNum, groupNumX = 2, groupNumY = 2, groupNumZ = 1; //Object类和颜色都写死了 不能超出class Object {里的组数
+int groupNum, groupNumX = 2, groupNumY = 1, groupNumZ = 1; //Object类和颜色都写死了 不能超出class Object {里的组数
 int wKey = 0;
 
 
@@ -62,7 +62,7 @@ int main() {
 	}
 	
 	// Accessing and printing the groups and their tetrahedra
-#pragma omp parallel for
+//#pragma omp parallel for
 	for (int i = 0; i < groupNum; ++i) {  // Loop over the groups
 		Group& group = object.getGroup(i);
 		std::cout << "Group " << i << " has " << group.tetrahedra.size() << " tetrahedra." << std::endl;
@@ -113,7 +113,7 @@ int main() {
 	}
 	
 	
-	object.storeAllGroups();
+	
 	/////////揪头发固定法
 	//float maxY = -std::numeric_limits<float>::infinity(); // 初始化为极小值
 	//Vertex* vertexWithMaxY = nullptr;
@@ -132,8 +132,8 @@ int main() {
 	//	vertexWithMaxY->isFixed = true; // 假设有一个方法 setFixed 来设置顶点的固定状态
 	//}
 	/////////
-
-#pragma omp parallel for
+	
+//#pragma omp parallel for
 	for (int i = 0; i < object.groupNum; ++i) {
 		object.groups[i].calMassMatrix(density);
 		object.groups[i].calDampingMatrix();
@@ -181,7 +181,7 @@ int main() {
 		//std::cout << wKey << std::endl;// 当 W 被按下时的逻辑
 		//double aa = object.groups[0].tetrahedra[0]->calMassTetra(density);
 		
-		#pragma omp parallel for
+		//#pragma omp parallel for
 		for (int i = 0; i < groupNum; i++) {
 			object.groups[i].calPrimeVec(wKey);
 			object.groups[i].calRotationMatrix();

@@ -5,7 +5,7 @@ const float timeStep = 0.01f;
 const float dampingConst = 10.0f;
 const float PI = 3.1415926535f;
 const float Gravity = -5.0f;
-const float bindForce = -50.0f;
+const float bindForce = -500.0f;
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -764,10 +764,11 @@ void Group::calRInvLocalPos() {
 
 void Object::PBDLOOP(int looptime) {
 // 1. 初始化：将每个组的 Fbind 置零
-	//#pragma omp parallel for
+	
+     //#pragma omp parallel for
 	float reference = 0.0f; // float类型的参考值
 	float epsilon = std::numeric_limits<float>::epsilon(); // float类型的epsilon
-#pragma omp parallel for
+    #pragma omp parallel for
 	for (int i = 0; i < groupNum; ++i) {
 		auto& g = groups[i];
 		g.Fbind = Eigen::VectorXf::Zero(3 * g.verticesMap.size()); // 假设 Group 类有一个方法来清除 Fbind
@@ -786,20 +787,26 @@ void Object::PBDLOOP(int looptime) {
 	for (int iter = 0; iter < looptime; ++iter) {
 		// 每组计算 RHS
 
-		//#pragma omp parallel for //500fps to 300, -optimization
+		#pragma omp parallel for //500fps to 300, -optimization
 		for (int i = 0; i < groupNum; ++i) {
 			auto& g = groups[i];
 			g.calRHS();
 			g.calDeltaX();
 			g.calculateCurrentPositions();
+			//g.calFbind(allGroup, bindForce);
+
+		}
+		storeAllGroups();
+		//std::vector<Group*> tmpGroups = allGroup;
+		for (int i = 0; i < groupNum; ++i) {
+			auto& g = groups[i];
+			
 			g.calFbind(allGroup, bindForce);
 
 		}
-
-
 	}
 	//std::cout << "Bind is" << std::endl << groups[0].Fbind(58) << std::endl;
-//#pragma omp parallel for
+#pragma omp parallel for
 	for (int i = 0; i < groupNum; ++i) {
 		auto& g = groups[i];
 		g.updateVelocity();
@@ -971,6 +978,7 @@ void Group::calFbind(const std::vector<Group>& allGroups, float k) {
 				Fbind.segment<3>(3 * vertexThisGroup->localIndex)  += force;
 				
 			}
+			int aaa = 1;
 		}
 	}
 }
