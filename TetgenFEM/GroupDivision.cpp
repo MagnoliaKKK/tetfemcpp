@@ -5,7 +5,7 @@ const float timeStep = 0.01f;
 const float dampingConst = 10.0f;
 const float PI = 3.1415926535f;
 const float Gravity = -5.0f;
-const float bindForce = -500.0f;
+const float bindForce = -1000.0f;
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -181,15 +181,6 @@ void Object::storeAdjacentGroupsCommonVertices(int groupIndex) {
 			currentGroup.commonVerticesInDirections[direction] = commonVertices;
 		}
 	}
-
-	// 将找到的共同顶点与当前组相关联并存储起来
-	// 这里假设有一个成员变量来存储这些信息，例如:
-	// std::vector<std::vector<std::pair<std::vector<Vertex*>, std::vector<Vertex*>>>> commonVerticesForGroups;
-	// 确保 commonVerticesForGroups 大小足够
-	/*if (commonVerticesForGroups.size() <= groupIndex) {
-		commonVerticesForGroups.resize(groupIndex + 1);
-	}
-	commonVerticesForGroups[groupIndex] = commonVerticesInAllDirections;*/
 }
 
 
@@ -796,17 +787,27 @@ void Object::PBDLOOP(int looptime) {
 			//g.calFbind(allGroup, bindForce);
 
 		}
-		storeAllGroups();
-		//std::vector<Group*> tmpGroups = allGroup;
-		for (int i = 0; i < groupNum; ++i) {
-			auto& g = groups[i];
-			
-			g.calFbind(allGroup, bindForce);
+		for (int groupIdx = 0; groupIdx < groups.size(); ++groupIdx) {
+			Group& currentGroup = groups[groupIdx];
 
+			// 遍历所有6个方向的相邻组
+			for (int direction = 0; direction < 6; ++direction) {
+				int adjacentGroupIdx = currentGroup.adjacentGroupIDs[direction];
+
+				// 检查是否存在相邻组
+				if (adjacentGroupIdx != -1) {
+					Group& adjacentGroup = groups[adjacentGroupIdx];
+					const auto& commonVerticesPair = currentGroup.commonVerticesInDirections[direction];
+
+					// 使用 calFbind1 计算约束力
+					currentGroup.calFbind1(commonVerticesPair.first, commonVerticesPair.second,
+						currentGroup.currentPosition, adjacentGroup.currentPosition, bindForce);
+				}
+			}
 		}
 	}
 	//std::cout << "Bind is" << std::endl << groups[0].Fbind(58) << std::endl;
-#pragma omp parallel for
+//#pragma omp parallel for
 	for (int i = 0; i < groupNum; ++i) {
 		auto& g = groups[i];
 		g.updateVelocity();
@@ -896,22 +897,19 @@ void Group::calculateCurrentPositions() {
 void Group::calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
 	const std::vector<Vertex*>& commonVerticesGroup2,
 	const Eigen::VectorXf& currentPositionGroup1,
-	const Eigen::VectorXf& currentPositionGroup2,const Eigen::VectorXf& velGroup1,
-	const Eigen::VectorXf& velGroup2,
-	float k, float m) {
+	const Eigen::VectorXf& currentPositionGroup2,
+	float k) {
 	// Initialize Fbind, with a length three times the number of vertices in the group
 	Fbind = Eigen::VectorXf::Zero(verticesMap.size() * 3);
 	Eigen::Vector3f posThisGroup;
 	Eigen::Vector3f posOtherGroup;
 	Eigen::Vector3f avgPosition;
 	Eigen::Vector3f posDifference;
-	Eigen::Vector3f velDifference;
 	Eigen::Vector3f force;
 	posThisGroup = Eigen::Vector3f::Zero();
 	posOtherGroup = Eigen::Vector3f::Zero();
 	avgPosition = Eigen::Vector3f::Zero();
 	posDifference = Eigen::Vector3f::Zero();
-	velDifference = Eigen::Vector3f::Zero();;
 	force = Eigen::Vector3f::Zero();
 	// Iterate through all common vertices
 	for (size_t i = 0; i < commonVerticesGroup1.size(); ++i) {
@@ -929,56 +927,42 @@ void Group::calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
 		posDifference = posThisGroup - avgPosition;
 		// Compute the constraint force
 		force = k * posDifference;
-		velDifference = velGroup1.segment<3>(3 * vertexThisGroup->localIndex) - velGroup2.segment<3>(3 * vertexOtherGroup->localIndex);
-		force += m * velDifference;
+		
 		// Place the constraint force in Fbind at the appropriate position using the local index
 		Fbind.segment<3>(3 * vertexThisGroup->localIndex) = force;
 	}
 	
 }
 
-void Group::calFbind(const std::vector<Group>& allGroups, float k) {
-	// Initialize Fbind with a length three times the number of vertices in the group
-	//Fbind = Eigen::VectorXf::Zero(verticesMap.size() * 3);
+void Group::calFbind(const Eigen::VectorXf& currentPositionThisGroup, const std::vector<Eigen::VectorXf>& allCurrentPositionsOtherGroups, float k) {
 	Eigen::Vector3f posThisGroup;
 	Eigen::Vector3f posOtherGroup;
 	Eigen::Vector3f avgPosition;
 	Eigen::Vector3f posDifference;
 	Eigen::Vector3f force;
-	posThisGroup = Eigen::Vector3f::Zero();
-	posOtherGroup = Eigen::Vector3f::Zero();
-	avgPosition = Eigen::Vector3f::Zero();
-	posDifference = Eigen::Vector3f::Zero();
-	force = Eigen::Vector3f::Zero();
-	// Iterate through all six directions
+	// 假设verticesMap是定义了组内顶点索引映射的变量
+	Fbind = Eigen::VectorXf::Zero(currentPositionThisGroup.size()); // 假设每个顶点占用3个位置
+
 	for (int direction = 0; direction < 6; ++direction) {
 		int adjacentGroupIdx = adjacentGroupIDs[direction];
 
-		// Check if there is an adjacent group in this direction
 		if (adjacentGroupIdx != -1) {
-			const Group& adjacentGroup = allGroups[adjacentGroupIdx];
+			const auto& currentPositionOtherGroup = allCurrentPositionsOtherGroups[adjacentGroupIdx];
 			const auto& commonVerticesPair = commonVerticesInDirections[direction];
 
-			// Iterate through all common vertices in this direction
 			for (size_t i = 0; i < commonVerticesPair.first.size(); ++i) {
 				Vertex* vertexThisGroup = commonVerticesPair.first[i];
 				Vertex* vertexOtherGroup = commonVerticesPair.second[i];
 
-				// Calculate the position vectors of the vertices in this group and the adjacent group
-				/*Eigen::Vector3f posThisGroup = Eigen::Vector3f(vertexThisGroup->x, vertexThisGroup->y, vertexThisGroup->z);
-				Eigen::Vector3f posOtherGroup = Eigen::Vector3f(vertexOtherGroup->x, vertexOtherGroup->y, vertexOtherGroup->z);*/
-				posThisGroup = currentPosition.segment<3>(3 * vertexThisGroup->localIndex);
-				posOtherGroup = adjacentGroup.currentPosition.segment<3>(3 * vertexOtherGroup->localIndex);
+				// 直接使用对应顶点的当前位置
+				posThisGroup = currentPositionThisGroup.segment<3>(3 * vertexThisGroup->localIndex);
+				posOtherGroup = currentPositionOtherGroup.segment<3>(3 * vertexOtherGroup->localIndex);
 				avgPosition = (posThisGroup + posOtherGroup) / 2;
-				// Compute the position difference and the constraint force
 				posDifference = posThisGroup - avgPosition;
 				force = k * posDifference;
 
-				// Add the constraint force to Fbind at the appropriate position using the local index
-				Fbind.segment<3>(3 * vertexThisGroup->localIndex)  += force;
-				
+				Fbind.segment<3>(3 * vertexThisGroup->localIndex) += force;
 			}
-			int aaa = 1;
 		}
 	}
 }
@@ -1063,7 +1047,7 @@ void Object::storeAllGroups() {
 		Group& group = getGroup(i); // 获取第 i 个 Group 对象的引用
 		allGroup.push_back(group); // 将 Group 对象添加到集合中
 	}
-}
+} 
 
 void Object::updateAdjacentGroupIndices(int numX, int numY, int numZ) {
 	for (int z = 0; z < numZ; ++z) {

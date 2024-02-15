@@ -150,19 +150,14 @@ public:
 	void calRHS();
 	void calDeltaX();
 	void calculateCurrentPositions();
-	void calFbind(const std::vector<Group>& allGroups, float k);
+	void calFbind(const Eigen::VectorXf& currentPositionThisGroup, const std::vector<Eigen::VectorXf>& allCurrentPositionsOtherGroups, float k);
 	void updatePosition();
 	void updateVelocity();
 	void initialize();
 	void calPrimeVec2(int w);
 	//void updateVertexPositions();
 	void calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
-		const std::vector<Vertex*>& commonVerticesGroup2,
-		const Eigen::VectorXf& currentPositionGroup1,
-		const Eigen::VectorXf& currentPositionGroup2,
-		const Eigen::VectorXf& velGroup1,
-		const Eigen::VectorXf& velGroup2,
-		float k, float m);
+		const std::vector<Vertex*>& commonVerticesGroup2, const Eigen::VectorXf& currentPositionGroup1, const Eigen::VectorXf& currentPositionGroup2, float k);
 	void calRInvLocalPos();
 
 

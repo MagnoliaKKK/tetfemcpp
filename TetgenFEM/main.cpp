@@ -22,7 +22,7 @@ Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 float youngs = 10000;
 float poisson = 0.49;
 float density = 1000;
-int groupNum, groupNumX = 2, groupNumY = 1, groupNumZ = 1; //Object类和颜色都写死了 不能超出class Object {里的组数
+int groupNum, groupNumX = 4, groupNumY = 2, groupNumZ = 2; //Object类和颜色都写死了 不能超出class Object {里的组数
 int wKey = 0;
 
 
@@ -37,7 +37,7 @@ int main() {
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "'pq10a0.01"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
+	char args[] = "pq10a0.001"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
 	behavior.parse_commandline(args);
 
 	// Call TetGen to tetrahedralize the geometry
