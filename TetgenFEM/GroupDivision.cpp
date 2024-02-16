@@ -2,10 +2,10 @@
 
 
 const float timeStep = 0.01f;
-const float dampingConst = 10.0f;
+const float dampingConst = 20.0f;
 const float PI = 3.1415926535f;
 const float Gravity = -5.0f;
-const float bindForce = -1000.0f;
+const float bindForce = -100.0f;
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -900,7 +900,7 @@ void Group::calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
 	const Eigen::VectorXf& currentPositionGroup2,
 	float k) {
 	// Initialize Fbind, with a length three times the number of vertices in the group
-	Fbind = Eigen::VectorXf::Zero(verticesMap.size() * 3);
+	//Fbind = Eigen::VectorXf::Zero(verticesMap.size() * 3);
 	Eigen::Vector3f posThisGroup;
 	Eigen::Vector3f posOtherGroup;
 	Eigen::Vector3f avgPosition;
@@ -929,7 +929,7 @@ void Group::calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
 		force = k * posDifference;
 		
 		// Place the constraint force in Fbind at the appropriate position using the local index
-		Fbind.segment<3>(3 * vertexThisGroup->localIndex) = force;
+		Fbind.segment<3>(3 * vertexThisGroup->localIndex) += force;
 	}
 	
 }

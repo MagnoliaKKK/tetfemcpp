@@ -20,9 +20,9 @@
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 float youngs = 10000;
-float poisson = 0.49;
+float poisson = 0.39;
 float density = 1000;
-int groupNum, groupNumX = 4, groupNumY = 2, groupNumZ = 2; //Object类和颜色都写死了 不能超出class Object {里的组数
+int groupNum, groupNumX = 2, groupNumY = 5, groupNumZ = 1; //Object类和颜色都写死了 不能超出class Object {里的组数
 int wKey = 0;
 
 
@@ -32,12 +32,12 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/cubeLong.stl", in);
+	readSTL("stls/bunnyLow.stl", in);
 
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq10a0.001"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
+	char args[] = "pq1.15a0.001"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
 	behavior.parse_commandline(args);
 
 	// Call TetGen to tetrahedralize the geometry
@@ -100,7 +100,7 @@ int main() {
 	//object.commonPoints1 = object.findCommonVertices1(object.groups[1], object.groups[2]);
 	//object.commonPoints2 = object.findCommonVertices1(object.groups[2], object.groups[3]);
 	//object.commonPoints3 = object.findCommonVertices1(object.groups[3], object.groups[4]);
-	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonVertices2 = object.findCommonVertices1(object.groups[0], object.groups[1]);
+	//std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonVertices2 = object.findCommonVertices1(object.groups[0], object.groups[1]);
 	for (Group& g : object.groups) {
 		 //遍历Group中的每个Vertex
 		for (const auto& vertexPair : g.verticesMap) {
@@ -188,7 +188,7 @@ int main() {
 		
 		}
 	
-		object.PBDLOOP(5);
+		object.PBDLOOP(2);
 
 		
 		
@@ -227,19 +227,19 @@ int main() {
 		glEnd();
 
 
-		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) { //写点的标号，画字
-			Group& group = object.getGroup(groupIdx);
+		//for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) { //写点的标号，画字
+		//	Group& group = object.getGroup(groupIdx);
 
-			//画不重复的版本
-			std::vector<Vertex*> uniqueVertices = group.getUniqueVertices();
-			for (size_t i = 0; i < uniqueVertices.size(); ++i) {
-				Vertex* vertex = uniqueVertices[i];
-				char buffer[5]; // 分配足够大的缓冲区
-				sprintf_s(buffer, "%d", vertex->index); // 将int转换为char*
-				glColor3f(1, 0.0f, 0.0f);
-				glRasterPos3f(vertex->x, vertex->y, vertex->z);
-				XPrintString(buffer);
-			}
+		//	//画不重复的版本
+		//	std::vector<Vertex*> uniqueVertices = group.getUniqueVertices();
+		//	for (size_t i = 0; i < uniqueVertices.size(); ++i) {
+		//		Vertex* vertex = uniqueVertices[i];
+		//		char buffer[5]; // 分配足够大的缓冲区
+		//		sprintf_s(buffer, "%d", vertex->index); // 将int转换为char*
+		//		glColor3f(1, 0.0f, 0.0f);
+		//		glRasterPos3f(vertex->x, vertex->y, vertex->z);
+		//		XPrintString(buffer);
+		//	}
 
 
 			//画重复的版本
@@ -274,7 +274,7 @@ int main() {
 			//	}
 			//}
 
-		}
+		//}
 		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
 			Group& group = object.getGroup(groupIdx);
 
