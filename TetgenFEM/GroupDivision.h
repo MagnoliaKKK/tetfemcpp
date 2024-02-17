@@ -126,6 +126,7 @@ public:
 	Eigen::SparseMatrix<float> RHS_E, RHS_F, RHS_G;
 	Eigen::VectorXf curLocalPos;
 	Eigen::VectorXf RInvPos;
+	bool gravityApplied = false;
 
 
 	
@@ -155,6 +156,7 @@ public:
 	void updateVelocity();
 	void initialize();
 	void calPrimeVec2(int w);
+	void calPrimeVec();
 	//void updateVertexPositions();
 	void calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
 		const std::vector<Vertex*>& commonVerticesGroup2, const Eigen::VectorXf& currentPositionGroup1, const Eigen::VectorXf& currentPositionGroup2, float k);

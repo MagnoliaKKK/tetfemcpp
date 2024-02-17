@@ -2,10 +2,10 @@
 
 
 const float timeStep = 0.01f;
-const float dampingConst = 20.0f;
+const float dampingConst = 10.0f;
 const float PI = 3.1415926535f;
 const float Gravity = -5.0f;
-const float bindForce = -100.0f;
+const float bindForce = -1000.0f;
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -697,6 +697,40 @@ void Group::calPrimeVec(int w) {
 
 	}
 
+}
+void Group::calPrimeVec() {
+	primeVec = Eigen::VectorXf::Zero(3 * verticesVector.size());
+
+	if (!gravityApplied) {
+		gravity = Eigen::VectorXf::Zero(3 * verticesVector.size());
+
+		// 初始化gravity向量，只在y方向施加重力
+		for (int i = 0; i < 3 * verticesVector.size(); i += 3) {
+			gravity(i) = -Gravity; // y方向上设置重力
+		}
+
+		// 仅在初始时刻更新groupVelocity
+		groupVelocity += gravity * timeStep;
+		gravityApplied = true; // 标记重力已被应用，防止未来的更新
+	}
+
+	// 使用整个矩阵计算velocityUpdate
+	Eigen::VectorXf velocityUpdate = inverseTermSparse * (massMatrix * groupVelocity) * timeStep;
+
+	// 更新primeVec和顶点位置
+	for (auto& vertexPair : verticesVector) {
+		Vertex* vertex = vertexPair;
+		int localPi = vertex->localIndex; // 使用局部索引
+
+		// 获取当前顶点的速度更新部分
+		Eigen::Vector3f currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
+
+		// 计算新的位置
+		Eigen::Vector3f newPosition = Eigen::Vector3f(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate;
+
+		// 更新primeVec
+		primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
+	}
 }
 
 void Group::calLHS() {

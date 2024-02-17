@@ -22,7 +22,7 @@ Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 float youngs = 10000;
 float poisson = 0.39;
 float density = 1000;
-int groupNum, groupNumX = 2, groupNumY = 5, groupNumZ = 1; //Object类和颜色都写死了 不能超出class Object {里的组数
+int groupNum, groupNumX = 3, groupNumY = 1, groupNumZ = 1; //Object类和颜色都写死了 不能超出class Object {里的组数
 int wKey = 0;
 
 
@@ -32,12 +32,12 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/bunnyLow.stl", in);
+	readSTL("stls/cube.stl", in);
 
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.15a0.001"; // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
+	char args[] = "pq1.15a0.003";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
 	behavior.parse_commandline(args);
 
 	// Call TetGen to tetrahedralize the geometry
@@ -133,7 +133,7 @@ int main() {
 	//}
 	/////////
 	
-//#pragma omp parallel for
+#pragma omp parallel for
 	for (int i = 0; i < object.groupNum; ++i) {
 		object.groups[i].calMassMatrix(density);
 		object.groups[i].calDampingMatrix();
@@ -181,7 +181,7 @@ int main() {
 		//std::cout << wKey << std::endl;// 当 W 被按下时的逻辑
 		//double aa = object.groups[0].tetrahedra[0]->calMassTetra(density);
 		
-		//#pragma omp parallel for
+		#pragma omp parallel for
 		for (int i = 0; i < groupNum; i++) {
 			object.groups[i].calPrimeVec(wKey);
 			object.groups[i].calRotationMatrix();
@@ -275,25 +275,25 @@ int main() {
 			//}
 
 		//}
-		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
-			Group& group = object.getGroup(groupIdx);
+		//for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
+		//	Group& group = object.getGroup(groupIdx);
 
-			// 使用组中已经计算好的质心
-			Eigen::Vector3f& center = group.centerofMass;
+		//	// 使用组中已经计算好的质心
+		//	Eigen::Vector3f& center = group.centerofMass;
 
-			// 将组索引转换为字符串
-			char groupNumber[10];
-			sprintf_s(groupNumber, "%d", groupIdx);
+		//	// 将组索引转换为字符串
+		//	char groupNumber[10];
+		//	sprintf_s(groupNumber, "%d", groupIdx);
 
-			// 为组编号设置颜色
-			glColor3f(1.0f, 1.0f, 0.0f); // 白色用于文本
+		//	// 为组编号设置颜色
+		//	glColor3f(1.0f, 1.0f, 0.0f); // 白色用于文本
 
-			// 设置组编号的位置并绘制
-			glRasterPos3f(center[0], center[1], center[2]);
-			XPrintString(groupNumber);
+		//	// 设置组编号的位置并绘制
+		//	glRasterPos3f(center[0], center[1], center[2]);
+		//	XPrintString(groupNumber);
 
-			// ... [绘制边缘和顶点的其余代码] ...
-		}
+		//	// ... [绘制边缘和顶点的其余代码] ...
+		//}
 		
 		// Draw edges
 		glBegin(GL_LINES);
