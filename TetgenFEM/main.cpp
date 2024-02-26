@@ -20,9 +20,9 @@
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 float youngs = 100000;
-float poisson = 0.39;
+float poisson = 0.49;
 float density = 1000;
-int groupNum, groupNumX = 5, groupNumY = 3, groupNumZ = 3; //Object类和颜色都写死了 不能超出class Object {里的组数
+int groupNum, groupNumX = 1, groupNumY = 1, groupNumZ = 1;//Object类和颜色都写死了 不能超出class Object {里的组数
 int wKey = 0;
 
 
@@ -32,7 +32,7 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/cubeLong.stl", in);
+	readSTL("stls/xigou.stl", in);
 
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
@@ -140,12 +140,14 @@ int main() {
 		object.groups[i].calCenterofMass();
 		object.groups[i].calInitCOM();
 		object.groups[i].calLocalPos(); // 计算初始位置与初始重心的差值
-		object.groups[i].calGroupK(youngs, poisson);
+		//object.groups[i].calGroupK(youngs, poisson);
 		
 		object.groups[i].setVertexMassesFromMassMatrix();
 		object.groups[i].calMassGroup();
 		object.groups[i].calMassDistributionMatrix();
-		object.groups[i].calLHS();
+		object.groups[i].inverseTerm = (object.groups[i].massMatrix + object.groups[i].dampingMatrix * 0.01f).inverse(); //顺顺便把这个算了
+		object.groups[i].inverseTermSparse = object.groups[i].inverseTerm.sparseView();
+		//object.groups[i].calLHS();
 	}
 
 	//for calculate frame rate
@@ -183,12 +185,22 @@ int main() {
 		
 		#pragma omp parallel for
 		for (int i = 0; i < groupNum; i++) {
-			object.groups[i].calPrimeVec(wKey);
-			object.groups[i].calRotationMatrix();
+			object.groups[i].calGroupKFEM(youngs, poisson);
+			object.groups[i].calPrimeVec();
+			object.groups[i].calLHSFEM();
+			object.groups[i].calRHSFEM();
+			object.groups[i].calDeltaXFEM();
+			object.groups[i].calculateCurrentPositionsFEM();
+			object.groups[i].updateVelocityFEM();
+			object.groups[i].updatePositionFEM();
+			
+			
+			//object.groups[i].calRotationMatrix();
 		
 		}
 	
-		object.PBDLOOP(4);
+		//object.PBDLOOP(2);
+
 
 		
 		

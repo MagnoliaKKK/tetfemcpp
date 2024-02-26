@@ -63,6 +63,7 @@ public:
 	float massTetra;
 	float volumeTetra;
 	Eigen::MatrixXf elementK;
+	Eigen::MatrixXf elementKFEM;
 
 	Tetrahedron(Vertex* v1, Vertex* v2, Vertex* v3, Vertex* v4) {
 		vertices[0] = v1;
@@ -72,6 +73,7 @@ public:
 	}
 	Eigen::MatrixXf createElementK(float E, float nu, const Eigen::Vector3f& groupCenterOfMass);
 	float calMassTetra(float den);
+	Eigen::MatrixXf createElementKFEM(float E, float nu);
 
 };
 
@@ -86,8 +88,10 @@ public:
 	Eigen::MatrixXf massMatrix;//group mass matrix
 	Eigen::MatrixXf massDistribution;
 	Eigen::MatrixXf groupK;//group stiffness matrix
+	Eigen::MatrixXf groupKFEM;
 	Eigen::VectorXf primeVec;
 	Eigen::VectorXf groupVelocity;
+	Eigen::VectorXf groupVelocityFEM;
 	Eigen::VectorXf groupExf;
 	Eigen::MatrixXf rotationMatrix;
 	Eigen::Matrix3f rotate_matrix;//3*3的旋转矩阵，扩展成组的旋转矩阵
@@ -101,15 +105,18 @@ public:
 	Eigen::VectorXf FEMRHS;
 	Eigen::VectorXf Fbind;
 	Eigen::VectorXf deltaX;
+	Eigen::VectorXf deltaXFEM;
 	Eigen::SparseMatrix<float> rotationSparse;
 	Eigen::SparseMatrix<float> rotationTransSparse;//R^t sparse
 	Eigen::SparseMatrix<float> kSparse;
+	Eigen::SparseMatrix<float> kSparseFEM;
 	Eigen::SparseMatrix<float> massSparse;
 	Eigen::SparseMatrix<float> dampingSparse;
 	Eigen::SparseMatrix<float> massDistributionSparse;
 	Eigen::SparseMatrix<float> massDampingSparseInv; //(M+C').inv sparse
 	Eigen::SparseMatrix<float> inverseTermSparse;
 	Eigen::VectorXf currentPosition;//计算bindf用的位置信息，不用做位置更新
+	Eigen::VectorXf currentPositionFEM;
 	std::array<int, 6> adjacentGroupIDs;
 	int groupIndex;//每组的编号
 	std::vector<std::pair<std::vector<Vertex*>, std::vector<Vertex*>>> commonVerticesInDirections;//各个相邻组的共同点
@@ -118,7 +125,8 @@ public:
 	Eigen::MatrixXf LHS_A;
 	Eigen::MatrixXf LHS_B;
 	Eigen::MatrixXf LHS_C;
-
+	Eigen::MatrixXf LHSFEM;
+	Eigen::VectorXf RHSFEM;
 	Eigen::VectorXf RHS_A;
 	Eigen::VectorXf RHS_B;
 	Eigen::VectorXf RHS_C;
@@ -127,6 +135,7 @@ public:
 	Eigen::VectorXf curLocalPos;
 	Eigen::VectorXf RInvPos;
 	bool gravityApplied = false;
+
 
 
 	
@@ -148,12 +157,18 @@ public:
 	Eigen::Vector3f clamp2(Eigen::Vector3f x, float y, float z);
 	Eigen::Quaternionf Exp2(Eigen::Vector3f a);
 	void calLHS();
+	void calLHSFEM();
 	void calRHS();
+	void calRHSFEM();
 	void calDeltaX();
+	void calDeltaXFEM();
 	void calculateCurrentPositions();
+	void calculateCurrentPositionsFEM();
 	void calFbind(const Eigen::VectorXf& currentPositionThisGroup, const std::vector<Eigen::VectorXf>& allCurrentPositionsOtherGroups, float k);
 	void updatePosition();
+	void updatePositionFEM();
 	void updateVelocity();
+	void updateVelocityFEM();
 	void initialize();
 	void calPrimeVec2(int w);
 	void calPrimeVec();
@@ -161,7 +176,7 @@ public:
 	void calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
 		const std::vector<Vertex*>& commonVerticesGroup2, const Eigen::VectorXf& currentPositionGroup1, const Eigen::VectorXf& currentPositionGroup2, float k);
 	void calRInvLocalPos();
-
+	void calGroupKFEM(float E, float nu);
 
 
 	Group()
