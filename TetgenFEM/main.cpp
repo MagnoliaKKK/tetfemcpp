@@ -20,9 +20,9 @@
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 float youngs = 100000;
-float poisson = 0.49;
+float poisson = 0.33;
 float density = 1000;
-int groupNum, groupNumX = 1, groupNumY = 1, groupNumZ = 1;//Object类和颜色都写死了 不能超出class Object {里的组数
+int groupNum, groupNumX = 3, groupNumY = 2, groupNumZ = 1;//Object类和颜色都写死了 不能超出class Object {里的组数
 int wKey = 0;
 
 
@@ -32,12 +32,12 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/xigou.stl", in);
+	readSTL("stls/bunnyLow.stl", in);
 
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.15a0.0001";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
+	char args[] = "pq1.15a0.001";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
 	behavior.parse_commandline(args);
 
 	// Call TetGen to tetrahedralize the geometry
@@ -140,14 +140,14 @@ int main() {
 		object.groups[i].calCenterofMass();
 		object.groups[i].calInitCOM();
 		object.groups[i].calLocalPos(); // 计算初始位置与初始重心的差值
-		//object.groups[i].calGroupK(youngs, poisson);
+		object.groups[i].calGroupK(youngs, poisson);
 		
 		object.groups[i].setVertexMassesFromMassMatrix();
 		object.groups[i].calMassGroup();
 		object.groups[i].calMassDistributionMatrix();
-		object.groups[i].inverseTerm = (object.groups[i].massMatrix + object.groups[i].dampingMatrix * 0.01f).inverse(); //顺顺便把这个算了
-		object.groups[i].inverseTermSparse = object.groups[i].inverseTerm.sparseView();
-		//object.groups[i].calLHS();
+		//object.groups[i].inverseTerm = (object.groups[i].massMatrix + object.groups[i].dampingMatrix * 0.01f).inverse(); //顺顺便把这个算了
+		//object.groups[i].inverseTermSparse = object.groups[i].inverseTerm.sparseView();
+		object.groups[i].calLHS();
 	}
 
 	//for calculate frame rate
@@ -185,21 +185,21 @@ int main() {
 		
 		#pragma omp parallel for
 		for (int i = 0; i < groupNum; i++) {
-			object.groups[i].calGroupKFEM(youngs, poisson);
-			object.groups[i].calPrimeVec();
-			object.groups[i].calLHSFEM();
+			//object.groups[i].calGroupKFEM(youngs, poisson);
+			object.groups[i].calPrimeVec2(wKey);
+			/*object.groups[i].calLHSFEM();
 			object.groups[i].calRHSFEM();
 			object.groups[i].calDeltaXFEM();
 			object.groups[i].calculateCurrentPositionsFEM();
 			object.groups[i].updateVelocityFEM();
-			object.groups[i].updatePositionFEM();
+			object.groups[i].updatePositionFEM();*/
 			
 			
-			//object.groups[i].calRotationMatrix();
+			object.groups[i].calRotationMatrix();
 		
 		}
 	
-		//object.PBDLOOP(2);
+		object.PBDLOOP(5);
 
 
 		
@@ -239,19 +239,19 @@ int main() {
 		glEnd();
 
 
-		//for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) { //写点的标号，画字
-		//	Group& group = object.getGroup(groupIdx);
+		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) { //写点的标号，画字
+			//Group& group = object.getGroup(groupIdx);
 
-		//	//画不重复的版本
-		//	std::vector<Vertex*> uniqueVertices = group.getUniqueVertices();
-		//	for (size_t i = 0; i < uniqueVertices.size(); ++i) {
-		//		Vertex* vertex = uniqueVertices[i];
-		//		char buffer[5]; // 分配足够大的缓冲区
-		//		sprintf_s(buffer, "%d", vertex->index); // 将int转换为char*
-		//		glColor3f(1, 0.0f, 0.0f);
-		//		glRasterPos3f(vertex->x, vertex->y, vertex->z);
-		//		XPrintString(buffer);
-		//	}
+			////画不重复的版本
+			//std::vector<Vertex*> uniqueVertices = group.getUniqueVertices();
+			//for (size_t i = 0; i < uniqueVertices.size(); ++i) {
+			//	Vertex* vertex = uniqueVertices[i];
+			//	char buffer[5]; // 分配足够大的缓冲区
+			//	sprintf_s(buffer, "%d", vertex->index); // 将int转换为char*
+			//	glColor3f(1, 0.0f, 0.0f);
+			//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
+			//	XPrintString(buffer);
+			//}
 
 
 			//画重复的版本
@@ -286,7 +286,7 @@ int main() {
 			//	}
 			//}
 
-		//}
+		}
 		//for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
 		//	Group& group = object.getGroup(groupIdx);
 
