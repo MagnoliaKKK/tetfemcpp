@@ -2,10 +2,10 @@
 
 
 const float timeStep = 0.01f;
-const float dampingConst = 10.0f;
+const float dampingConst = 100.0f;
 const float PI = 3.1415926535f;
-const float Gravity = -600.0f;
-const float bindForce = -100.0f;
+const float Gravity = -100.0f;
+const float bindForce = -1000.0f;
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -825,17 +825,17 @@ void Group::calPrimeVec() {
 		gravity = Eigen::VectorXf::Zero(3 * verticesVector.size());
 
 		// 初始化gravity向量，只在y方向施加重力
-		for (int i = 0; i < 3 * verticesVector.size(); i += 1) {
-			gravity(i) = -Gravity; // y方向上设置重力
+		for (int i = 1; i < 3 * verticesVector.size(); i += 3) {
+			gravity(i) = Gravity; // y方向上设置重力
 		}
 
 		// 仅在初始时刻更新groupVelocity
-		groupVelocityFEM += gravity * timeStep;
+		groupVelocity += gravity * timeStep;
 		gravityApplied = true; // 标记重力已被应用，防止未来的更新
 	}
 
 	// 使用整个矩阵计算velocityUpdate
-	Eigen::VectorXf velocityUpdate = inverseTermSparse * (massMatrix * groupVelocityFEM) * timeStep;
+	Eigen::VectorXf velocityUpdate = inverseTermSparse * (massMatrix * groupVelocity) * timeStep;
 
 	// 更新primeVec和顶点位置
 	for (auto& vertexPair : verticesVector) {

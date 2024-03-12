@@ -20,9 +20,9 @@
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 float youngs = 100000;
-float poisson = 0.33;
+float poisson = 0.49;
 float density = 1000;
-int groupNum, groupNumX = 3, groupNumY = 2, groupNumZ = 1;//Object类和颜色都写死了 不能超出class Object {里的组数
+int groupNum, groupNumX =1, groupNumY = 1, groupNumZ = 1;//Object类和颜色都写死了 不能超出class Object {里的组数
 int wKey = 0;
 
 
@@ -32,12 +32,12 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/bunnyLow.stl", in);
+	readSTL("stls/cubeLong.stl", in);
 
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.15a0.001";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
+	char args[] = "pq1.15a0.0005";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005"
 	behavior.parse_commandline(args);
 
 	// Call TetGen to tetrahedralize the geometry
@@ -186,7 +186,7 @@ int main() {
 		#pragma omp parallel for
 		for (int i = 0; i < groupNum; i++) {
 			//object.groups[i].calGroupKFEM(youngs, poisson);
-			object.groups[i].calPrimeVec2(wKey);
+			object.groups[i].calPrimeVec(wKey);
 			/*object.groups[i].calLHSFEM();
 			object.groups[i].calRHSFEM();
 			object.groups[i].calDeltaXFEM();
@@ -199,7 +199,7 @@ int main() {
 		
 		}
 	
-		object.PBDLOOP(5);
+		object.PBDLOOP(2);
 
 
 		
