@@ -5,7 +5,7 @@ const float timeStep = 0.01f;
 const float dampingConst = 100.0f;
 const float PI = 3.1415926535f;
 const float Gravity = -100.0f;
-const float bindForce = -1000.0f;
+const float bindForce = -10.0f;
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
