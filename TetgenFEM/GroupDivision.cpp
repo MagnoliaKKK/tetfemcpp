@@ -923,7 +923,7 @@ void Object::PBDLOOP(int looptime) {
      //#pragma omp parallel for
 	float reference = 0.0f; // float类型的参考值
 	float epsilon = std::numeric_limits<float>::epsilon(); // float类型的epsilon
-    //#pragma omp parallel for
+    #pragma omp parallel for
 	for (int i = 0; i < groupNum; ++i) {
 		auto& g = groups[i];
 		g.Fbind = Eigen::VectorXf::Zero(3 * g.verticesMap.size()); // 假设 Group 类有一个方法来清除 Fbind
@@ -942,7 +942,7 @@ void Object::PBDLOOP(int looptime) {
 	for (int iter = 0; iter < looptime; ++iter) {
 		// 每组计算 RHS
 
-		//#pragma omp parallel for //500fps to 300, -optimization
+		#pragma omp parallel for //500fps to 300, -optimization
 		for (int i = 0; i < groupNum; ++i) {
 			auto& g = groups[i];
 			g.calRHS();

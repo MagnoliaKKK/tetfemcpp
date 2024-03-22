@@ -22,7 +22,7 @@ Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 float youngs = 100000;
 float poisson = 0.49;
 float density = 1000;
-int groupNum, groupNumX = 6, groupNumY = 4, groupNumZ = 4;//ObjectÀàºÍÑÕÉ«¶¼Ğ´ËÀÁË ²»ÄÜ³¬³öclass Object {ÀïµÄ×éÊı
+int groupNum, groupNumX = 1, groupNumY = 1, groupNumZ =1;//ObjectÀàºÍÑÕÉ«¶¼Ğ´ËÀÁË ²»ÄÜ³¬³öclass Object {ÀEÄ×éÊı
 int wKey = 0;
 
 
@@ -32,12 +32,12 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/thinker.stl", in);
+	readSTL("stls/xigou.stl", in);
 
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.414a0.000075";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
+	char args[] = "pq1.1/15a0.0001";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
 	// Call TetGen to tetrahedralize the geometry
@@ -117,7 +117,7 @@ int main() {
 	/////////¾¾Í··¢¹Ì¶¨·¨
 	//float maxY = -std::numeric_limits<float>::infinity(); // ³õÊ¼»¯Îª¼«Ğ¡Öµ
 	//Vertex* vertexWithMaxY = nullptr;
-	//// ²éÕÒ y Öµ×î´óµÄ¶¥µã
+	//// ²éÕÒ y Öµ×ûĞóµÄ¶¥µE
 	//for (Group& g : object.groups) {
 	//	for (const auto& vertexPair : g.verticesMap) {
 	//		Vertex* vertex = vertexPair.second;
@@ -127,7 +127,7 @@ int main() {
 	//		}
 	//	}
 	//}
-	//// ½« y Öµ×î´óµÄ¶¥µãÉèÎª¹Ì¶¨µã
+	//// ½« y Öµ×ûĞóµÄ¶¥µãÉèÎª¹Ì¶¨µE
 	//if (vertexWithMaxY != nullptr) {
 	//	vertexWithMaxY->isFixed = true; // ¼ÙÉèÓĞÒ»¸ö·½·¨ setFixed À´ÉèÖÃ¶¥µãµÄ¹Ì¶¨×´Ì¬
 	//}
@@ -139,7 +139,7 @@ int main() {
 		object.groups[i].calDampingMatrix();
 		object.groups[i].calCenterofMass();
 		object.groups[i].calInitCOM();
-		object.groups[i].calLocalPos(); // ¼ÆËã³õÊ¼Î»ÖÃÓë³õÊ¼ÖØĞÄµÄ²îÖµ
+		object.groups[i].calLocalPos(); // ¼ÆËã³õÊ¼Î»ÖÃÓEõÊ¼ÖØĞÄµÄ²ûòµ
 		object.groups[i].calGroupK(youngs, poisson);
 		
 		object.groups[i].setVertexMassesFromMassMatrix();
@@ -183,7 +183,7 @@ int main() {
 		//std::cout << wKey << std::endl;// µ± W ±»°´ÏÂÊ±µÄÂß¼­
 		//double aa = object.groups[0].tetrahedra[0]->calMassTetra(density);
 		
-		//#pragma omp parallel for
+		#pragma omp parallel for
 		for (int i = 0; i < groupNum; i++) {
 			//object.groups[i].calGroupKFEM(youngs, poisson);
 			object.groups[i].calPrimeVec(wKey);
@@ -224,7 +224,7 @@ int main() {
 		// Draw vertices
 		// ÉèÖÃµãµÄ´óĞ¡Îª10ÏñËØ
 		glPointSize(5.0f);
-		// »æÖÆ°×É«µã
+		// »æÖÆ°×É«µE
 		glColor3f(1.0f, 1.0f, 1.0f);
 		glBegin(GL_POINTS);
 		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
@@ -239,14 +239,14 @@ int main() {
 		glEnd();
 
 
-		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) { //Ğ´µãµÄ±êºÅ£¬»­×Ö
+		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) { //Ğ´µãµÄ±EÅ£¬»­×Ö
 			//Group& group = object.getGroup(groupIdx);
 
 			////»­²»ÖØ¸´µÄ°æ±¾
 			//std::vector<Vertex*> uniqueVertices = group.getUniqueVertices();
 			//for (size_t i = 0; i < uniqueVertices.size(); ++i) {
 			//	Vertex* vertex = uniqueVertices[i];
-			//	char buffer[5]; // ·ÖÅä×ã¹»´óµÄ»º³åÇø
+			//	char buffer[5]; // ·ÖÅä×ã¹»´óµÄ»º³åÇE
 			//	sprintf_s(buffer, "%d", vertex->index); // ½«int×ª»»Îªchar*
 			//	glColor3f(1, 0.0f, 0.0f);
 			//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
@@ -257,10 +257,10 @@ int main() {
 			//»­ÖØ¸´µÄ°æ±¾
 
 
-			//for (Tetrahedron* tetra : group.tetrahedra) { // ±éÀú×éÖĞµÄÃ¿¸öËÄÃæÌå
-			//	for (int i = 0; i < 4; ++i) { // ±éÀúËÄÃæÌåµÄÃ¿¸ö¶¥µã
+			//for (Tetrahedron* tetra : group.tetrahedra) { // ±éÀú×éÖĞµÄÃ¿¸öËÄÃæÌE
+			//	for (int i = 0; i < 4; ++i) { // ±éÀúËÄÃæÌåµÄÃ¿¸ö¶¥µE
 			//		Vertex* vertex = tetra->vertices[i];
-			//		char buffer[5]; // ·ÖÅä×ã¹»´óµÄ»º³åÇø
+			//		char buffer[5]; // ·ÖÅä×ã¹»´óµÄ»º³åÇE
 			//		sprintf_s(buffer, "%d", vertex->index); // ½«int×ª»»Îªchar*
 			//		//if (groupIdx == 0) {
 			//		//	glColor3f(1, 0.0f, 0.0f);
@@ -304,7 +304,7 @@ int main() {
 		//	glRasterPos3f(center[0], center[1], center[2]);
 		//	XPrintString(groupNumber);
 
-		//	// ... [»æÖÆ±ßÔµºÍ¶¥µãµÄÆäÓà´úÂë] ...
+		//	// ... [»æÖÆ±ßÔµºÍ¶¥µãµÄÆäÓà´úÂE ...
 		//}
 		
 		// Draw edges
@@ -314,36 +314,36 @@ int main() {
 		
 
 		//·Ö×éÏÔÊ¾
-		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
-			Group& group = object.getGroup(groupIdx);
-			for (Tetrahedron* tet : group.tetrahedra) {
-				for (int edgeIdx = 0; edgeIdx < 6; ++edgeIdx) {  // Loop through each edge in the tetrahedron
-					Edge* edge = tet->edges[edgeIdx];
-					Vertex* vertex1 = edge->vertices[0];
-					Vertex* vertex2 = edge->vertices[1];
-					bool isSurfaceEdge = edge->isBoundary;
+		//for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
+		//	Group& group = object.getGroup(groupIdx);
+		//	for (Tetrahedron* tet : group.tetrahedra) {
+		//		for (int edgeIdx = 0; edgeIdx < 6; ++edgeIdx) {  // Loop through each edge in the tetrahedron
+		//			Edge* edge = tet->edges[edgeIdx];
+		//			Vertex* vertex1 = edge->vertices[0];
+		//			Vertex* vertex2 = edge->vertices[1];
+		//			bool isSurfaceEdge = edge->isBoundary;
 
-					// Use HSV to RGB conversion to create a unique color for each group
-					float hue = (360.0f * groupIdx) / groupNum;  // Distribute hues evenly across the spectrum
-					float saturation = 1.0f;  // Full saturation
-					float value = 1.0f;      // Full brightness
+		//			 Use HSV to RGB conversion to create a unique color for each group
+		//			float hue = (360.0f * groupIdx) / groupNum;  // Distribute hues evenly across the spectrum
+		//			float saturation = 1.0f;  // Full saturation
+		//			float value = 1.0f;      // Full brightness
 
-					// Convert HSV to RGB
-					float red, green, blue;
-					hsvToRgb(hue, saturation, value, red, green, blue);
+		//			 Convert HSV to RGB
+		//			float red, green, blue;
+		//			hsvToRgb(hue, saturation, value, red, green, blue);
 
-					// If it's a boundary edge, you may want to adjust the color or keep as is
-					// For example, make the color brighter if it's a boundary edge
-					if (isSurfaceEdge) {
-						red = std::min(1.0f, red + 0.3f);
-						green = std::min(1.0f, green + 0.3f);
-						blue = std::min(1.0f, blue + 0.3f);
-					}
+		//			 If it's a boundary edge, you may want to adjust the color or keep as is
+		//			 For example, make the color brighter if it's a boundary edge
+		//			if (isSurfaceEdge) {
+		//				red = std::min(1.0f, red + 0.3f);
+		//				green = std::min(1.0f, green + 0.3f);
+		//				blue = std::min(1.0f, blue + 0.3f);
+		//			}
 
-					drawEdge(vertex1, vertex2, red, green, blue);
-				}
-			}
-		}
+		//			drawEdge(vertex1, vertex2, red, green, blue);
+		//		}
+		//	}
+		//}
 
 		
 
@@ -362,7 +362,7 @@ int main() {
 		//calculate frame rate
 		double currentTime = glfwGetTime();
 		nbFrames++;
-		if (currentTime - lastTime >= 1.0) { // Èç¹û¹ıÈ¥ÁËÖÁÉÙ1Ãë
+		if (currentTime - lastTime >= 1.0) { // Èç¹û¹ıÈ¥ÁËÖÁÉÙ1ÃE
 			printf("%d frames/sec\n", nbFrames);
 			nbFrames = 0;
 			lastTime += 1.0;
