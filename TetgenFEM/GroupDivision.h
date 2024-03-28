@@ -149,6 +149,7 @@ public:
 	void calGroupK(float E, float nu);
 	void calPrimeVec(int w);
 	void calPrimeVec1(int w);
+	void calPrimeVecT(int w);
 	void calDampingMatrix();
 	void calInitCOM();
 	void calRotationMatrix();

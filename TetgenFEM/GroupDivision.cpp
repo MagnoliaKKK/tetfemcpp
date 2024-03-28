@@ -2,10 +2,10 @@
 
 
 const float timeStep = 0.01f;
-const float dampingConst = 100.0f;
+const float dampingConst = 10.0f;
 const float PI = 3.1415926535f;
 const float Gravity = -10.0f;
-const float bindForce = -10.0f;
+const float bindForce = -1000.0f;
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -727,6 +727,150 @@ void Group::calPrimeVec1(int w) {
 		primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
 	}
 }
+//void Group::calPrimeVecT(int w) {
+//	// 确保primeVec已经初始化且设置为正确的尺寸
+//	primeVec = Eigen::VectorXf::Zero(3 * verticesVector.size());
+//
+//	// 初始化旋转力向量
+//	Eigen::VectorXf twistForce = Eigen::VectorXf::Zero(3 * verticesVector.size());
+//
+//	// 检查是否是第三组，如果是，则为特定顶点施加旋转力
+//	if (this->groupIndex == 2) {
+//		// 设置每个顶点旋转力的大小，这里简化为统一大小，具体值需要根据实际情况调整
+//		float forceMagnitude = 10.0f; // 示例力的大小
+//
+//		// 顶点局部索引数组
+//		std::vector<int> indices = { 116, 91, 24, 22 };
+//
+//		// 为每个顶点施加旋转力
+//		for (int index : indices) {
+//			// 确定力的方向：根据顶点在yz面上的顺时针旋转方向施加
+//			if (index == 116) {
+//				// 对于116，假设力向下（y轴负方向）
+//				twistForce(3 * index + 1) = -forceMagnitude;
+//			}
+//			else if (index == 91) {
+//				// 对于91，假设力向右（z轴正方向）
+//				twistForce(3 * index + 2) = forceMagnitude;
+//			}
+//			else if (index == 24) {
+//				// 对于24，假设力向上（y轴正方向）
+//				twistForce(3 * index + 1) = forceMagnitude;
+//			}
+//			else if (index == 22) {
+//				// 对于22，假设力向左（z轴负方向）
+//				twistForce(3 * index + 2) = -forceMagnitude;
+//			}
+//		}
+//	}
+//
+//	// 更新groupVelocity
+//	groupVelocity += twistForce * timeStep;
+//
+//	// 使用整个矩阵计算velocityUpdate
+//	Eigen::VectorXf velocityUpdate = inverseTermSparse * (massMatrix * groupVelocity) * timeStep;
+//
+//	// 更新primeVec和顶点位置
+//	for (auto& vertexPair : verticesVector) {
+//		Vertex* vertex = vertexPair;
+//		int localPi = vertex->localIndex; // 使用局部索引
+//
+//		// 获取当前顶点的速度更新部分
+//		Eigen::Vector3f currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
+//
+//		// 计算新的位置
+//		Eigen::Vector3f newPosition = Eigen::Vector3f(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate;
+//
+//		// 更新primeVec
+//		primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
+//	}
+//}
+void Group::calPrimeVecT(int w) {
+	// 确保primeVec已经初始化且设置为正确的尺寸
+	primeVec = Eigen::VectorXf::Zero(3 * verticesVector.size());
+
+	// 初始化旋转力向量
+	Eigen::VectorXf twistForce = Eigen::VectorXf::Zero(3 * verticesVector.size());
+
+	// 特定顶点局部索引数组
+	std::vector<int> indices = {22, 17, 9, 15 };
+	std::vector<int> indices1 = { 24, 18, 5, 17 };
+	if (this->groupIndex == 0) {
+		// 先计算平均位置
+		Eigen::Vector3f avgPosition = Eigen::Vector3f::Zero();
+		for (int index : indices1) {
+			Vertex* vertex = verticesVector[index];
+			avgPosition += Eigen::Vector3f(vertex->x, vertex->y, vertex->z);
+		}
+		avgPosition /= indices1.size();
+
+		// 为每个顶点施加旋转力
+		for (int index : indices1) {
+			Vertex* vertex = verticesVector[index];
+			Eigen::Vector3f pos = Eigen::Vector3f(vertex->x, vertex->y, vertex->z);
+			Eigen::Vector3f toCenter = pos - avgPosition;
+
+			// 在yz平面上计算相切的力的方向
+			Eigen::Vector3f tangentForce = Eigen::Vector3f(0, -toCenter.z(), toCenter.y()).normalized();
+
+			// 更新twistForce，这里使用tangentForce乘以一个标量来表示力的大小
+			float forceMagnitude = 150.0f; // 示例力的大小
+			twistForce(3 * index) += 0; // X方向上不施加力
+			twistForce(3 * index + 1) += forceMagnitude * tangentForce.y(); // Y方向
+			twistForce(3 * index + 2) += forceMagnitude * tangentForce.z(); // Z方向
+		}
+	}
+
+	// 检查是否是第三组，如果是，则为特定顶点施加旋转力
+	if (this->groupIndex == 3) {
+		// 先计算平均位置
+		Eigen::Vector3f avgPosition = Eigen::Vector3f::Zero();
+		for (int index : indices) {
+			Vertex* vertex = verticesVector[index];
+			avgPosition += Eigen::Vector3f(vertex->x, vertex->y, vertex->z);
+		}
+		avgPosition /= indices.size();
+
+		// 为每个顶点施加旋转力
+		for (int index : indices) {
+			Vertex* vertex = verticesVector[index];
+			Eigen::Vector3f pos = Eigen::Vector3f(vertex->x, vertex->y, vertex->z);
+			Eigen::Vector3f toCenter = pos - avgPosition;
+
+			// 在yz平面上计算相切的力的方向
+			Eigen::Vector3f tangentForce = Eigen::Vector3f(0, toCenter.z(), -toCenter.y()).normalized();
+
+			// 更新twistForce，这里使用tangentForce乘以一个标量来表示力的大小
+			float forceMagnitude = 150.0f; // 示例力的大小
+			twistForce(3 * index) += 0; // X方向上不施加力
+			twistForce(3 * index + 1) += forceMagnitude * tangentForce.y(); // Y方向
+			twistForce(3 * index + 2) += forceMagnitude * tangentForce.z(); // Z方向
+		}
+	}
+
+	// 更新groupVelocity
+	groupVelocity += twistForce * timeStep;
+
+	// 使用整个矩阵计算velocityUpdate
+	Eigen::VectorXf velocityUpdate = inverseTermSparse * (massMatrix * groupVelocity) * timeStep;
+
+	// 更新primeVec和顶点位置
+	for (auto& vertexPair : verticesVector) {
+		Vertex* vertex = vertexPair;
+		int localPi = vertex->localIndex; // 使用局部索引
+
+		// 获取当前顶点的速度更新部分
+		Eigen::Vector3f currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
+
+		// 计算新的位置
+		Eigen::Vector3f newPosition = Eigen::Vector3f(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate;
+
+		// 更新primeVec
+		primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
+	}
+}
+
+
 void Group::calPrimeVec2(int w) {
 	// ... [现有代码] ...
 	primeVec = Eigen::VectorXf::Zero(3 * verticesVector.size());
