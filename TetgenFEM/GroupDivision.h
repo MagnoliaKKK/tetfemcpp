@@ -150,6 +150,7 @@ public:
 	void calPrimeVec(int w);
 	void calPrimeVec1(int w);
 	void calPrimeVecT(int w);
+	void calPrimeVecS(int w);
 	void calDampingMatrix();
 	void calInitCOM();
 	void calRotationMatrix();

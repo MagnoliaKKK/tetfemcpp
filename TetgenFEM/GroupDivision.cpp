@@ -4,8 +4,8 @@
 const float timeStep = 0.01f;
 const float dampingConst = 10.0f;
 const float PI = 3.1415926535f;
-const float Gravity = -10.0f;
-const float bindForce = -1000.0f;
+const float Gravity = -50.0f;
+const float bindForce = -100.0f;
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -785,6 +785,105 @@ void Group::calPrimeVec1(int w) {
 //		primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
 //	}
 //}
+//void Group::calPrimeVecS(int wKey) {
+//	// 确保primeVec已经初始化且设置为正确的尺寸
+//	primeVec = Eigen::VectorXf::Zero(3 * verticesVector.size());
+//
+//	// 初始化一个力向量
+//	Eigen::VectorXf appliedForce = Eigen::VectorXf::Zero(3 * verticesVector.size());
+//
+//	// 特定顶点局部索引数组
+//	std::vector<int> indices = { 55, 35, 57, 70 };
+//
+//	// 施加力的大小，可以根据实际情况调整
+//	float forceMagnitude = 1000.0f;
+//
+//	// 如果是第三组，根据wKey的值为特定顶点施加力
+//	if (this->groupIndex == 2) {
+//		for (int localPi : indices) {
+//			int indexX = 3 * localPi; // x方向的索引
+//
+//			// 根据键盘输入wKey的值在x方向上施加力
+//			if (wKey == 3) {
+//				appliedForce(indexX) -= forceMagnitude; // 向左施加力
+//			}
+//			else if (wKey == 4) {
+//				appliedForce(indexX) += forceMagnitude; // 向右施加力
+//			}
+//			// 对于wKey == 1或2，我们不在x方向上施加力
+//		}
+//	}
+//
+//	// 更新groupVelocity
+//	groupVelocity += appliedForce * timeStep;
+//
+//	// 使用整个矩阵计算velocityUpdate
+//	Eigen::VectorXf velocityUpdate = inverseTermSparse * (massMatrix * groupVelocity) * timeStep;
+//
+//	// 更新primeVec和顶点位置
+//	for (auto& vertexPair : verticesVector) {
+//		Vertex* vertex = vertexPair;
+//		int localPi = vertex->localIndex; // 使用局部索引
+//
+//		// 获取当前顶点的速度更新部分
+//		Eigen::Vector3f currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
+//
+//		// 计算新的位置
+//		Eigen::Vector3f newPosition = Eigen::Vector3f(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate;
+//
+//		// 更新primeVec
+//		primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
+//	}
+//}
+void Group::calPrimeVecS(int wKey) {
+	// 确保primeVec已经初始化且设置为正确的尺寸
+	primeVec = Eigen::VectorXf::Zero(3 * verticesVector.size());
+
+	// 初始化一个力向量
+	Eigen::VectorXf appliedForce = Eigen::VectorXf::Zero(3 * verticesVector.size());
+
+	// 施加力的大小，可以根据实际情况调整
+	float forceMagnitude = 50.0f;
+
+	// 如果是第三组，根据wKey的值为组内所有顶点施加力
+	if (this->groupIndex == 2) {
+		for (size_t i = 0; i < verticesVector.size(); ++i) {
+			int indexX = 3 * i; // x方向的索引
+
+			// 根据键盘输入wKey的值在x方向上施加力
+			if (wKey == 3) {
+				appliedForce(indexX) -= forceMagnitude; // 向左施加力
+			}
+			else if (wKey == 4) {
+				appliedForce(indexX) += forceMagnitude; // 向右施加力
+			}
+			// 对于wKey == 1或2，我们不在x方向上施加力
+		}
+	}
+
+	// 更新groupVelocity
+	groupVelocity += appliedForce * timeStep;
+
+	// 使用整个矩阵计算velocityUpdate
+	Eigen::VectorXf velocityUpdate = inverseTermSparse * (massMatrix * groupVelocity) * timeStep;
+
+	// 更新primeVec和顶点位置
+	for (auto& vertexPair : verticesVector) {
+		Vertex* vertex = vertexPair;
+		int localPi = vertex->localIndex; // 使用局部索引
+
+		// 获取当前顶点的速度更新部分
+		Eigen::Vector3f currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
+
+		// 计算新的位置
+		Eigen::Vector3f newPosition = Eigen::Vector3f(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate;
+
+		// 更新primeVec
+		primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
+	}
+}
+
+
 void Group::calPrimeVecT(int w) {
 	// 确保primeVec已经初始化且设置为正确的尺寸
 	primeVec = Eigen::VectorXf::Zero(3 * verticesVector.size());
