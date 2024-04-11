@@ -22,7 +22,7 @@ Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 float youngs = 100000;
 float poisson = 0.49;
 float density = 1000;
-int groupNum, groupNumX = 1, groupNumY = 1, groupNumZ =1;//ObjectÀàºÍÑÕÉ«¶¼Ğ´ËÀÁË ²»ÄÜ³¬³öclass Object {ÀEÄ×éÊı
+int groupNum, groupNumX = 1, groupNumY = 1, groupNumZ =1;//ObjectÀàºÍÑÕÉ«¶¼Ğ´ËÀÁË ²»ÄÜ³¬³öclass Object {ÀEÄ×éÊ?
 int wKey = 0;
 
 
@@ -139,7 +139,7 @@ int main() {
 		object.groups[i].calDampingMatrix();
 		object.groups[i].calCenterofMass();
 		object.groups[i].calInitCOM();
-		object.groups[i].calLocalPos(); // ¼ÆËã³õÊ¼Î»ÖÃÓEõÊ¼ÖØĞÄµÄ²ûòµ
+		object.groups[i].calLocalPos(); // ¼ÆËã³õÊ¼Î»ÖÃÓEõÊ¼ÖØĞÄµÄ²ûò?
 		object.groups[i].calGroupK(youngs, poisson);
 		
 		object.groups[i].setVertexMassesFromMassMatrix();
@@ -239,7 +239,7 @@ int main() {
 		glEnd();
 
 
-		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) { //Ğ´µãµÄ±EÅ£¬»­×Ö
+		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) { //Ğ´µãµÄ±EÅ£¬»­×?
 			//Group& group = object.getGroup(groupIdx);
 
 			////»­²»ÖØ¸´µÄ°æ±¾
