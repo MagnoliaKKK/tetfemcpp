@@ -38,7 +38,7 @@ public:
 		isFixed(false) // 默认不是固定点
 	{}
 	void setFixedIfBelowThreshold() {
-		if (initx < 5.64260061e-08 /*|| initx > 0.62*/) {//-0.619
+		if (initx < -0.619 /*|| initx > 0.62*/) {//-0.619
 			isFixed = true;
 		}
 
