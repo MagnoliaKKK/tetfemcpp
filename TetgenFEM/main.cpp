@@ -22,7 +22,7 @@ Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 float youngs = 10000;
 float poisson = 0.33;
 float density = 1000;
-int groupNum, groupNumX = 2, groupNumY = 3, groupNumZ =2;//Object类和颜色都写死了 不能超出class Object {纴E淖槭?
+int groupNum, groupNumX = 1, groupNumY = 3, groupNumZ =3;//Object类和颜色都写死了 不能超出class Object {纴E淖槭?
 int wKey = 0;
 
 
@@ -32,7 +32,8 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/bunnyLow.stl", in);
+	readSTL("stls/ring.stl", in);
+	//readSTL("stls/sphere.stl", in);
 
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
@@ -103,36 +104,36 @@ int main() {
 	//object.commonPoints2 = object.findCommonVertices1(object.groups[2], object.groups[3]);
 	//object.commonPoints3 = object.findCommonVertices1(object.groups[3], object.groups[4]);
 	//std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonVertices2 = object.findCommonVertices1(object.groups[0], object.groups[1]);
-	for (Group& g : object.groups) {
-		 //遍历Group中的每个Vertex
-		for (const auto& vertexPair : g.verticesMap) {
-			// 对每个顶点调用setFixedIfBelowThreshold方法
-			Vertex* vertex = vertexPair.second;
+	//for (Group& g : object.groups) {
+	//	 //遍历Group中的每个Vertex
+	//	for (const auto& vertexPair : g.verticesMap) {
+	//		// 对每个顶点调用setFixedIfBelowThreshold方法
+	//		Vertex* vertex = vertexPair.second;
 
-			vertex->setFixedIfBelowThreshold();
-		}
+	//		vertex->setFixedIfBelowThreshold();
+	//	}
 
-	}
+	//}
 	
 	
 	
 	/////////揪头发固定法
-	//float maxY = -std::numeric_limits<float>::infinity(); // 初始化为极小值
-	//Vertex* vertexWithMaxY = nullptr;
-	//// 查找 y 值畜的顶祦E
-	//for (Group& g : object.groups) {
-	//	for (const auto& vertexPair : g.verticesMap) {
-	//		Vertex* vertex = vertexPair.second;
-	//		if (vertex->y > maxY) {
-	//			maxY = vertex->y;
-	//			vertexWithMaxY = vertex;
-	//		}
-	//	}
-	//}
-	//// 将 y 值畜的顶点设为固定祦E
-	//if (vertexWithMaxY != nullptr) {
-	//	vertexWithMaxY->isFixed = true; // 假设有一个方法 setFixed 来设置顶点的固定状态
-	//}
+	float maxY = -std::numeric_limits<float>::infinity(); // 初始化为极小值
+	Vertex* vertexWithMaxY = nullptr;
+	// 查找 y 值畜的顶祦E
+	for (Group& g : object.groups) {
+		for (const auto& vertexPair : g.verticesMap) {
+			Vertex* vertex = vertexPair.second;
+			if (vertex->y > maxY) {
+				maxY = vertex->y;
+				vertexWithMaxY = vertex;
+			}
+		}
+	}
+	// 将 y 值畜的顶点设为固定祦E
+	if (vertexWithMaxY != nullptr) {
+		vertexWithMaxY->isFixed = true; // 假设有一个方法 setFixed 来设置顶点的固定状态
+	}
 	/////////
 	
 #pragma omp parallel for
@@ -188,8 +189,8 @@ int main() {
 		#pragma omp parallel for
 		for (int i = 0; i < groupNum; i++) {
 			//object.groups[i].calGroupKFEM(youngs, poisson);
-			//object.groups[i].calPrimeVec();
-			object.groups[i].calPrimeVec(wKey);
+			object.groups[i].calPrimeVec();
+			//object.groups[i].calPrimeVec(wKey);
 			//object.groups[i].calPrimeVecS(wKey);
 			//object.groups[i].calPrimeVecT(wKey);
 			/*object.groups[i].calLHSFEM();
@@ -203,7 +204,7 @@ int main() {
 		
 		}
 	
-		object.PBDLOOP(10);
+		object.PBDLOOP(5);
 
 
 		
@@ -291,34 +292,35 @@ int main() {
 			//}
 
 		}
-		//for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
-		//	Group& group = object.getGroup(groupIdx);
+		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
+			Group& group = object.getGroup(groupIdx);
 
-		//	// 使用组中已经计算好的质心
-		//	Eigen::Vector3f& center = group.centerofMass;
+			// 使用组中已经计算好的质心
+			Eigen::Vector3f& center = group.centerofMass;
 
-		//	// 将组索引转换为字符串
-		//	char groupNumber[10];
-		//	sprintf_s(groupNumber, "%d", groupIdx);
+			// 将组索引转换为字符串
+			char groupNumber[10];
+			sprintf_s(groupNumber, "%d", groupIdx);
 
-		//	// 为组编号设置颜色
-		//	glColor3f(1.0f, 1.0f, 0.0f); // 白色用于文本
+			// 为组编号设置颜色
+			glColor3f(1.0f, 1.0f, 0.0f); // 白色用于文本
 
-		//	// 设置组编号的位置并绘制
-		//	glRasterPos3f(center[0], center[1], center[2]);
-		//	XPrintString(groupNumber);
+			// 设置组编号的位置并绘制
+			glRasterPos3f(center[0] + 1, center[1], center[2]);
+			XPrintString(groupNumber);
 
-		//	// ... [绘制边缘和顶点的其余代聛E ...
-		//}
+			// ... [绘制边缘和顶点的其余代聛E ...
+		}
 		
 		// Draw edges
 		glBegin(GL_LINES);
 
 
 		
-
+		
 		//分组显示
 		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
+			float hhh;
 			Group& group = object.getGroup(groupIdx);
 			for (Tetrahedron* tet : group.tetrahedra) {
 				for (int edgeIdx = 0; edgeIdx < 6; ++edgeIdx) {  // Loop through each edge in the tetrahedron
@@ -329,6 +331,7 @@ int main() {
 
 					 //Use HSV to RGB conversion to create a unique color for each group
 					float hue = (360.0f * groupIdx) / groupNum;  // Distribute hues evenly across the spectrum
+					hhh = hue;
 					float saturation = 1.0f;  // Full saturation
 					float value = 1.0f;      // Full brightness
 
