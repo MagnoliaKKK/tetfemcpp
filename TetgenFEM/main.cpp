@@ -22,7 +22,7 @@ Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 float youngs = 10000;
 float poisson = 0.33;
 float density = 1000;
-int groupNum, groupNumX = 1, groupNumY = 3, groupNumZ =3;//Objectﾀ犲ﾍﾑﾕﾉｫｶｼﾐｴﾋﾀﾁﾋ ｲｻﾄﾜｳｬｳlass Object {ﾀ・ﾄﾗ鯡?
+int groupNum, groupNumX = 5, groupNumY = 1, groupNumZ =1;//Objectﾀ犲ﾍﾑﾕﾉｫｶｼﾐｴﾋﾀﾁﾋ ｲｻﾄﾜｳｬｳlass Object {ﾀ・ﾄﾗ鯡?
 int wKey = 0;
 
 
@@ -32,13 +32,13 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/ring.stl", in);
+	readSTL("stls/vega1.stl", in);
 	//readSTL("stls/sphere.stl", in);
 
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.15a0.0003";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
+	char args[] = "pq1.15a0.001";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
 	// Call TetGen to tetrahedralize the geometry
@@ -104,36 +104,36 @@ int main() {
 	//object.commonPoints2 = object.findCommonVertices1(object.groups[2], object.groups[3]);
 	//object.commonPoints3 = object.findCommonVertices1(object.groups[3], object.groups[4]);
 	//std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonVertices2 = object.findCommonVertices1(object.groups[0], object.groups[1]);
-	//for (Group& g : object.groups) {
-	//	 //ｱ鯊ⅷroupﾖﾐｵﾄﾃｿｸertex
-	//	for (const auto& vertexPair : g.verticesMap) {
-	//		// ｶﾔﾃｿｸ･ｵ羞ﾃsetFixedIfBelowThresholdｷｽｷｨ
-	//		Vertex* vertex = vertexPair.second;
+	for (Group& g : object.groups) {
+		 //ｱ鯊ⅷroupﾖﾐｵﾄﾃｿｸertex
+		for (const auto& vertexPair : g.verticesMap) {
+			// ｶﾔﾃｿｸ･ｵ羞ﾃsetFixedIfBelowThresholdｷｽｷｨ
+			Vertex* vertex = vertexPair.second;
 
-	//		vertex->setFixedIfBelowThreshold();
-	//	}
+			vertex->setFixedIfBelowThreshold();
+		}
 
-	//}
+	}
 	
 	
 	
 	/////////ｾｾﾍｷｷ｢ｹﾌｶｨｷｨ
-	float maxY = -std::numeric_limits<float>::infinity(); // ｳｼｻｯﾎｪｼｫﾐ｡ﾖｵ
-	Vertex* vertexWithMaxY = nullptr;
-	// ｲ鰈ﾒ y ﾖｵﾗ鋗ﾄｶ･ｵ・
-	for (Group& g : object.groups) {
-		for (const auto& vertexPair : g.verticesMap) {
-			Vertex* vertex = vertexPair.second;
-			if (vertex->y > maxY) {
-				maxY = vertex->y;
-				vertexWithMaxY = vertex;
-			}
-		}
-	}
-	// ｽｫ y ﾖｵﾗ鋗ﾄｶ･ｵ翹靜ｪｹﾌｶｨｵ・
-	if (vertexWithMaxY != nullptr) {
-		vertexWithMaxY->isFixed = true; // ｼﾙﾉ勒ﾐﾒｻｸｽｷｨ setFixed ﾀｴﾉ靹ﾃｶ･ｵ羞ﾄｹﾌｶｨﾗｴﾌｬ
-	}
+	//float maxY = -std::numeric_limits<float>::infinity(); // ｳｼｻｯﾎｪｼｫﾐ｡ﾖｵ
+	//Vertex* vertexWithMaxY = nullptr;
+	//// ｲ鰈ﾒ y ﾖｵﾗ鋗ﾄｶ･ｵ・
+	//for (Group& g : object.groups) {
+	//	for (const auto& vertexPair : g.verticesMap) {
+	//		Vertex* vertex = vertexPair.second;
+	//		if (vertex->y > maxY) {
+	//			maxY = vertex->y;
+	//			vertexWithMaxY = vertex;
+	//		}
+	//	}
+	//}
+	//// ｽｫ y ﾖｵﾗ鋗ﾄｶ･ｵ翹靜ｪｹﾌｶｨｵ・
+	//if (vertexWithMaxY != nullptr) {
+	//	vertexWithMaxY->isFixed = true; // ｼﾙﾉ勒ﾐﾒｻｸｽｷｨ setFixed ﾀｴﾉ靹ﾃｶ･ｵ羞ﾄｹﾌｶｨﾗｴﾌｬ
+	//}
 	/////////
 	
 #pragma omp parallel for

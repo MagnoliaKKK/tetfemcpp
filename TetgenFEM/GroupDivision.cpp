@@ -2,7 +2,7 @@
 
 
 const float timeStep = 0.01f;
-const float dampingConst = 10.0f;
+const float dampingConst = 2.5f;
 const float PI = 3.1415926535f;
 const float Gravity = -10.0f;
 const float bindForce = -1.0f;
@@ -1219,6 +1219,7 @@ void Object::PBDLOOP(int looptime) {
 		auto& g = groups[i];
 		g.updateVelocity();
 		g.updatePosition();
+		
 		//g.calRInvLocalPos();
 	}
 
@@ -1421,7 +1422,10 @@ void Group::updatePosition() {
 		}
 
 		// 更新顶点的位置
-		
+		if (vertex->isFixed == true)
+		{
+			std::cout << vertex->index << std::endl;
+		}
 	}
 }
 void Group::updatePositionFEM() {
