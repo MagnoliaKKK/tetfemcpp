@@ -19,10 +19,10 @@
  
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
-float youngs = 10000;
+float youngs = 100000;
 float poisson = 0.33;
 float density = 1000;
-int groupNum, groupNumX = 5, groupNumY = 1, groupNumZ =1;//Object类和颜色都写死了 不能超出class Object {纴E淖槭?
+int groupNum, groupNumX = 6, groupNumY = 1, groupNumZ =1;//Object类和颜色都写死了 不能超出class Object {纴E淖槭?
 int wKey = 0;
 
 
@@ -204,7 +204,7 @@ int main() {
 		
 		}
 	
-		object.PBDLOOP(5);
+		object.PBDLOOP(2);
 
 
 		

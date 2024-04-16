@@ -5,7 +5,7 @@ const float timeStep = 0.01f;
 const float dampingConst = 2.5f;
 const float PI = 3.1415926535f;
 const float Gravity = -10.0f;
-const float bindForce = -1.0f;
+const float bindForce = -5.0f;
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -1422,10 +1422,10 @@ void Group::updatePosition() {
 		}
 
 		// 更新顶点的位置
-		if (vertex->isFixed == true)
+		/*if (vertex->isFixed == true)
 		{
 			std::cout << vertex->index << std::endl;
-		}
+		}*/
 	}
 }
 void Group::updatePositionFEM() {
