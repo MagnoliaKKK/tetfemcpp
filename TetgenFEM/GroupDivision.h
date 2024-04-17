@@ -38,7 +38,7 @@ public:
 		isFixed(false) // 默认不是固定点
 	{}
 	void setFixedIfBelowThreshold() {
-		if (initx < -5.642600e-09/*|| initx > 0.62*/) {//-0.619
+		if (initx < -0.619/*|| initx > 0.62*/) {//-0.619
 			isFixed = true;
 		}
 
@@ -131,7 +131,7 @@ public:
 	Eigen::VectorXf RHS_B;
 	Eigen::VectorXf RHS_C;
 	Eigen::VectorXf RHS_D, RHS_AsubBplusC;
-	Eigen::SparseMatrix<float> RHS_E, RHS_F, RHS_G;
+	Eigen::SparseMatrix<float> RHS_E, RHS_F, RHS_G, RHS_F_MassD;
 	Eigen::VectorXf curLocalPos;
 	Eigen::VectorXf RInvPos;
 	bool gravityApplied = false;

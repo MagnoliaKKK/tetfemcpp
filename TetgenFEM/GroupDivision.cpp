@@ -2,10 +2,10 @@
 
 
 const float timeStep = 0.01f;
-const float dampingConst = 2.5f;
+const float dampingConst = 1.2f;
 const float PI = 3.1415926535f;
-const float Gravity = -10.0f;
-const float bindForce = -5.0f;
+const float Gravity = -20.0f;
+const float bindForce = -10.0f;
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -1109,7 +1109,7 @@ void Group::calLHS() {
 	// 计算逆矩阵 下面不属于LHS，顺便算
 	inverseTerm = (massMatrix + dampingMatrix * timeStep).inverse(); //顺顺便把这个算了
 	inverseTermSparse = inverseTerm.sparseView();
-	RHS_E = timeStep * timeStep * massDampingSparseInv * kSparse;
+	RHS_E = timeStep * timeStep * massDampingSparseInv * kSparse ;
 	RHS_A = RHS_E * initLocalPos;
 
 	FEMLHS = LHS_I + LHS_A - LHS_B;
@@ -1174,9 +1174,18 @@ void Object::PBDLOOP(int looptime) {
 
 		g.RHS_F = g.RHS_E * g.rotationTransSparse;//RHS的部分
 		g.RHS_B = g.RHS_F * g.primeVec; //46ms
-		g.RHS_C = g.RHS_F * g.massDistributionSparse * g.primeVec; //54ms
+		
+		//g.RHS_F_MassD = g.RHS_F * g.massDistributionSparse;
+
+		//auto fff = g.RHS_F.toDense();
+		//auto massssss = g.massDistributionSparse.toDense();
+
+		//Eigen::MatrixXf producttt = (10000*fff) * (10000*massssss);
+		//auto aa = g.RHS_F_MassD.toDense();
+
+		//g.RHS_C = g.RHS_F_MassD * g.primeVec; //54ms
 		g.RHS_G = timeStep * timeStep * g.massDampingSparseInv * g.rotationTransSparse;
-		g.RHS_AsubBplusC = g.RHS_A - g.RHS_B + g.RHS_C; //24ms
+		g.RHS_AsubBplusC = g.RHS_A - g.RHS_B;// +g.RHS_C; //24ms
 
 	}
 
@@ -1387,7 +1396,7 @@ void Group::calFbind(const Eigen::VectorXf& currentPositionThisGroup, const std:
 				posDifference = posThisGroup - avgPosition;
 				force = k * posDifference;
 
-				Fbind.segment<3>(3 * vertexThisGroup->localIndex) += force;
+				Fbind.segment<3>(3 * vertexThisGroup->localIndex) = force;
 			}
 		}
 	}
@@ -1421,10 +1430,10 @@ void Group::updatePosition() {
 			vertex->z = pos.z();
 		}
 
-		// 更新顶点的位置
-		/*if (vertex->isFixed == true)
+		/* 更新顶点的位置
+		if (vertex->isFixed == true)
 		{
-			std::cout << vertex->index << std::endl;
+			vertex->x += 0.01;
 		}*/
 	}
 }
