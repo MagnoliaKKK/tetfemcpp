@@ -19,10 +19,10 @@
  
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
-float youngs = 10000;
-float poisson = 0.33;
+float youngs = 3000000000;
+float poisson = 0.3;
 float density = 1000;
-int groupNum, groupNumX = 5, groupNumY = 1, groupNumZ =1;//Object类和颜色都写死了 不能超出class Object {纴E淖槭?
+int groupNum, groupNumX = 1, groupNumY = 1, groupNumZ =1;//Object类和颜色都写死了 不能超出class Object {纴E淖槭?
 int wKey = 0;
 
 
@@ -32,13 +32,13 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/vega1.stl", in);
+	readSTL("stls/xigou.stl", in);
 	//readSTL("stls/sphere.stl", in);
 
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.15a0.001";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
+	char args[] = "pq1.15a0.0005";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
 	// Call TetGen to tetrahedralize the geometry
@@ -188,23 +188,24 @@ int main() {
 		
 		#pragma omp parallel for
 		for (int i = 0; i < groupNum; i++) {
-			//object.groups[i].calGroupKFEM(youngs, poisson);
+			object.groups[i].calGroupKFEM(youngs, poisson);
 			object.groups[i].calPrimeVec();
+			//object.groups[i].calPrimeVec2(wKey);
 			//object.groups[i].calPrimeVec(wKey);
 			//object.groups[i].calPrimeVecS(wKey);
 			//object.groups[i].calPrimeVecT(wKey);
-			/*object.groups[i].calLHSFEM();
+			object.groups[i].calLHSFEM();
 			object.groups[i].calRHSFEM();
 			object.groups[i].calDeltaXFEM();
 			object.groups[i].calculateCurrentPositionsFEM();
 			object.groups[i].updateVelocityFEM();
-			object.groups[i].updatePositionFEM();*/
+			object.groups[i].updatePositionFEM();
 			
-			object.groups[i].calRotationMatrix();
+			//object.groups[i].calRotationMatrix();
 		
 		}
 	
-		object.PBDLOOP(2);
+		//object.PBDLOOP(2);
 
 
 		

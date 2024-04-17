@@ -2,10 +2,10 @@
 
 
 const float timeStep = 0.01f;
-const float dampingConst = 1.2f;
+const float dampingConst = 300.0f;// 10.2f;
 const float PI = 3.1415926535f;
-const float Gravity = -20.0f;
-const float bindForce = -10.0f;
+const float Gravity = -10.0f;
+const float bindForce = -10000.0f;
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -274,21 +274,47 @@ void Group::calRotationMatrix() {
 	Eigen::MatrixXf Apq = Eigen::MatrixXf::Zero(3, 3);
 	Eigen::Matrix3f tempA = Eigen::Matrix3f::Zero();
 	Eigen::Vector3f center_grid = Eigen::Vector3f::Zero();
-	
-	for (const auto& vertexEntry : verticesMap) {
-		center_grid[0] = massDistribution(0, 3 * vertexEntry.second->localIndex) * primeVec[3 * vertexEntry.second->localIndex];
-		center_grid[1] = massDistribution(0, 3 * vertexEntry.second->localIndex) * primeVec[3 * vertexEntry.second->localIndex + 1];
-		center_grid[2] = massDistribution(0, 3 * vertexEntry.second->localIndex) * primeVec[3 * vertexEntry.second->localIndex + 2];
+
+	Eigen::Vector3f tempCenterGrid = Eigen::Vector3f::Zero();
+#pragma omp parallel num_threads(4)
+	{
+		Eigen::Vector3f localCenterGrid = Eigen::Vector3f::Zero();
+#pragma omp for
+		for (int i = 0; i < static_cast<int>(verticesMap.size()); ++i) {
+			auto it = verticesMap.begin();
+			std::advance(it, i);
+			const std::pair<const int, Vertex*>& vertexEntry = *it;
+
+			localCenterGrid.noalias() += massDistribution(0, 3 * vertexEntry.second->localIndex) * primeVec.segment<3>(3 * vertexEntry.second->localIndex);
+		}
+#pragma omp critical
+		{
+			tempCenterGrid += localCenterGrid;
+		}
 	}
+	center_grid = tempCenterGrid;
+
+
 	// 计算Apq矩阵
-	for (const auto& vertexEntry : verticesMap) {
-		
-		
-		tempA = (primeVec.block<3, 1>(3 * vertexEntry.second->localIndex, 0) - center_grid) * initLocalPos.block<3, 1>(3 * vertexEntry.second->localIndex, 0).transpose();
-		//auto m = massMatrix(3 * vertexEntry.second->localIndex, 3 * vertexEntry.second->localIndex);
-		
-		Apq += massMatrix(3 * vertexEntry.second->localIndex, 3 * vertexEntry.second->localIndex) * tempA;
+	Eigen::MatrixXf tempApq = Eigen::MatrixXf::Zero(3, 3);
+#pragma omp parallel num_threads(4)
+	{
+		Eigen::MatrixXf localApq = Eigen::MatrixXf::Zero(3, 3);
+#pragma omp for
+		for (int i = 0; i < static_cast<int>(verticesMap.size()); ++i) {
+			auto it = verticesMap.begin();
+			std::advance(it, i);
+			const std::pair<const int, Vertex*>& vertexEntry = *it;
+
+			tempA.noalias() = (primeVec.segment<3>(3 * vertexEntry.second->localIndex) - center_grid) * initLocalPos.segment<3>(3 * vertexEntry.second->localIndex).transpose();
+			localApq.noalias() += massMatrix(3 * vertexEntry.second->localIndex, 3 * vertexEntry.second->localIndex) * tempA;
+		}
+#pragma omp critical
+		{
+			tempApq += localApq;
+		}
 	}
+	Apq = tempApq;
 
 	// 初始化四元数和旋转矩阵
 	Eigen::Vector3f omega = Eigen::Vector3f::Identity();
@@ -304,17 +330,13 @@ void Group::calRotationMatrix() {
 		Eigen::Matrix3f S = R.transpose() * Apq;
 		Eigen::Vector3f gradR = axlAPD(S);
 		Eigen::Matrix3f HesseR = S.trace() * Eigen::Matrix3f::Identity() - (S + S.transpose()) * 0.5;
-		Eigen::Vector3f omega = -1 * HesseR.inverse() * gradR;
-
-		float w;
-		w = omega.norm();
+		Eigen::Vector3f omega = -HesseR.inverse() * gradR;
+		float w = omega.norm();
 		if (w < 1.0e-9) {
 			break;
 		}
-
-		omega = clamp2(omega, -1 * PI, PI);
-		Eigen::Quaternionf  temp2;
-		temp2 = Exp2(omega);
+		omega = clamp2(omega, -PI, PI);
+		Eigen::Quaternionf temp2 = Exp2(omega);
 		quaternion = quaternion * temp2;
 	}
 
@@ -322,29 +344,11 @@ void Group::calRotationMatrix() {
 
 	// 构建旋转矩阵的3N x 3N版本
 	rotationMatrix = Eigen::MatrixXf::Zero(3 * verticesMap.size(), 3 * verticesMap.size());
-	//Eigen::JacobiSVD<Eigen::Matrix3f> svd(rotationMatrix, Eigen::ComputeFullU | Eigen::ComputeFullV);
-	//double cond = svd.singularValues()(0) / svd.singularValues()(2); // 3x3矩阵，索引从0到2
-	//std::cout << "Condition number: " << cond << std::endl;
-	// Eigen::JacobiSVD<Eigen::MatrixXd> svd(matrix, Eigen::ComputeThinU | Eigen::ComputeThinV);
-
-    // 获取奇异值
-	//Eigen::JacobiSVD<Eigen::MatrixXf> svd(rotate_matrix, Eigen::ComputeThinU | Eigen::ComputeThinV);
-	//Eigen::VectorXf singularValues = svd.singularValues();
-
-	//// 打印奇异值
-	//std::cout << "Singular values:" << std::endl;
-	//std::cout << singularValues << std::endl;
-	//rotationMatrix = Eigen::MatrixXf::Identity(3 * verticesMap.size(), 3 * verticesMap.size());
-	for (unsigned int pi = 0; pi < verticesMap.size(); pi++) {
+	
+	#pragma omp parallel for
+	for (int pi = 0; pi < static_cast<int>(verticesMap.size()); pi++) {
 		rotationMatrix.block<3, 3>(3 * pi, 3 * pi) = rotate_matrix;
 	}
-
-	//rotationSparse = rotationMatrix.sparseView();
-	//rotationTransSparse = rotationMatrix.transpose().sparseView();
-
-	// 将旋转矩阵转换为稀疏格式（如果需要）
-	//Eigen::SparseMatrix<float> Rn_Matrix_Sparse = rotate_matrix3N.sparseView();
-	//Eigen::SparseMatrix<float> Rn_MatrixTR_Sparse = rotate_matrix3N.transpose().sparseView();
 }
 //
 Eigen::MatrixXf Tetrahedron::createElementK(float E, float nu, const Eigen::Vector3f& groupCenterOfMass) {
@@ -843,7 +847,7 @@ void Group::calPrimeVecS(int wKey) {
 	Eigen::VectorXf appliedForce = Eigen::VectorXf::Zero(3 * verticesVector.size());
 
 	// 施加力的大小，可以根据实际情况调整
-	float forceMagnitude = 50.0f;
+	float forceMagnitude = 10.0f;
 
 	// 如果是第三组，根据wKey的值为组内所有顶点施加力
 	if (this->groupIndex == 2) {
@@ -977,9 +981,11 @@ void Group::calPrimeVec2(int w) {
 
 	gravity = Eigen::VectorXf::Zero(3 * verticesVector.size());
 	// 设置指定点的 gravity
-	int localPi = 47; // 指定的 localIndex
-	if (localPi < verticesVector.size()) {
-		int gravityIndex = 3 * localPi + 1; // 假设在 y 方向上施加力
+	int localPi = 2; // 指定的 localIndex
+	int globalPi = 69;
+	if (globalPi < verticesVector.size()) {
+		Vertex* v = verticesVector[globalPi];
+		int gravityIndex = 3 * (v->localIndex) + 1; // 假设在 y 方向上施加力
 		if (w == 1 || w == 2) {
 			gravity(gravityIndex) = (w == 1) ? Gravity : -Gravity; // 根据 w 的值决定力的方向
 		}
@@ -1267,7 +1273,7 @@ void Group::calDeltaX() {
 void Group::calDeltaXFEM() {
 
 	// 解线性方程Ax = b
-	deltaXFEM = LHSFEM.colPivHouseholderQr().solve(RHSFEM);
+	deltaXFEM = LHSFEM.inverse() * RHSFEM;
 }
 void Group::calculateCurrentPositions() {
 	// 遍历所有顶点
