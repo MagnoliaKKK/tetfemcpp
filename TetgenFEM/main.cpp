@@ -19,10 +19,10 @@
  
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
-float youngs = 3000000000;
-float poisson = 0.3;
+float youngs = 100000;
+float poisson = 0.33;
 float density = 1000;
-int groupNum, groupNumX = 1, groupNumY = 1, groupNumZ =1;//Object类和颜色都写死了 不能超出class Object {纴E淖槭?
+int groupNum, groupNumX = 8, groupNumY = 1, groupNumZ =1;//Object类和颜色都写死了 不能超出class Object {纴E淖槭?
 int wKey = 0;
 
 
@@ -32,7 +32,7 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/xigou.stl", in);
+	readSTL("stls/vega1.stl", in);
 	//readSTL("stls/sphere.stl", in);
 
 	// Configure TetGen behavior
@@ -188,24 +188,24 @@ int main() {
 		
 		#pragma omp parallel for
 		for (int i = 0; i < groupNum; i++) {
-			object.groups[i].calGroupKFEM(youngs, poisson);
+			//object.groups[i].calGroupKFEM(youngs, poisson);
 			object.groups[i].calPrimeVec();
 			//object.groups[i].calPrimeVec2(wKey);
 			//object.groups[i].calPrimeVec(wKey);
 			//object.groups[i].calPrimeVecS(wKey);
 			//object.groups[i].calPrimeVecT(wKey);
-			object.groups[i].calLHSFEM();
+			/*object.groups[i].calLHSFEM();
 			object.groups[i].calRHSFEM();
 			object.groups[i].calDeltaXFEM();
 			object.groups[i].calculateCurrentPositionsFEM();
 			object.groups[i].updateVelocityFEM();
-			object.groups[i].updatePositionFEM();
+			object.groups[i].updatePositionFEM();*/
 			
-			//object.groups[i].calRotationMatrix();
+			object.groups[i].calRotationMatrix();
 		
 		}
 	
-		//object.PBDLOOP(2);
+		object.PBDLOOP(2);
 
 
 		
