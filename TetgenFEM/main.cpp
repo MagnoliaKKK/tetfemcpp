@@ -1,4 +1,4 @@
-
+ï»¿
 //#define EIGEN_USE_MKL_ALL
 #include <iostream>
 #include <vector>
@@ -20,10 +20,12 @@
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 float youngs = 100000;
-float poisson = 0.33;
+float poisson = 0.49;
 float density = 1000;
-int groupNum, groupNumX = 8, groupNumY = 1, groupNumZ =1;//ObjectÀàºÍÑÕÉ«¶¼Ğ´ËÀÁË ²»ÄÜ³¬³öclass Object {ÀEÄ×éÊ?
+int groupNum, groupNumX = 3, groupNumY = 1, groupNumZ =1;//Objectï¾€çŠ²ï¾ï¾‘ï¾•ï¾‰ï½«ï½¶ï½¼ï¾ï½´ï¾‹ï¾€ï¾ï¾‹ ï½²ï½»ï¾„ï¾œï½³ï½¬ï½³î’‹lass Object {ï¾€ãƒ»ï¾„ï¾—é¯¡?
 int wKey = 0;
+
+
 
 
 int main() {
@@ -32,7 +34,7 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/vega1.stl", in);
+	readSTL("stls/xigou.stl", in);
 	//readSTL("stls/sphere.stl", in);
 
 	// Configure TetGen behavior
@@ -54,13 +56,13 @@ int main() {
 	object.groupNumY = groupNumY;
 	object.groupNumZ = groupNumZ;
 	divideIntoGroups(out, object, groupNumX, groupNumY, groupNumZ); //convert tetgen to our data structure
-	object.updateIndices(); // Ã¿¸öµã·ÖÅäÒ»¸ö¶ÀÁ¢index£¬ÖØ¸´µÄ¸ÄĞÂµÄindex
-	object.assignLocalIndicesToAllGroups(); //·ÖÅäLocal index
-	object.generateUniqueVertices();//²úÉúUniqueVertices
+	object.updateIndices(); // ï¾ƒï½¿ï½¸î“œç¾šï¾–ï¾…èªï½»ï½¸î“ï¾€ï¾ï½¢indexï½£ï½¬ï¾–ï¾˜ï½¸ï½´ï½µï¾„ï½¸ï¾„ï¾ï¾‚ï½µï¾„index
+	object.assignLocalIndicesToAllGroups(); //ï½·ï¾–ï¾…è†ˆocal index
+	object.generateUniqueVertices();//ï½²æµï¿¤niqueVertices
 	
 	object.updateAdjacentGroupIndices(groupNumX, groupNumY, groupNumZ);
 	for (int i = 0; i < groupNum; ++i) {
-		// ¶ÔÃ¿¸ö×éµ÷ÓÃ storeAdjacentGroupsCommonVertices º¯Êı
+		// ï½¶ï¾”ï¾ƒï½¿ï½¸î“¾é­´î–¶ï¾ƒ storeAdjacentGroupsCommonVertices ï½ºï½¯ï¾Šï£±
 		object.storeAdjacentGroupsCommonVertices(i);
 	}
 	
@@ -69,7 +71,7 @@ int main() {
 	for (int i = 0; i < groupNum; ++i) {  // Loop over the groups
 		Group& group = object.getGroup(i);
 		std::cout << "Group " << i << " has " << group.tetrahedra.size() << " tetrahedra." << std::endl;
-		group.LHS_I = Eigen::MatrixXf::Identity(3 * group.verticesMap.size(), 3 * group.verticesMap.size()); //½ÚÊ¡Ê±¼äĞ¡ÄÜÊÖ
+		group.LHS_I = Eigen::MatrixXf::Identity(3 * group.verticesMap.size(), 3 * group.verticesMap.size()); //ï½½ï¾šï¾Šï½¡ï¾Šï½±ï½¼è»ï½¡ï¾„ï¾œï¾Šï¾–
 	}
 
 
@@ -105,9 +107,9 @@ int main() {
 	//object.commonPoints3 = object.findCommonVertices1(object.groups[3], object.groups[4]);
 	//std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonVertices2 = object.findCommonVertices1(object.groups[0], object.groups[1]);
 	for (Group& g : object.groups) {
-		 //±éÀúGroupÖĞµÄÃ¿¸öVertex
+		 //ï½±é¯Šâ…·roupï¾–ï¾ï½µï¾„ï¾ƒï½¿ï½¸î‘¾ertex
 		for (const auto& vertexPair : g.verticesMap) {
-			// ¶ÔÃ¿¸ö¶¥µãµ÷ÓÃsetFixedIfBelowThreshold·½·¨
+			// ï½¶ï¾”ï¾ƒï½¿ï½¸î“ï½¥ï½µç¾î–¶ï¾ƒsetFixedIfBelowThresholdï½·ï½½ï½·ï½¨
 			Vertex* vertex = vertexPair.second;
 
 			vertex->setFixedIfBelowThreshold();
@@ -117,10 +119,10 @@ int main() {
 	
 	
 	
-	/////////¾¾Í··¢¹Ì¶¨·¨
-	//float maxY = -std::numeric_limits<float>::infinity(); // ³õÊ¼»¯Îª¼«Ğ¡Öµ
+	/////////ï½¾ï½¾ï¾ï½·ï½·ï½¢ï½¹ï¾Œï½¶ï½¨ï½·ï½¨
+	//float maxY = -std::numeric_limits<float>::infinity(); // ï½³îµï½¼ï½»ï½¯ï¾ï½ªï½¼ï½«ï¾ï½¡ï¾–ï½µ
 	//Vertex* vertexWithMaxY = nullptr;
-	//// ²éÕÒ y Öµ×ûĞóµÄ¶¥µE
+	//// ï½²é°ˆï¾’ y ï¾–ï½µï¾—é‹—îŠ¨ï¾„ï½¶ï½¥ï½µãƒ»
 	//for (Group& g : object.groups) {
 	//	for (const auto& vertexPair : g.verticesMap) {
 	//		Vertex* vertex = vertexPair.second;
@@ -130,9 +132,9 @@ int main() {
 	//		}
 	//	}
 	//}
-	//// ½« y Öµ×ûĞóµÄ¶¥µãÉèÎª¹Ì¶¨µE
+	//// ï½½ï½« y ï¾–ï½µï¾—é‹—îŠ¨ï¾„ï½¶ï½¥ï½µç¿¹éœï½ªï½¹ï¾Œï½¶ï½¨ï½µãƒ»
 	//if (vertexWithMaxY != nullptr) {
-	//	vertexWithMaxY->isFixed = true; // ¼ÙÉèÓĞÒ»¸ö·½·¨ setFixed À´ÉèÖÃ¶¥µãµÄ¹Ì¶¨×´Ì¬
+	//	vertexWithMaxY->isFixed = true; // ï½¼ï¾™ï¾‰å‹’ï¾ï¾’ï½»ï½¸î“ï½½ï½·ï½¨ setFixed ï¾€ï½´ï¾‰é¹ï¾ƒï½¶ï½¥ï½µç¾ï¾„ï½¹ï¾Œï½¶ï½¨ï¾—ï½´ï¾Œï½¬
 	//}
 	/////////
 	
@@ -141,14 +143,13 @@ int main() {
 		object.groups[i].calMassMatrix(density);
 		object.groups[i].calDampingMatrix();
 		object.groups[i].calCenterofMass();
-		object.groups[i].calInitCOM();
-		object.groups[i].calLocalPos(); // ¼ÆËã³õÊ¼Î»ÖÃÓEõÊ¼ÖØĞÄµÄ²ûò?
-		object.groups[i].calGroupK(youngs, poisson);
-		
-		object.groups[i].setVertexMassesFromMassMatrix();
+		object.groups[i].calInitCOM();//initial com
+		object.groups[i].calLocalPos(); // initial local positions
+		object.groups[i].calGroupK(youngs, poisson);		
+		object.groups[i].setVertexMassesFromMassMatrix();//vertex mass
 		object.groups[i].calMassGroup();
 		object.groups[i].calMassDistributionMatrix();
-		//object.groups[i].inverseTerm = (object.groups[i].massMatrix + object.groups[i].dampingMatrix * 0.01f).inverse(); //Ë³Ë³±ã°ÑÕâ¸öËãÁË
+		//object.groups[i].inverseTerm = (object.groups[i].massMatrix + object.groups[i].dampingMatrix * 0.01f).inverse(); //ï¾‹ï½³ï¾‹ï½³ï½±ç¾ƒï¾‘ï¾•ç¯‹î“²ç¿†ï¾‹
 		//object.groups[i].inverseTermSparse = object.groups[i].inverseTerm.sparseView();
 		object.groups[i].calLHS();
 	}
@@ -156,13 +157,13 @@ int main() {
 	//for calculate frame rate
 	double lastTime = glfwGetTime();
 	int nbFrames = 0;
-	glfwSwapInterval(0); //´¹Ö±Í¬²½
+	glfwSwapInterval(0); //ï½´ï½¹ï¾–ï½±ï¾ï½¬ï½²ï½½
 
 	
 	while (!glfwWindowShouldClose(window)) {
 		
 		//object.commonPoints1 = object.findCommonVertices(object.groups[1], object.groups[2]);
-		//¹Ì¶¨µãÉèÖÃ
+		//ï½¹ï¾Œï½¶ï½¨ï½µç¿¹é¹ï¾ƒ
 	
 	
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
@@ -183,13 +184,13 @@ int main() {
 		}
 		else
 			wKey = 0;
-		//std::cout << wKey << std::endl;// µ± W ±»°´ÏÂÊ±µÄÂß¼­
+		//std::cout << wKey << std::endl;// ï½µï½± W ï½±ï½»ï½°ï½´ï¾ï¾‚ï¾Šï½±ï½µï¾„ï¾‚ï¾Ÿï½¼ï½­
 		//double aa = object.groups[0].tetrahedra[0]->calMassTetra(density);
-		
 		#pragma omp parallel for
 		for (int i = 0; i < groupNum; i++) {
 			//object.groups[i].calGroupKFEM(youngs, poisson);
 			object.groups[i].calPrimeVec();
+			
 			//object.groups[i].calPrimeVec2(wKey);
 			//object.groups[i].calPrimeVec(wKey);
 			//object.groups[i].calPrimeVecS(wKey);
@@ -204,17 +205,26 @@ int main() {
 			object.groups[i].calRotationMatrix();
 		
 		}
-	
-		object.PBDLOOP(2);
+		/*for (int i = 0; i < groupNum; i++) {
+			std::cout << "Group" << i << "Prime vector is" << std::endl << object.groups[i].primeVec;
+		}*/
+		
+			
+		object.PBDLOOP(15);
 
+		if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
+			for (int i = 0; i < groupNum; i++)
+				std::cout << "Group Velocity-" << i << ":\n" << object.groups[i].groupVelocity << std::endl;
 
+			system("pause");
+		}
 		
 		
 		// Render here
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
 		//drawAxis1(0.3f, object.groups[0].rotate_matrix);
-		// »æÖÆ×ø±EE
+		// ï½»è´ï¾†ï¾—î™ãƒ»ãƒ»
 		drawAxis(0.3f);
 		//std::cout << getRotationAngleZ(object.groups[0].rotate_matrix) << std::endl;;
 		// Enable wireframe mode
@@ -228,9 +238,9 @@ int main() {
 		
 		
 		// Draw vertices
-		// ÉèÖÃµãµÄ´óĞ¡Îª10ÏñËØ
+		// ï¾‰é¹ï¾ƒï½µç¾ï¾„ï½´î‹ƒï½¡ï¾ï½ª10ï¾î…†ï¾˜
 		glPointSize(5.0f);
-		// »æÖÆ°×É«µE
+		// ï½»è´ï¾†ï½°ï¾—ï¾‰ï½«ï½µãƒ»
 		glColor3f(1.0f, 1.0f, 1.0f);
 		glBegin(GL_POINTS);
 		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
@@ -245,29 +255,29 @@ int main() {
 		glEnd();
 
 
-		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) { //Ğ´µãµÄ±EÅ£¬»­×?
+		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) { //ï¾ï½´ï½µç¾ï¾„ï½±ãƒ»ï¾…ï½£ï½¬ï½»ï½­ï¾—?
 			Group& group = object.getGroup(groupIdx);
 
-			////»­²»ÖØ¸´µÄ°æ±¾
+			////ï½»ï½­ï½²ï½»ï¾–ï¾˜ï½¸ï½´ï½µï¾„ï½°è±ï½¾
 			//std::vector<Vertex*> uniqueVertices = group.getUniqueVertices();
 			//for (size_t i = 0; i < uniqueVertices.size(); ++i) {
 			//	Vertex* vertex = uniqueVertices[i];
-			//	char buffer[5]; // ·ÖÅä×ã¹»´óµÄ»º³åÇE
-			//	sprintf_s(buffer, "%d", vertex->index); // ½«int×ª»»Îªchar*
+			//	char buffer[5]; // ï½·ï¾–ï¾…è‘«ç¾¯ï½»ï½´îŠ¨ï¾„ï½»ï½ºï½³è¡‚ãƒ»
+			//	sprintf_s(buffer, "%d", vertex->index); // ï½½ï½«intï¾—ï½ªï½»ï½»ï¾ï½ªchar*
 			//	glColor3f(1, 0.0f, 0.0f);
 			//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
 			//	XPrintString(buffer);
 			//}
 
 
-			//»­ÖØ¸´µÄ°æ±¾
+			//ï½»ï½­ï¾–ï¾˜ï½¸ï½´ï½µï¾„ï½°è±ï½¾
 
 
-			//for (Tetrahedron* tetra : group.tetrahedra) { // ±éÀú×éÖĞµÄÃ¿¸öËÄÃæÌE
-			//	for (int i = 0; i < 4; ++i) { // ±éÀúËÄÃæÌåµÄÃ¿¸ö¶¥µE
+			//for (Tetrahedron* tetra : group.tetrahedra) { // ï½±é¯Šæ™™é°’ï¾ï½µï¾„ï¾ƒï½¿ï½¸î“²ï¾„ï¾ƒè³£ãƒ»
+			//	for (int i = 0; i < 4; ++i) { // ï½±é¯Šæ’ï¾„ï¾ƒè³£è ï¾„ï¾ƒï½¿ï½¸î“ï½¥ï½µãƒ»
 			//		Vertex* vertex = tetra->vertices[i];
-			//		char buffer[5]; // ·ÖÅä×ã¹»´óµÄ»º³åÇE
-			//		sprintf_s(buffer, "%d", vertex->index); // ½«int×ª»»Îªchar*
+			//		char buffer[5]; // ï½·ï¾–ï¾…è‘«ç¾¯ï½»ï½´îŠ¨ï¾„ï½»ï½ºï½³è¡‚ãƒ»
+			//		sprintf_s(buffer, "%d", vertex->index); // ï½½ï½«intï¾—ï½ªï½»ï½»ï¾ï½ªchar*
 			//		//if (groupIdx == 0) {
 			//		//	glColor3f(1, 0.0f, 0.0f);
 			//		//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
@@ -282,7 +292,7 @@ int main() {
 			//		//}
 			//		//	
 
-			//		//std::default_random_engine generator(vertex->index);//Ëæ»úÊı·¢ÉúÆ÷£¬ÓÃÓÚ×Ö·ûÆ«ÒÆ·ÀÖØµş
+			//		//std::default_random_engine generator(vertex->index);//ï¾‹è²Šæ‘ ï£±ï½·ï½¢ï¾‰æ†˜î–†ï½¬ï¾“ï¾ƒï¾“ï¾šï¾—ï¾–ï½·éˆ¼ï½«ï¾’ï¾†ï½·ï¾€ï¾–ï¾˜ï½µï£²
 			//		//std::uniform_real_distribution<float> distribution(0, 0.05);
 			//		//float random_number = distribution(generator);
 			//		glColor3f(1, 0.0f, 0.0f);
@@ -296,21 +306,21 @@ int main() {
 		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
 			Group& group = object.getGroup(groupIdx);
 
-			// Ê¹ÓÃ×éÖĞÒÑ¾­¼ÆËãºÃµÄÖÊĞÄ
+			// ï¾Šï½¹ï¾“ï¾ƒï¾—é°’ï¾ï¾’ï¾‘ï½¾ï½­ï½¼ï¾†ï¾‹ç¾²ï¾ƒï½µï¾„ï¾–ï¾Šï¾ï¾„
 			Eigen::Vector3f& center = group.centerofMass;
 
-			// ½«×éË÷Òı×ª»»Îª×Ö·û´®
+			// ï½½ï½«ï¾—é°ºî–µï£±ï¾—ï½ªï½»ï½»ï¾ï½ªï¾—ï¾–ï½·ï¨¥ï½®
 			char groupNumber[10];
 			sprintf_s(groupNumber, "%d", groupIdx);
 
-			// Îª×é±àºÅÉèÖÃÑÕÉ«
-			glColor3f(1.0f, 1.0f, 0.0f); // °×É«ÓÃÓÚÎÄ±¾
+			// ï¾ï½ªï¾—é­çŠ²ï¾…ï¾‰é¹ï¾ƒï¾‘ï¾•ï¾‰ï½«
+			glColor3f(1.0f, 1.0f, 0.0f); // ï½°ï¾—ï¾‰ï½«ï¾“ï¾ƒï¾“ï¾šï¾ï¾„ï½±ï½¾
 
-			// ÉèÖÃ×é±àºÅµÄÎ»ÖÃ²¢»æÖÆ
+			// ï¾‰é¹ï¾ƒï¾—é­çŠ²ï¾…ï½µï¾„ï¾ï½»ï¾–ï¾ƒï½²ï½¢ï½»è´ï¾†
 			glRasterPos3f(center[0] + 1, center[1], center[2]);
 			XPrintString(groupNumber);
 
-			// ... [»æÖÆ±ßÔµºÍ¶¥µãµÄÆäÓà´úÂE ...
+			// ... [ï½»è´ï¾†ï½±ï¾Ÿï¾”ï½µï½ºï¾ï½¶ï½¥ï½µç¾ï¾„ï¾†è¼çŠ‡æƒ²ãƒ» ...
 		}
 		
 		// Draw edges
@@ -319,7 +329,7 @@ int main() {
 
 		
 		
-		//·Ö×éÏÔÊ¾
+		//ï½·ï¾–ï¾—é°•ï¾”ï¾Šï½¾
 		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
 			float hhh;
 			Group& group = object.getGroup(groupIdx);
@@ -370,7 +380,7 @@ int main() {
 		//calculate frame rate
 		double currentTime = glfwGetTime();
 		nbFrames++;
-		if (currentTime - lastTime >= 1.0) { // Èç¹û¹ıÈ¥ÁËÖÁÉÙ1ÃE
+		if (currentTime - lastTime >= 1.0) { // ï¾ˆéƒ¢é„§ï£±ï¾ˆï½¥ï¾ï¾‹ï¾–ï¾ï¾‰ï¾™1ï¾ƒãƒ»
 			printf("%d frames/sec\n", nbFrames);
 			nbFrames = 0;
 			lastTime += 1.0;
@@ -379,6 +389,5 @@ int main() {
 	}
 
 	glfwTerminate();
-
 	return 0;
 }
