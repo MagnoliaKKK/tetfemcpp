@@ -22,7 +22,7 @@ Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 float youngs = 100000;
 float poisson = 0.49;
 float density = 1000;
-int groupNum, groupNumX = 3, groupNumY = 3, groupNumZ =3;//Objectﾀ犲ﾍﾑﾕﾉｫｶｼﾐｴﾋﾀﾁﾋ ｲｻﾄﾜｳｬｳlass Object {ﾀ・ﾄﾗ鯡?
+int groupNum, groupNumX =3, groupNumY = 2, groupNumZ =2;//Objectﾀ犲ﾍﾑﾕﾉｫｶｼﾐｴﾋﾀﾁﾋ ｲｻﾄﾜｳｬｳlass Object {ﾀ・ﾄﾗ鯡?
 int wKey = 0;
 
 
@@ -34,20 +34,22 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/sphere.stl", in);
+	readSTL("stls/bunnyLow.stl", in);
 	//readSTL("stls/sphere.stl", in);
 
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.15a0.001";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
+	char args[] = "pq1.414a0.0005";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
 	// Call TetGen to tetrahedralize the geometry
 	tetrahedralize(&behavior, &in, &out);
 
-	//out.save_nodes("output");
-	//out.save_elements("output");
+	/*out.save_nodes("output");
+	out.save_elements("output");*/
+	//out.save_poly("output");
+	
 
 	Object object;
 	groupNum = groupNumX * groupNumY * groupNumZ;
@@ -112,7 +114,7 @@ int main() {
 			// ｶﾔﾃｿｸ･ｵ羞ﾃsetFixedIfBelowThresholdｷｽｷｨ
 			Vertex* vertex = vertexPair.second;
 
-			//vertex->setFixedIfBelowThreshold();
+			vertex->setFixedIfBelowThreshold();
 		}
 
 	}
@@ -120,22 +122,22 @@ int main() {
 	
 	
 	/////////ｾｾﾍｷｷ｢ｹﾌｶｨｷｨ
-	float maxY = -std::numeric_limits<float>::infinity(); // ｳｼｻｯﾎｪｼｫﾐ｡ﾖｵ
-	Vertex* vertexWithMaxY = nullptr;
-	// ｲ鰈ﾒ y ﾖｵﾗ鋗ﾄｶ･ｵ・
-	for (Group& g : object.groups) {
-		for (const auto& vertexPair : g.verticesMap) {
-			Vertex* vertex = vertexPair.second;
-			if (vertex->y > maxY) {
-				maxY = vertex->y;
-				vertexWithMaxY = vertex;
-			}
-		}
-	}
-	// ｽｫ y ﾖｵﾗ鋗ﾄｶ･ｵ翹靜ｪｹﾌｶｨｵ・
-	if (vertexWithMaxY != nullptr) {
-		vertexWithMaxY->isFixed = true; // ｼﾙﾉ勒ﾐﾒｻｸｽｷｨ setFixed ﾀｴﾉ靹ﾃｶ･ｵ羞ﾄｹﾌｶｨﾗｴﾌｬ
-	}
+	//float maxY = -std::numeric_limits<float>::infinity(); // ｳｼｻｯﾎｪｼｫﾐ｡ﾖｵ
+	//Vertex* vertexWithMaxY = nullptr;
+	//// ｲ鰈ﾒ y ﾖｵﾗ鋗ﾄｶ･ｵ・
+	//for (Group& g : object.groups) {
+	//	for (const auto& vertexPair : g.verticesMap) {
+	//		Vertex* vertex = vertexPair.second;
+	//		if (vertex->y > maxY) {
+	//			maxY = vertex->y;
+	//			vertexWithMaxY = vertex;
+	//		}
+	//	}
+	//}
+	//// ｽｫ y ﾖｵﾗ鋗ﾄｶ･ｵ翹靜ｪｹﾌｶｨｵ・
+	//if (vertexWithMaxY != nullptr) {
+	//	vertexWithMaxY->isFixed = true; // ｼﾙﾉ勒ﾐﾒｻｸｽｷｨ setFixed ﾀｴﾉ靹ﾃｶ･ｵ羞ﾄｹﾌｶｨﾗｴﾌｬ
+	//}
 	/////////
 	
 #pragma omp parallel for
@@ -210,7 +212,7 @@ int main() {
 		}*/
 		
 			
-		object.PBDLOOP(15);
+		object.PBDLOOP(5);
 
 		if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
 			for (int i = 0; i < groupNum; i++)
@@ -303,25 +305,25 @@ int main() {
 			//}
 
 		}
-		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
-			Group& group = object.getGroup(groupIdx);
+		//for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
+		//	Group& group = object.getGroup(groupIdx);
 
-			// ﾊｹﾓﾃﾗ鰒ﾐﾒﾑｾｭｼﾆﾋ羲ﾃｵﾄﾖﾊﾐﾄ
-			Eigen::Vector3f& center = group.centerofMass;
+		//	// ﾊｹﾓﾃﾗ鰒ﾐﾒﾑｾｭｼﾆﾋ羲ﾃｵﾄﾖﾊﾐﾄ
+		//	Eigen::Vector3f& center = group.centerofMass;
 
-			// ｽｫﾗ鰺ﾗｪｻｻﾎｪﾗﾖｷ逸ｮ
-			char groupNumber[10];
-			sprintf_s(groupNumber, "%d", groupIdx);
+		//	// ｽｫﾗ鰺ﾗｪｻｻﾎｪﾗﾖｷ逸ｮ
+		//	char groupNumber[10];
+		//	sprintf_s(groupNumber, "%d", groupIdx);
 
-			// ﾎｪﾗ魍犲ﾅﾉ靹ﾃﾑﾕﾉｫ
-			glColor3f(1.0f, 1.0f, 0.0f); // ｰﾗﾉｫﾓﾃﾓﾚﾎﾄｱｾ
+		//	// ﾎｪﾗ魍犲ﾅﾉ靹ﾃﾑﾕﾉｫ
+		//	glColor3f(1.0f, 1.0f, 0.0f); // ｰﾗﾉｫﾓﾃﾓﾚﾎﾄｱｾ
 
-			// ﾉ靹ﾃﾗ魍犲ﾅｵﾄﾎｻﾖﾃｲ｢ｻ贍ﾆ
-			glRasterPos3f(center[0] + 1, center[1], center[2]);
-			XPrintString(groupNumber);
+		//	// ﾉ靹ﾃﾗ魍犲ﾅｵﾄﾎｻﾖﾃｲ｢ｻ贍ﾆ
+		//	glRasterPos3f(center[0] + 1, center[1], center[2]);
+		//	XPrintString(groupNumber);
 
-			// ... [ｻ贍ﾆｱﾟﾔｵｺﾍｶ･ｵ羞ﾄﾆ萼犇惲・ ...
-		}
+		//	// ... [ｻ贍ﾆｱﾟﾔｵｺﾍｶ･ｵ羞ﾄﾆ萼犇惲・ ...
+		//}
 		
 		// Draw edges
 		glBegin(GL_LINES);

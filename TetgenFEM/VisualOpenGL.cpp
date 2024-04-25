@@ -141,9 +141,9 @@ void drawAxis(float length) {
 void drawAxis1(float length, const Eigen::Matrix3f& rotationMatrix) {
 	glPushMatrix();  // 保存当前的模型视图矩諄E
 	glTranslatef(-length * 3, -length * 3, 0);  // 将坐眮E嵩阋贫酱翱诘挠蚁陆?
-	Eigen::Matrix4f matrix4f = Eigen::Matrix4f::Identity(); // 创建一个4x4单位矩阵
+	Eigen::Matrix4f matrix4f = Eigen::Matrix4f::Identity(); // 创建一竵Ex4单位矩諄E
 	matrix4f.block<3, 3>(0, 0) = rotationMatrix;
-	glMultMatrixf(matrix4f.data());//旋转坐标轴
+	glMultMatrixf(matrix4f.data());//旋转坐眮E丒
 
 	glBegin(GL_LINES);
 	// X axis in red
