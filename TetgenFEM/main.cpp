@@ -26,6 +26,51 @@ int groupNum, groupNumX =3, groupNumY = 2, groupNumZ =2;//Objectﾀ犲ﾍﾑﾕ�
 int wKey = 0;
 
 
+void saveOBJ(const std::string& filename, std::vector<Group>& groups) {
+	std::ofstream objFile(filename);
+	if (!objFile.is_open()) {
+		std::cerr << "Failed to open file for writing.\n";
+		return;
+	}
+
+	std::unordered_map<Vertex*, int> vertexIndexMap;
+	int currentIndex = 1;
+
+	// 遍历组，找出所有边界边并记录其顶点
+	for (const auto& group : groups) {
+		for (const auto* tet : group.tetrahedra) {
+			for (const auto* edge : tet->edges) {
+				if (edge->isBoundary) {
+					for (Vertex* vertex : edge->vertices) {
+						if (vertexIndexMap.find(vertex) == vertexIndexMap.end()) {
+							vertexIndexMap[vertex] = currentIndex++;
+							objFile << "v " << vertex->x << " " << vertex->y << " " << vertex->z << "\n";
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// 再次遍历，这次是为了构建面
+	for (const auto& group : groups) {
+		for (const auto* tet : group.tetrahedra) {
+			for (const auto* edge : tet->edges) {
+				if (edge->isBoundary) {
+					objFile << "f";
+					for (Vertex* vertex : edge->vertices) {
+						objFile << " " << vertexIndexMap[vertex];
+					}
+					objFile << "\n";
+				}
+			}
+		}
+	}
+
+	objFile.close();
+	std::cout << "OBJ file saved: " << filename << "\n";
+}
+
 
 
 int main() {
@@ -34,22 +79,34 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/bunnyLow.stl", in);
-	//readSTL("stls/sphere.stl", in);
+	//readSTL("stls/cubeLong1.stl", in);
 
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.414a0.0005";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
+	char args[] = "pq1.414a1";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
-	// Call TetGen to tetrahedralize the geometry
-	tetrahedralize(&behavior, &in, &out);
+	char argsNode[] = "C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/cubeThin";
+	char argsEle[] = "C:/Users/76739/Desktop/tetfemcpp/TetgenFEM//cubeThin";
+	if (!in.load_node(argsNode)) {
+	    std::cerr << "Error loading .node file!" << std::endl;
+	    return 1;
+	}
 
-	/*out.save_nodes("output");
-	out.save_elements("output");*/
+	// Load the ele file
+	if (!in.load_tet(argsEle)) {
+	    std::cerr << "Error loading .ele file!" << std::endl;
+	    return 1;
+	}
+
+	// Call TetGen to tetrahedralize the geometry
+	//tetrahedralize(&behavior, &in, &out);
+
+	//out.save_nodes("output");
+	//out.save_elements("output");
 	//out.save_poly("output");
-	
+	out = in;
 
 	Object object;
 	groupNum = groupNumX * groupNumY * groupNumZ;
@@ -370,6 +427,7 @@ int main() {
 
 
 		glEnd();
+		saveOBJ("43224.obj", object.groups);
 
 		glPopMatrix();
 
