@@ -20,9 +20,9 @@
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 float youngs = 100000;
-float poisson = 0.49;
+float poisson = 0.45;
 float density = 1000;
-int groupNum, groupNumX =3, groupNumY = 2, groupNumZ =2;//Objectﾀ犲ﾍﾑﾕﾉｫｶｼﾐｴﾋﾀﾁﾋ ｲｻﾄﾜｳｬｳlass Object {ﾀ・ﾄﾗ鯡?
+int groupNum, groupNumX =4, groupNumY = 1, groupNumZ =1;//Objectﾀ犲ﾍﾑﾕﾉｫｶｼﾐｴﾋﾀﾁﾋ ｲｻﾄﾜｳｬｳlass Object {ﾀ・ﾄﾗ鯡?
 int wKey = 0;
 
 
@@ -79,34 +79,33 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	//readSTL("stls/cubeLong1.stl", in);
-
+	readSTL("stls/cubeLong.stl", in);
+	//readOBJ("C:/Users/76739/Downloads/VegaFEM-v4.0/VegaFEM-v4.0/models/beam3/bunnyHDLow.obj", in);
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.414a1";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
+	char args[] = "pq1.414a0.001";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
-	char argsNode[] = "C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/cubeThin";
-	char argsEle[] = "C:/Users/76739/Desktop/tetfemcpp/TetgenFEM//cubeThin";
-	if (!in.load_node(argsNode)) {
-	    std::cerr << "Error loading .node file!" << std::endl;
-	    return 1;
-	}
+	//char argsNode[] = "C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/cubeThin";
+	//char argsEle[] = "C:/Users/76739/Desktop/tetfemcpp/TetgenFEM//cubeThin";
+	//if (!in.load_node(argsNode)) {
+	//    std::cerr << "Error loading .node file!" << std::endl;
+	//    return 1;
+	//}
 
-	// Load the ele file
-	if (!in.load_tet(argsEle)) {
-	    std::cerr << "Error loading .ele file!" << std::endl;
-	    return 1;
-	}
+	////// Load the ele file
+	//if (!in.load_tet(argsEle)) {
+	//    std::cerr << "Error loading .ele file!" << std::endl;
+	//    return 1;
+	//}
 
 	// Call TetGen to tetrahedralize the geometry
-	//tetrahedralize(&behavior, &in, &out);
+	tetrahedralize(&behavior, &in, &out);
+	out.save_nodes("bunnyHDLow");
+	out.save_elements("bunnyHDLow");
 
-	//out.save_nodes("output");
-	//out.save_elements("output");
-	//out.save_poly("output");
-	out = in;
+	//out = in;
 
 	Object object;
 	groupNum = groupNumX * groupNumY * groupNumZ;
@@ -218,16 +217,16 @@ int main() {
 	int nbFrames = 0;
 	glfwSwapInterval(0); //ｴｹﾖｱﾍｬｲｽ
 
-	
+	int frame = 1;
 	while (!glfwWindowShouldClose(window)) {
-		
+
 		//object.commonPoints1 = object.findCommonVertices(object.groups[1], object.groups[2]);
 		//ｹﾌｶｨｵ翹靹ﾃ
-	
-	
+
+
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
 			wKey = 1;
-			
+
 		}
 		else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
 			wKey = 2;
@@ -245,13 +244,13 @@ int main() {
 			wKey = 0;
 		//std::cout << wKey << std::endl;// ｵｱ W ｱｻｰｴﾏﾂﾊｱｵﾄﾂﾟｼｭ
 		//double aa = object.groups[0].tetrahedra[0]->calMassTetra(density);
-		#pragma omp parallel for
+#pragma omp parallel for
 		for (int i = 0; i < groupNum; i++) {
 			//object.groups[i].calGroupKFEM(youngs, poisson);
-			//object.groups[i].calPrimeVec();
-			
+			object.groups[i].calPrimeVec();
+
 			//object.groups[i].calPrimeVec2(wKey);
-			object.groups[i].calPrimeVec(wKey);
+			//object.groups[i].calPrimeVec(wKey);
 			//object.groups[i].calPrimeVecS(wKey);
 			//object.groups[i].calPrimeVecT(wKey);
 			/*object.groups[i].calLHSFEM();
@@ -260,16 +259,16 @@ int main() {
 			object.groups[i].calculateCurrentPositionsFEM();
 			object.groups[i].updateVelocityFEM();
 			object.groups[i].updatePositionFEM();*/
-			
+
 			object.groups[i].calRotationMatrix();
-		
+
 		}
 		/*for (int i = 0; i < groupNum; i++) {
 			std::cout << "Group" << i << "Prime vector is" << std::endl << object.groups[i].primeVec;
 		}*/
-		
-			
-		object.PBDLOOP(5);
+
+
+		object.PBDLOOP(8);
 
 		if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
 			for (int i = 0; i < groupNum; i++)
@@ -277,11 +276,11 @@ int main() {
 
 			system("pause");
 		}
-		
-		
+
+
 		// Render here
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
+
 		//drawAxis1(0.3f, object.groups[0].rotate_matrix);
 		// ｻ贍ﾆﾗ・・
 		drawAxis(0.3f);
@@ -294,8 +293,8 @@ int main() {
 		mat = Eigen::Matrix4f::Identity();
 		mat.block<3, 3>(0, 0) = rotation.toRotationMatrix();
 		glMultMatrixf(mat.data());
-		
-		
+
+
 		// Draw vertices
 		// ﾉ靹ﾃｵ羞ﾄｴ｡ﾎｪ10ﾏﾘ
 		glPointSize(5.0f);
@@ -381,13 +380,13 @@ int main() {
 
 		//	// ... [ｻ贍ﾆｱﾟﾔｵｺﾍｶ･ｵ羞ﾄﾆ萼犇惲・ ...
 		//}
-		
+
 		// Draw edges
 		glBegin(GL_LINES);
 
 
-		
-		
+
+
 		//ｷﾖﾗ鰕ﾔﾊｾ
 		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
 			float hhh;
@@ -399,13 +398,13 @@ int main() {
 					Vertex* vertex2 = edge->vertices[1];
 					bool isSurfaceEdge = edge->isBoundary;
 
-					 //Use HSV to RGB conversion to create a unique color for each group
+					//Use HSV to RGB conversion to create a unique color for each group
 					float hue = (360.0f * groupIdx) / groupNum;  // Distribute hues evenly across the spectrum
 					hhh = hue;
 					float saturation = 1.0f;  // Full saturation
 					float value = 1.0f;      // Full brightness
 
-					 //Convert HSV to RGB
+					//Convert HSV to RGB
 					float red, green, blue;
 					hsvToRgb(hue, saturation, value, red, green, blue);
 
@@ -422,12 +421,12 @@ int main() {
 			}
 		}
 
-		
+
 
 
 
 		glEnd();
-		saveOBJ("43224.obj", object.groups);
+		//saveOBJ("43224.obj", object.groups);
 
 		glPopMatrix();
 
@@ -445,9 +444,14 @@ int main() {
 			nbFrames = 0;
 			lastTime += 1.0;
 		}
+		printf("%d frame number\n", frame);
+		frame++;
+
+		
 
 	}
-
+	
+	
 	glfwTerminate();
 	return 0;
 }

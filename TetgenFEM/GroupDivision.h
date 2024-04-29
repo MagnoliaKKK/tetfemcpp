@@ -80,6 +80,7 @@ public:
 
 class Group {
 public:
+	float groupVolume;
 	std::vector<Tetrahedron*> tetrahedra;
 	std::unordered_map<int, Vertex*> verticesMap;
 	std::vector<Vertex*> verticesVector;
@@ -136,6 +137,7 @@ public:
 	Eigen::VectorXf RInvPos;
 	bool gravityApplied = false;
 
+	float Kinematics;
 
 
 	
@@ -201,6 +203,7 @@ public:
 	
 	int groupNum, groupNumX, groupNumY, groupNumZ;
 	std::vector<Group> allGroup;
+	float bodyVolume;
 
 	Group& getGroup(int index);
 	void findCommonVertices();// find common vertex

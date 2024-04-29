@@ -2,10 +2,10 @@
 
 
 const float timeStep = 0.01f;
-const float dampingConst = 2.0f;// 10.2f;
+const float dampingConst = 20.0f;// 10.2f;
 const float PI = 3.1415926535f;
 const float Gravity = -10.0f;
-const float bindForce = -1.0f;
+const float bindForce = -2000.0f;
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -1235,7 +1235,14 @@ void Object::PBDLOOP(int looptime) {
 		auto& g = groups[i];
 		g.updateVelocity();
 		g.updatePosition();
-		
+		g.groupVolume = 0.0f;
+		for (auto& tet : g.tetrahedra) {
+			float tetMass = tet->calMassTetra(1000);
+			g.groupVolume += tet->volumeTetra;
+		}
+		float bodyVolume = 0.0f;
+		bodyVolume += g.groupVolume;
+		std::cout << bodyVolume << std::endl;
 		//g.calRInvLocalPos();
 	}
 
@@ -1479,6 +1486,7 @@ void Group::updateVelocity() {
 	Eigen::Vector3f previousPos = Eigen::Vector3f::Zero();
 	Eigen::Vector3f currentPos = Eigen::Vector3f::Zero();
 	Eigen::Vector3f velocity =  Eigen::Vector3f::Zero();
+	Kinematics = 0.0;
 	
 	// 遍历所有顶点，更新速度并保存当前位置
 	for (auto& vertexPair : verticesMap) {
@@ -1496,6 +1504,8 @@ void Group::updateVelocity() {
 			// 计算速度
 			velocity = (currentPos - previousPos) / timeStep;
 			groupVelocity.segment<3>(3 * localIndex) = velocity;
+
+			Kinematics += 0.5 * vertex->vertexMass * velocity.norm();
 		}
 		/*std::cout << "\r";
 		std::cout << groupVelocity << std::endl;*/
