@@ -87,25 +87,25 @@ int main() {
 	char args[] = "pq1.15a0.0005";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
-	//char argsNode[] = "C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/cubeThin";
-	//char argsEle[] = "C:/Users/76739/Desktop/tetfemcpp/TetgenFEM//cubeThin";
-	//if (!in.load_node(argsNode)) {
-	//    std::cerr << "Error loading .node file!" << std::endl;
-	//    return 1;
-	//}
+	char argsNode[] = "C:/Users/xu_yu/Downloads/cubeLong";
+	char argsEle[] = "C:/Users/xu_yu/Downloads/cubeLong";
+	if (!in.load_node(argsNode)) {
+	    std::cerr << "Error loading .node file!" << std::endl;
+	    return 1;
+	}
 
-	////// Load the ele file
-	//if (!in.load_tet(argsEle)) {
-	//    std::cerr << "Error loading .ele file!" << std::endl;
-	//    return 1;
-	//}
+	//// Load the ele file
+	if (!in.load_tet(argsEle)) {
+	    std::cerr << "Error loading .ele file!" << std::endl;
+	    return 1;
+	}
 
 	// Call TetGen to tetrahedralize the geometry
-	tetrahedralize(&behavior, &in, &out);
-	out.save_nodes("bunnyHDLow");
-	out.save_elements("bunnyHDLow");
+	//tetrahedralize(&behavior, &in, &out);
+	//out.save_nodes("bunnyHDLow");
+	//out.save_elements("bunnyHDLow");
 
-	//out = in;
+	out = in;
 
 	Object object;
 	groupNum = groupNumX * groupNumY * groupNumZ;
@@ -217,6 +217,32 @@ int main() {
 	int nbFrames = 0;
 	glfwSwapInterval(0); //ｴｹﾖｱﾍｬｲｽ
 
+
+	//------------------- 保存点坐标用
+	std::vector<Vertex*> objectUniqueVertices;
+
+	for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
+		Group& group = object.getGroup(groupIdx);
+		auto& verticesMap = group.verticesMap; // 假设每个组都有一个名为 verticesMap 的成员
+
+		for (const auto& pair : verticesMap) {
+			bool found = false;
+			for (const auto& vertex : objectUniqueVertices) {
+				if (vertex->x == pair.second->initx && vertex->inity == pair.second->inity && vertex->initz == pair.second->initz) {
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				objectUniqueVertices.push_back(pair.second);
+			}
+		}
+	}
+
+	std::sort(objectUniqueVertices.begin(), objectUniqueVertices.end(), [](const Vertex* a, const Vertex* b) {
+		return a->index < b->index;
+		});//按索引从小到大排序
+
 	int frame = 1;
 	while (!glfwWindowShouldClose(window)) {
 
@@ -270,12 +296,20 @@ int main() {
 
 		object.PBDLOOP(15);
 
-		if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
-			for (int i = 0; i < groupNum; i++)
-				std::cout << "Group Velocity-" << i << ":\n" << object.groups[i].groupVelocity << std::endl;
-
-			system("pause");
+		if (true) {//是否开启保存点坐标
+			std::ofstream file("DeformResultLocalFEM.txt", std::ios::out | std::ios::trunc);
+			if (!file.is_open()) {
+				std::cerr << "Failed to open file." << std::endl;
+				return 0;
+			}
+			for (int i = 0; i < objectUniqueVertices.size(); i++) {
+				file << i + 1 << " " << objectUniqueVertices[i]->x << " " << objectUniqueVertices[i]->y << " " << objectUniqueVertices[i]->z << std::endl;
+			}
+			file.close();
+			std::cout << "Data has been written to the file." << std::endl;
 		}
+
+		
 
 
 		// Render here
@@ -384,10 +418,6 @@ int main() {
 		// Draw edges
 		glBegin(GL_LINES);
 
-
-
-
-		//ｷﾖﾗ鰕ﾔﾊｾ
 		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
 			float hhh;
 			Group& group = object.getGroup(groupIdx);
@@ -461,6 +491,9 @@ int main() {
 			object.bodyVolume += object.groups[i].groupVolume;
 		}
 		std::cout << object.bodyVolume << std::endl;
+
+
+		
 	}
 	
 	
