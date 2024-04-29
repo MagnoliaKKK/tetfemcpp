@@ -84,7 +84,7 @@ int main() {
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.414a0.001";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
+	char args[] = "pq1.15a0.0005";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
 	//char argsNode[] = "C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/cubeThin";
@@ -268,7 +268,7 @@ int main() {
 		}*/
 
 
-		object.PBDLOOP(8);
+		object.PBDLOOP(15);
 
 		if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
 			for (int i = 0; i < groupNum; i++)
@@ -444,11 +444,23 @@ int main() {
 			nbFrames = 0;
 			lastTime += 1.0;
 		}
-		printf("%d frame number\n", frame);
-		frame++;
-
-		
-
+		/*printf("%d frame number\n", frame);
+		frame++;*/
+		//object.writeVerticesToFile("ourMethodResult.txt");
+		object.bodyVolume = 0.0f;
+		for (int i = 0; i < groupNum; i++)
+		{
+			object.groups[i].groupVolume = 0.0f;
+		}
+		for (int i = 0; i < groupNum; i++)
+		{
+			for (auto tets : object.groups[i].tetrahedra)
+			{
+				object.groups[i].groupVolume += tets->calVolumeTetra();
+			}
+			object.bodyVolume += object.groups[i].groupVolume;
+		}
+		std::cout << object.bodyVolume << std::endl;
 	}
 	
 	

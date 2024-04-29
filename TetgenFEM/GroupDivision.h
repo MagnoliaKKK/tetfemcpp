@@ -73,6 +73,7 @@ public:
 	}
 	Eigen::MatrixXf createElementK(float E, float nu, const Eigen::Vector3f& groupCenterOfMass);
 	float calMassTetra(float den);
+	float calVolumeTetra();
 	Eigen::MatrixXf createElementKFEM(float E, float nu);
 
 };
@@ -216,7 +217,7 @@ public:
 	void updateAdjacentGroupIndices(int numX, int numY, int numZ);
 	void calDistance(std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonpoints);
 	void storeAdjacentGroupsCommonVertices(int groupIndex);
-
+	void writeVerticesToFile(const std::string& filename);
 };
 
 void findBoundaryEdges(tetgenio& out);

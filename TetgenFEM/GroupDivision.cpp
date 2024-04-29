@@ -1235,14 +1235,14 @@ void Object::PBDLOOP(int looptime) {
 		auto& g = groups[i];
 		g.updateVelocity();
 		g.updatePosition();
-		g.groupVolume = 0.0f;
+		/*g.groupVolume = 0.0f;
 		for (auto& tet : g.tetrahedra) {
 			float tetMass = tet->calMassTetra(1000);
 			g.groupVolume += tet->volumeTetra;
-		}
-		float bodyVolume = 0.0f;
+		}*/
+		/*float bodyVolume = 0.0f;
 		bodyVolume += g.groupVolume;
-		std::cout << bodyVolume << std::endl;
+		std::cout << bodyVolume << std::endl;*/
 		//g.calRInvLocalPos();
 	}
 
@@ -1697,7 +1697,18 @@ float Tetrahedron::calMassTetra(float den) {
 
 	
 }
+float Tetrahedron::calVolumeTetra() {
 
+	//float volume;
+	Eigen::Vector3f AB(vertices[1]->x - vertices[0]->x, vertices[1]->y - vertices[0]->y, vertices[1]->z - vertices[0]->z);
+	Eigen::Vector3f AC(vertices[2]->x - vertices[0]->x, vertices[2]->y - vertices[0]->y, vertices[2]->z - vertices[0]->z);
+	Eigen::Vector3f AD(vertices[3]->x - vertices[0]->x, vertices[3]->y - vertices[0]->y, vertices[3]->z - vertices[0]->z);
+
+	// Calculate volume using the formula
+	volumeTetra = (AB.cross(AC)).dot(AD) / 6.0f;
+	volumeTetra = std::abs(volumeTetra);
+	return volumeTetra;
+}
 void Object::calDistance(std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints) {
 	const auto& verticesGroup1 = commonPoints.first;
 	const auto& verticesGroup2 = commonPoints.second;
@@ -1721,4 +1732,30 @@ void Object::calDistance(std::pair<std::vector<Vertex*>, std::vector<Vertex*>> c
 	
 		std::cout << "Distance of: "<< i << "is" << distance << std::endl;
 	}
+}
+
+void Object::writeVerticesToFile(const std::string& filename) {
+	std::ofstream outfile(filename, std::ios::out);
+	if (!outfile) {
+		std::cerr << "无法打开文件！" << std::endl;
+		return;
+	}
+
+	std::unordered_set<int> writtenIndices;  // 用于存储已写入的顶点索引
+
+	for (const auto& group : groups) {  // 遍历所有组
+		for (const auto& vertex : group.verticesVector) {  // 遍历组内所有顶点
+			if (vertex != nullptr && writtenIndices.find(vertex->index) == writtenIndices.end()) {
+				// 如果顶点索引尚未写入，则写入文件
+				outfile << "Index: " << vertex->index
+					<< ", X: " << vertex->x
+					<< ", Y: " << vertex->y
+					<< ", Z: " << vertex->z << std::endl;
+				writtenIndices.insert(vertex->index);  // 标记索引为已写入
+			}
+		}
+	}
+
+	outfile.close();
+	std::cout << "顶点数据已成功写入文件: " << filename << std::endl;
 }
