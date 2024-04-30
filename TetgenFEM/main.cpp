@@ -22,7 +22,7 @@ Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 float youngs = 100000;
 float poisson = 0.45;
 float density = 1000;
-int groupNum, groupNumX =4, groupNumY = 1, groupNumZ =1;//Objectﾀ犲ﾍﾑﾕﾉｫｶｼﾐｴﾋﾀﾁﾋ ｲｻﾄﾜｳｬｳlass Object {ﾀ・ﾄﾗ鯡?
+int groupNum, groupNumX =10, groupNumY = 1, groupNumZ =1;//Objectﾀ犲ﾍﾑﾕﾉｫｶｼﾐｴﾋﾀﾁﾋ ｲｻﾄﾜｳｬｳlass Object {ﾀ・ﾄﾗ鯡?
 int wKey = 0;
 
 
@@ -115,16 +115,16 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	//readSTL("stls/cubeX.stl", in);
-	readOBJ("C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/cubeX18000.obj", in);
+	//readSTL("stls/cubeLong.stl", in);
+	readOBJ("C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/cubeLong12000.obj", in);
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.15a0.000002";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
+	char args[] = "pq1.15a0.00006";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
-	//char argsNode[] = "C:/Users/76739/Downloads/VegaFEM-v4.0/VegaFEM-v4.0/models/beam3/cubeTest";
-	//char argsEle[] = "C:/Users/76739/Downloads/VegaFEM-v4.0/VegaFEM-v4.0/models/beam3/cubeTest";
+	//char argsNode[] = "./cubeX4000";
+	//char argsEle[] = "./cubeX4000";
 	//if (!in.load_node(argsNode)) {
 	//    std::cerr << "Error loading .node file!" << std::endl;
 	//    return 1;
@@ -151,9 +151,9 @@ int main() {
 	object.groupNumZ = groupNumZ;
 	divideIntoGroups(out, object, groupNumX, groupNumY, groupNumZ); //convert tetgen to our data structure
 
-	out.save_nodes("cubeX18000");
-	out.save_elements("cubeX18000");
-	//writeOBJ(object, "cubeX18000.obj");
+	out.save_nodes("cubeLong12000");
+	out.save_elements("cubeLong12000");
+	//writeOBJ(object, "cubeLong12000.obj");
 
 
 	object.updateIndices(); // ﾃｿｸ羚ﾖﾅ萪ｻｸﾀﾁ｢index｣ｬﾖﾘｸｴｵﾄｸﾄﾐﾂｵﾄindex
@@ -336,20 +336,20 @@ int main() {
 		}*/
 
 
-		object.PBDLOOP(15);
+		object.PBDLOOP(30);
 
-		if (true) {//是否开启保存点坐标
-			std::ofstream file("DeformResultLocalFEM.txt", std::ios::out | std::ios::trunc);
-			if (!file.is_open()) {
-				std::cerr << "Failed to open file." << std::endl;
-				return 0;
-			}
-			for (int i = 0; i < objectUniqueVertices.size(); i++) {
-				file << i + 1 << " " << objectUniqueVertices[i]->x << " " << objectUniqueVertices[i]->y << " " << objectUniqueVertices[i]->z << std::endl;
-			}
-			file.close();
-			std::cout << "Data has been written to the file." << std::endl;
-		}
+		//if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {//是否开启保存点坐标
+		//	std::ofstream file("DeformResultLocalFEM4000.txt", std::ios::out | std::ios::trunc);
+		//	if (!file.is_open()) {
+		//		std::cerr << "Failed to open file." << std::endl;
+		//		return 0;
+		//	}
+		//	for (int i = 0; i < objectUniqueVertices.size(); i++) {
+		//		file << i + 1 << " " << objectUniqueVertices[i]->x << " " << objectUniqueVertices[i]->y << " " << objectUniqueVertices[i]->z << std::endl;
+		//	}
+		//	file.close();
+		//	std::cout << "Data has been written to the file." << std::endl;
+		//}
 
 		
 
@@ -532,7 +532,7 @@ int main() {
 			}
 			object.bodyVolume += object.groups[i].groupVolume;
 		}
-		std::cout << object.bodyVolume << std::endl;
+		//std::cout << object.bodyVolume << std::endl;
 
 
 		
