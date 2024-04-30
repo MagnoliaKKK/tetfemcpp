@@ -70,7 +70,43 @@ void saveOBJ(const std::string& filename, std::vector<Group>& groups) {
 	objFile.close();
 	std::cout << "OBJ file saved: " << filename << "\n";
 }
+void writeOBJ(const Object& object, const std::string& filename) {
+	std::ofstream file(filename);
+	if (!file.is_open()) {
+		std::cerr << "Failed to open file for writing.\n";
+		return;
+	}
 
+	int vertexIndexOffset = 1;
+	std::unordered_map<Vertex*, int> vertexIndexMap;
+
+	for (const auto& group : object.groups) {
+		for (const auto& tetrahedron : group.tetrahedra) {
+			// 写入顶点
+			for (int i = 0; i < 4; ++i) {
+				Vertex* vertex = tetrahedron->vertices[i];
+				if (vertexIndexMap.find(vertex) == vertexIndexMap.end()) {
+					vertexIndexMap[vertex] = vertexIndexOffset++;
+					file << "v " << vertex->x << " " << vertex->y << " " << vertex->z << "\n";
+				}
+			}
+
+			// 写入面
+			// 四面体的四个面的索引组合（根据你的四面体顶点组织可能需要调整）
+			int indices[4][3] = { {0, 1, 2}, {0, 1, 3}, {1, 2, 3}, {0, 2, 3} };
+			for (int i = 0; i < 4; ++i) {
+				file << "f";
+				for (int j = 0; j < 3; ++j) {
+					file << " " << vertexIndexMap[tetrahedron->vertices[indices[i][j]]];
+				}
+				file << "\n";
+			}
+		}
+	}
+
+	file.close();
+	std::cout << "OBJ file has been written.\n";
+}
 
 
 int main() {
@@ -79,33 +115,33 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/cubeLong.stl", in);
-	//readOBJ("C:/Users/76739/Downloads/VegaFEM-v4.0/VegaFEM-v4.0/models/beam3/bunnyHDLow.obj", in);
+	//readSTL("stls/cubeX.stl", in);
+	readOBJ("C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/cubeX18000.obj", in);
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.15a0.0005";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
+	char args[] = "pq1.15a0.000002";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
-	char argsNode[] = "C:/Users/xu_yu/Downloads/cubeLong";
-	char argsEle[] = "C:/Users/xu_yu/Downloads/cubeLong";
-	if (!in.load_node(argsNode)) {
-	    std::cerr << "Error loading .node file!" << std::endl;
-	    return 1;
-	}
+	//char argsNode[] = "C:/Users/76739/Downloads/VegaFEM-v4.0/VegaFEM-v4.0/models/beam3/cubeTest";
+	//char argsEle[] = "C:/Users/76739/Downloads/VegaFEM-v4.0/VegaFEM-v4.0/models/beam3/cubeTest";
+	//if (!in.load_node(argsNode)) {
+	//    std::cerr << "Error loading .node file!" << std::endl;
+	//    return 1;
+	//}
 
-	//// Load the ele file
-	if (!in.load_tet(argsEle)) {
-	    std::cerr << "Error loading .ele file!" << std::endl;
-	    return 1;
-	}
+	////// Load the ele file
+	//if (!in.load_tet(argsEle)) {
+	//    std::cerr << "Error loading .ele file!" << std::endl;
+	//    return 1;
+	//}
 
 	// Call TetGen to tetrahedralize the geometry
-	//tetrahedralize(&behavior, &in, &out);
-	//out.save_nodes("bunnyHDLow");
-	//out.save_elements("bunnyHDLow");
+	tetrahedralize(&behavior, &in, &out);
+	
 
-	out = in;
+
+	//out = in;
 
 	Object object;
 	groupNum = groupNumX * groupNumY * groupNumZ;
@@ -114,6 +150,12 @@ int main() {
 	object.groupNumY = groupNumY;
 	object.groupNumZ = groupNumZ;
 	divideIntoGroups(out, object, groupNumX, groupNumY, groupNumZ); //convert tetgen to our data structure
+
+	out.save_nodes("cubeX18000");
+	out.save_elements("cubeX18000");
+	//writeOBJ(object, "cubeX18000.obj");
+
+
 	object.updateIndices(); // ﾃｿｸ羚ﾖﾅ萪ｻｸﾀﾁ｢index｣ｬﾖﾘｸｴｵﾄｸﾄﾐﾂｵﾄindex
 	object.assignLocalIndicesToAllGroups(); //ｷﾖﾅ膈ocal index
 	object.generateUniqueVertices();//ｲ揵￤niqueVertices
