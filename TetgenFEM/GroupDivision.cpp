@@ -2,10 +2,10 @@
 
 
 const float timeStep = 0.01f;
-const float dampingConst = 800.0f;// 10.2f;
+const float dampingConst = 55.0f;// 10.2f;
 const float PI = 3.1415926535f;
-const float Gravity = -9.80f;
-const float bindForce = -40.0f;
+const float Gravity = -0.0f;
+const float bindForce = -840.0f;
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -1416,8 +1416,18 @@ void Group::calFbind(const Eigen::VectorXf& currentPositionThisGroup, const std:
 	}
 }
 
+double angleIncrement = 3.1415926 / 180 * 0.001; // 每次旋转 5 度
+double currentAngle = 0.0;              // 当前角度
 
 void Group::updatePosition() {
+	static float frameTime = 0;
+	frameTime += timeStep;
+	currentAngle += angleIncrement;
+	//if (currentAngle >= 2 * 3.1415926) {
+	//	currentAngle -= 2 * 3.1415926; // 保持角度在 0 到 2π 之间
+	//}
+
+
 	Eigen::Vector3f pos = Eigen::Vector3f::Zero();
 	// 遍历所有顶点
 	for (auto& vertexPair : verticesMap) {
@@ -1431,9 +1441,14 @@ void Group::updatePosition() {
 		vertex->z = pos.z();*/
 		if (vertex->isFixed == true) {
 			// 对于固定点，将位置设置为初始位置
-			vertex->x = vertex->initx;
+			vertex->x = vertex->initx + 0.6 * sin(0.01 * frameTime);
 			vertex->y = vertex->inity;
 			vertex->z = vertex->initz;
+			//vertex->y = vertex->inity * sin(currentAngle) - vertex->initz * cos(currentAngle);
+			//vertex->z = vertex->inity * cos(currentAngle) + vertex->initz * sin(currentAngle);
+
+			//vertex->inity * sin(currentAngle) - vertex->initz * cos(currentAngle)
+			//vertex->x = vertex->initx + 0.6 * sin(0.01 * frameTime);
 		}
 		else {
 			// 使用旋转矩阵块乘以primeVec中的位置

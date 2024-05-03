@@ -20,9 +20,9 @@
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 float youngs = 100000;
-float poisson = 0.49;
+float poisson = 0.45;
 float density = 1000;
-int groupNum, groupNumX =4, groupNumY = 5, groupNumZ =5;//Objectﾀ犲ﾍﾑﾕﾉｫｶｼﾐｴﾋﾀﾁﾋ ｲｻﾄﾜｳｬｳlass Object {ﾀ・ﾄﾗ鯡?
+int groupNum, groupNumX =5, groupNumY = 5, groupNumZ =5;//Objectﾀ犲ﾍﾑﾕﾉｫｶｼﾐｴﾋﾀﾁﾋ ｲｻﾄﾜｳｬｳlass Object {ﾀ・ﾄﾗ鯡?
 int wKey = 0;
 
 
@@ -70,7 +70,7 @@ void saveOBJ(const std::string& filename, std::vector<Group>& groups) {
 	objFile.close();
 	std::cout << "OBJ file saved: " << filename << "\n";
 }
-void writeOBJ(const Object& object, const std::string& filename) {
+void writeOBJ(const Object& object, const std::string& filename) { //用这个
 	std::ofstream file(filename);
 	if (!file.is_open()) {
 		std::cerr << "Failed to open file for writing.\n";
@@ -115,12 +115,12 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	//readSTL("stls/cubeX.stl", in);
-	readOBJ("C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/cubeX12000.obj", in);
+	readSTL("stls/cubeLong.stl", in);
+	//readOBJ("C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/cubeX12000.obj", in);
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.414a100";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
+	char args[] = "pq1.414a0.0005";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
 	//char argsNode[] = "./cubeX4000";
@@ -518,6 +518,26 @@ int main() {
 			nbFrames = 0;
 			lastTime += 1.0;
 		}
+
+		//for animation saving
+		if (1) {
+			static int globalNumFrame = 0;
+			globalNumFrame++;
+			//writeOBJ(object, "./anim/" + std::to_string(globalNumFrame) + ".obj");
+			std::ofstream file("./anim/" + std::to_string(globalNumFrame) + ".txt", std::ios::out | std::ios::trunc);
+			if (!file.is_open()) {
+				std::cerr << "Failed to open file." << std::endl;
+				return 0;
+			}
+			for (int i = 0; i < objectUniqueVertices.size(); i++) {
+				file << i + 1 << " " << objectUniqueVertices[i]->x << " " << objectUniqueVertices[i]->y << " " << objectUniqueVertices[i]->z << std::endl;
+			}
+			file.close();
+			std::cout << "Data has been written to the file." << std::endl;
+		}
+		
+
+
 		/*printf("%d frame number\n", frame);
 		frame++;*/
 		//object.writeVerticesToFile("ourMethodResult.txt");
