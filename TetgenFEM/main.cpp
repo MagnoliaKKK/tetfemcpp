@@ -19,10 +19,10 @@
  
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
-float youngs = 100000;
+float youngs = 2000000;
 float poisson = 0.49;
 float density = 1000;
-int groupNum, groupNumX =4, groupNumY = 5, groupNumZ =5;//Objectﾀ犲ﾍﾑﾕﾉｫｶｼﾐｴﾋﾀﾁﾋ ｲｻﾄﾜｳｬｳlass Object {ﾀ・ﾄﾗ鯡?
+int groupNum, groupNumX =6, groupNumY = 6, groupNumZ =1;//Objectﾀ犲ﾍﾑﾕﾉｫｶｼﾐｴﾋﾀﾁﾋ ｲｻﾄﾜｳｬｳlass Object {ﾀ・ﾄﾗ鯡?
 int wKey = 0;
 
 
@@ -115,16 +115,16 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	//readSTL("stls/cubeX.stl", in);
-	readOBJ("C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/cubeX12000.obj", in);
+	readSTL("stls/ring.stl", in);
+	//readOBJ("C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/ring.obj", in);
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.414a100";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
+	char args[] = "pq1.414a0.01";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
-	//char argsNode[] = "./cubeX4000";
-	//char argsEle[] = "./cubeX4000";
+	//char argsNode[] = "./cubeX8000";
+	//char argsEle[] = "./cubeX8000";
 	//if (!in.load_node(argsNode)) {
 	//    std::cerr << "Error loading .node file!" << std::endl;
 	//    return 1;
@@ -151,9 +151,9 @@ int main() {
 	object.groupNumZ = groupNumZ;
 	divideIntoGroups(out, object, groupNumX, groupNumY, groupNumZ); //convert tetgen to our data structure
 
-	//out.save_nodes("cubeX12000");
-	//out.save_elements("cubeX12000");
-	//writeOBJ(object, "cubeLong12000.obj");
+	/*out.save_nodes("ring1");
+	out.save_elements("ring1");*/
+	//writeOBJ(object, "ring.obj");
 
 
 	object.updateIndices(); // ﾃｿｸ羚ﾖﾅ萪ｻｸﾀﾁ｢index｣ｬﾖﾘｸｴｵﾄｸﾄﾐﾂｵﾄindex
@@ -235,6 +235,7 @@ int main() {
 	//// ｽｫ y ﾖｵﾗ鋗ﾄｶ･ｵ翹靜ｪｹﾌｶｨｵ・
 	//if (vertexWithMaxY != nullptr) {
 	//	vertexWithMaxY->isFixed = true; // ｼﾙﾉ勒ﾐﾒｻｸｽｷｨ setFixed ﾀｴﾉ靹ﾃｶ･ｵ羞ﾄｹﾌｶｨﾗｴﾌｬ
+	//	
 	//}
 	/////////
 	
@@ -338,10 +339,10 @@ int main() {
 		}*/
 
 
-		object.PBDLOOP(20);
+		object.PBDLOOP(10);
 
 		if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {//是否开启保存点坐标
-			std::ofstream file("DeformResultLocalFEM4000.txt", std::ios::out | std::ios::trunc);
+			std::ofstream file("DeformResultLocalFEM80000_0.49.txt", std::ios::out | std::ios::trunc);
 			if (!file.is_open()) {
 				std::cerr << "Failed to open file." << std::endl;
 				return 0;
@@ -534,7 +535,7 @@ int main() {
 			}
 			object.bodyVolume += object.groups[i].groupVolume;
 		}
-		//std::cout << object.bodyVolume << std::endl;
+		
 
 		
 	

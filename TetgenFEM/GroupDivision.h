@@ -38,7 +38,7 @@ public:
 		isFixed(false) // 默认不是固定点
 	{}
 	void setFixedIfBelowThreshold() {
-		if (initx < -0.64/*|| initx > 0.62*/) {//-0.619
+		if (initx < -0.519/*|| initx > 0.62*/) {//-0.619
 			isFixed = true;
 		}
 
@@ -72,6 +72,7 @@ public:
 		vertices[3] = v4;
 	}
 	Eigen::MatrixXf createElementK(float E, float nu, const Eigen::Vector3f& groupCenterOfMass);
+	Eigen::MatrixXf createElementKAni(float E, float nu, const Eigen::Vector3f& groupCenterOfMass);
 	float calMassTetra(float den);
 	float calVolumeTetra();
 	Eigen::MatrixXf createElementKFEM(float E, float nu);

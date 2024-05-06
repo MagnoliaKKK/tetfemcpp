@@ -2,10 +2,10 @@
 
 
 const float timeStep = 0.01f;
-const float dampingConst = 800.0f;// 10.2f;
+const float dampingConst = 400.0f;// 10.2f;
 const float PI = 3.1415926535f;
-const float Gravity = -9.80f;
-const float bindForce = -40.0f;
+const float Gravity = -0.0f;
+const float bindForce = -4000.0f;
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -351,6 +351,10 @@ void Group::calRotationMatrix() {
 	}
 }
 //
+Eigen::MatrixXf Tetrahedron::createElementKAni(float E, float nu, const Eigen::Vector3f& groupCenterOfMass)
+{
+
+}
 Eigen::MatrixXf Tetrahedron::createElementK(float E, float nu, const Eigen::Vector3f& groupCenterOfMass) {
 	// 定义节点坐标
 	float x1 = vertices[0]->x - groupCenterOfMass.x();
@@ -442,6 +446,7 @@ Eigen::MatrixXf Tetrahedron::createElementK(float E, float nu, const Eigen::Vect
 	elementK = k;
 	return k;
 }
+
 Eigen::MatrixXf Tetrahedron::createElementKFEM(float E, float nu) {
 	// 定义节点坐标
 	float x1 = vertices[0]->x;
@@ -1376,7 +1381,19 @@ void Group::calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
 		posDifference = posThisGroup - avgPosition;
 		// Compute the constraint force
 		force = k * posDifference;
-		
+		float maxForce = 100000;
+		if (abs(force.x())  > maxForce)
+		{
+			force.x() = force.x() / abs(force.x()) * maxForce;
+		}
+		if (abs(force.y()) > maxForce)
+		{
+			force.y() = force.y() / abs(force.y()) * maxForce;
+		}
+		if (abs(force.z()) > maxForce)
+		{
+			force.z() = force.z() / abs(force.z()) * maxForce;
+		}
 		// Place the constraint force in Fbind at the appropriate position using the local index
 		Fbind.segment<3>(3 * vertexThisGroup->localIndex) += force;
 	}
@@ -1418,6 +1435,8 @@ void Group::calFbind(const Eigen::VectorXf& currentPositionThisGroup, const std:
 
 
 void Group::updatePosition() {
+	static float frameTime = 0;
+	frameTime += timeStep;
 	Eigen::Vector3f pos = Eigen::Vector3f::Zero();
 	// 遍历所有顶点
 	for (auto& vertexPair : verticesMap) {
@@ -1431,8 +1450,8 @@ void Group::updatePosition() {
 		vertex->z = pos.z();*/
 		if (vertex->isFixed == true) {
 			// 对于固定点，将位置设置为初始位置
-			vertex->x = vertex->initx;
-			vertex->y = vertex->inity;
+			vertex->x = vertex->x = vertex->initx + 0.3 * sin(0.02 * frameTime);
+			vertex->y = vertex->y = vertex->inity + 0.4 * cos(0.02 * frameTime);
 			vertex->z = vertex->initz;
 		}
 		else {
