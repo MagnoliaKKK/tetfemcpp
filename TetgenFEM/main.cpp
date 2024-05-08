@@ -19,10 +19,13 @@
  
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
-float youngs = 2000000;
+float youngs = 100000;
+float youngs1 = 2000000;
+float youngs2 = 1000000;
+float youngs3 = 1000000;
 float poisson = 0.49;
 float density = 1000;
-int groupNum, groupNumX =6, groupNumY = 6, groupNumZ =1;//Objectﾀ犲ﾍﾑﾕﾉｫｶｼﾐｴﾋﾀﾁﾋ ｲｻﾄﾜｳｬｳlass Object {ﾀ・ﾄﾗ鯡?
+int groupNum, groupNumX =1, groupNumY = 1, groupNumZ =1;//Objectﾀ犲ﾍﾑﾕﾉｫｶｼﾐｴﾋﾀﾁﾋ ｲｻﾄﾜｳｬｳlass Object {ﾀ・ﾄﾗ鯡?
 int wKey = 0;
 
 
@@ -120,11 +123,11 @@ int main() {
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.414a0.01";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
+	char args[] = "pq1.15a10";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
-	//char argsNode[] = "./cubeX8000";
-	//char argsEle[] = "./cubeX8000";
+	//char argsNode[] = "./cubeX4000";
+	//char argsEle[] = "./cubeX4000";
 	//if (!in.load_node(argsNode)) {
 	//    std::cerr << "Error loading .node file!" << std::endl;
 	//    return 1;
@@ -151,8 +154,8 @@ int main() {
 	object.groupNumZ = groupNumZ;
 	divideIntoGroups(out, object, groupNumX, groupNumY, groupNumZ); //convert tetgen to our data structure
 
-	/*out.save_nodes("ring1");
-	out.save_elements("ring1");*/
+	//out.save_nodes("ring");
+	//out.save_elements("ring");
 	//writeOBJ(object, "ring.obj");
 
 
@@ -246,7 +249,8 @@ int main() {
 		object.groups[i].calCenterofMass();
 		object.groups[i].calInitCOM();//initial com
 		object.groups[i].calLocalPos(); // initial local positions
-		object.groups[i].calGroupK(youngs, poisson);		
+		object.groups[i].calGroupK(youngs, poisson);	
+		//object.groups[i].calGroupKAni(youngs1, youngs2, youngs3, poisson);
 		object.groups[i].setVertexMassesFromMassMatrix();//vertex mass
 		object.groups[i].calMassGroup();
 		object.groups[i].calMassDistributionMatrix();
@@ -342,7 +346,7 @@ int main() {
 		object.PBDLOOP(10);
 
 		if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {//是否开启保存点坐标
-			std::ofstream file("DeformResultLocalFEM80000_0.49.txt", std::ios::out | std::ios::trunc);
+			std::ofstream file("ringY3.txt", std::ios::out | std::ios::trunc);
 			if (!file.is_open()) {
 				std::cerr << "Failed to open file." << std::endl;
 				return 0;

@@ -38,8 +38,8 @@ public:
 		isFixed(false) // 默认不是固定点
 	{}
 	void setFixedIfBelowThreshold() {
-		if (initx < -0.519/*|| initx > 0.62*/) {//-0.619
-			isFixed = true;
+		if (inity > 0.75/*|| initx > 0.62*/) {//-0.619 -0.645 CubeX
+			isFixed = true; 
 		}
 
 	}
@@ -72,7 +72,7 @@ public:
 		vertices[3] = v4;
 	}
 	Eigen::MatrixXf createElementK(float E, float nu, const Eigen::Vector3f& groupCenterOfMass);
-	Eigen::MatrixXf createElementKAni(float E, float nu, const Eigen::Vector3f& groupCenterOfMass);
+	Eigen::MatrixXf createElementKAni(float E1, float E2, float E3, float nu, const Eigen::Vector3f& groupCenterOfMass);
 	float calMassTetra(float den);
 	float calVolumeTetra();
 	Eigen::MatrixXf createElementKFEM(float E, float nu);
@@ -151,6 +151,7 @@ public:
 	void setVertexMassesFromMassMatrix();
 	void calMassDistributionMatrix();
 	void calGroupK(float E, float nu);
+	void calGroupKAni(float E1, float E2, float E3, float nu);
 	void calPrimeVec(int w);
 	void calPrimeVec1(int w);
 	void calPrimeVecT(int w);
