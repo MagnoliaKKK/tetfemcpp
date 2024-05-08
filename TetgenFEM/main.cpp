@@ -20,12 +20,9 @@
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 float youngs = 100000;
-float youngs1 = 2000000;
-float youngs2 = 1000000;
-float youngs3 = 1000000;
 float poisson = 0.49;
 float density = 1000;
-int groupNum, groupNumX =1, groupNumY = 1, groupNumZ =1;//Objectﾀ犲ﾍﾑﾕﾉｫｶｼﾐｴﾋﾀﾁﾋ ｲｻﾄﾜｳｬｳlass Object {ﾀ・ﾄﾗ鯡?
+int groupNum, groupNumX =6, groupNumY = 3, groupNumZ =3;//Objectﾀ犲ﾍﾑﾕﾉｫｶｼﾐｴﾋﾀﾁﾋ ｲｻﾄﾜｳｬｳlass Object {ﾀ・ﾄﾗ鯡?
 int wKey = 0;
 
 
@@ -118,33 +115,33 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/ring.stl", in);
+	//readSTL("stls/cubeX.stl", in);
 	//readOBJ("C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/ring.obj", in);
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.15a10";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
+	char args[] = "pq1.414a0.01";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
-	//char argsNode[] = "./cubeX4000";
-	//char argsEle[] = "./cubeX4000";
+	//char argsNode[] = "./cubeX8000";
+	//char argsEle[] = "./cubeX8000";
 	//if (!in.load_node(argsNode)) {
 	//    std::cerr << "Error loading .node file!" << std::endl;
 	//    return 1;
 	//}
 
-	////// Load the ele file
-	//if (!in.load_tet(argsEle)) {
-	//    std::cerr << "Error loading .ele file!" << std::endl;
-	//    return 1;
-	//}
+	//// Load the ele file
+	if (!in.load_tet(argsEle)) {
+	    std::cerr << "Error loading .ele file!" << std::endl;
+	    return 1;
+	}
 
 	// Call TetGen to tetrahedralize the geometry
 	tetrahedralize(&behavior, &in, &out);
 	
 
 
-	//out = in;
+	out = in;
 
 	Object object;
 	groupNum = groupNumX * groupNumY * groupNumZ;
@@ -346,7 +343,7 @@ int main() {
 		object.PBDLOOP(10);
 
 		if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {//是否开启保存点坐标
-			std::ofstream file("ringY3.txt", std::ios::out | std::ios::trunc);
+			std::ofstream file("DeformResultLocalFEM80000_0.49.txt", std::ios::out | std::ios::trunc);
 			if (!file.is_open()) {
 				std::cerr << "Failed to open file." << std::endl;
 				return 0;
@@ -540,7 +537,7 @@ int main() {
 			object.bodyVolume += object.groups[i].groupVolume;
 		}
 		
-
+		std::cout << object.bodyVolume << std::endl;
 		
 	
 		double totalKE = 0.0;

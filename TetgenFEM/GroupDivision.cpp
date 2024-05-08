@@ -5,7 +5,7 @@ const float timeStep = 0.01f;
 const float dampingConst = 80.0f;// 10.2f;
 const float PI = 3.1415926535f;
 const float Gravity = -9.80f;
-const float bindForce = -500.0f;
+const float bindForce = -120.0f;
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -1202,8 +1202,8 @@ void Group::calPrimeVec() {
 		
 
 		// 初始化gravity向量，只在y方向施加重力
-		for (int i = 1; i < 3 * verticesVector.size(); i += 3) {
-			gravity(i) = Gravity; // y方向上设置重力
+		for (int i = 0; i < 3 * verticesVector.size(); i += 3) {
+			gravity(i) = -Gravity; // y方向上设置重力
 		}
 
 		// 仅在初始时刻更新groupVelocity
@@ -1355,7 +1355,25 @@ void Object::PBDLOOP(int looptime) {
 					// 使用 calFbind1 计算约束力
 					currentGroup.calFbind1(commonVerticesPair.first, commonVerticesPair.second,
 						currentGroup.currentPosition, adjacentGroup.currentPosition, bindForce);
+					if (direction == 0 || direction == 1) {
+						currentGroup.distancesX = Eigen::VectorXf::Zero(commonVerticesPair.first.size() * 3);
+
+						for (size_t i = 0; i < commonVerticesPair.first.size(); ++i) {
+							Vertex* vertexThisGroup = commonVerticesPair.first[i];
+							Vertex* vertexOtherGroup = commonVerticesPair.second[i];
+
+							// 获取两个组中对应顶点的位置
+							Eigen::Vector3f posThisGroup = currentGroup.currentPosition.segment<3>(3 * vertexThisGroup->localIndex);
+							Eigen::Vector3f posOtherGroup = adjacentGroup.currentPosition.segment<3>(3 * vertexOtherGroup->localIndex);
+
+							// 计算两组间的绝对位置差异并存储
+							currentGroup.distancesX.segment<3>(3 * i) = (posThisGroup - posOtherGroup);
+						}
+
+						// 此处可添加额外的逻辑使用 `distances` 向量
+					}
 				}
+
 			}
 		}
 	}
@@ -1486,6 +1504,7 @@ void Group::calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
 	Eigen::Vector3f avgPosition;
 	Eigen::Vector3f posDifference;
 	Eigen::Vector3f force;
+	Eigen::VectorXf distances = Eigen::VectorXf::Zero(commonVerticesGroup1.size() * 3);
 	posThisGroup = Eigen::Vector3f::Zero();
 	posOtherGroup = Eigen::Vector3f::Zero();
 	avgPosition = Eigen::Vector3f::Zero();
@@ -1522,6 +1541,7 @@ void Group::calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
 		}
 		// Place the constraint force in Fbind at the appropriate position using the local index
 		Fbind.segment<3>(3 * vertexThisGroup->localIndex) += force;
+		distances.segment<3>(3 * i) = (posThisGroup - posOtherGroup).cwiseAbs();
 	}
 	
 }
@@ -1576,10 +1596,8 @@ void Group::updatePosition() {
 		vertex->z = pos.z();*/
 		if (vertex->isFixed == true) {
 			// 对于固定点，将位置设置为初始位置
-			/*vertex->x = vertex->x = vertex->initx + 0.3 * sin(0.02 * frameTime);
-			vertex->y = vertex->y = vertex->inity + 0.4 * cos(0.02 * frameTime);*/
-			vertex->x = vertex->initx;
-			vertex->y = vertex->inity;
+			vertex->x = vertex->x = vertex->initx + 0.3 * sin(0.02 * frameTime);
+			vertex->y = vertex->y = vertex->inity + 0.4 * cos(0.02 * frameTime);
 			vertex->z = vertex->initz;
 		}
 		else {

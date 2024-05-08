@@ -38,8 +38,8 @@ public:
 		isFixed(false) // 默认不是固定点
 	{}
 	void setFixedIfBelowThreshold() {
-		if (inity > 0.75/*|| initx > 0.62*/) {//-0.619 -0.645 CubeX
-			isFixed = true; 
+		if (initx < -0.645/*|| initx > 0.62*/) {//-0.619
+			isFixed = true;
 		}
 
 	}
@@ -120,6 +120,7 @@ public:
 	Eigen::SparseMatrix<float> inverseTermSparse;
 	Eigen::VectorXf currentPosition;//计算bindf用的位置信息，不用做位置更新
 	Eigen::VectorXf currentPositionFEM;
+	Eigen::VectorXf distancesX; //X方向的组间距离
 	std::array<int, 6> adjacentGroupIDs;
 	int groupIndex;//每组的编号
 	std::vector<std::pair<std::vector<Vertex*>, std::vector<Vertex*>>> commonVerticesInDirections;//各个相邻组的共同点
