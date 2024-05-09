@@ -5,7 +5,7 @@ const float timeStep = 0.01f;
 const float dampingConst = 80.0f;// 10.2f;
 const float PI = 3.1415926535f;
 const float Gravity = -9.80f;
-const float bindForce = -120.0f;
+const float bindForce = -500.0f;
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -1596,8 +1596,10 @@ void Group::updatePosition() {
 		vertex->z = pos.z();*/
 		if (vertex->isFixed == true) {
 			// 对于固定点，将位置设置为初始位置
-			vertex->x = vertex->x = vertex->initx + 0.3 * sin(0.02 * frameTime);
-			vertex->y = vertex->y = vertex->inity + 0.4 * cos(0.02 * frameTime);
+			//vertex->x = vertex->x = vertex->initx + 0.3 * sin(0.02 * frameTime);
+			//vertex->y = vertex->y = vertex->inity + 0.4 * cos(0.02 * frameTime);
+			vertex->x = vertex->initx;
+			vertex->y = vertex->inity;
 			vertex->z = vertex->initz;
 		}
 		else {

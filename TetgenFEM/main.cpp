@@ -20,6 +20,9 @@
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 float youngs = 100000;
+float youngs1 = 100000;
+float youngs2 = 100000;
+float youngs3 = 100000;
 float poisson = 0.49;
 float density = 1000;
 int groupNum, groupNumX =6, groupNumY = 3, groupNumZ =3;//Objectﾀ犲ﾍﾑﾕﾉｫｶｼﾐｴﾋﾀﾁﾋ ｲｻﾄﾜｳｬｳlass Object {ﾀ・ﾄﾗ鯡?
@@ -115,7 +118,7 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	//readSTL("stls/cubeX.stl", in);
+	readSTL("stls/cylinderY.stl", in);
 	//readOBJ("C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/ring.obj", in);
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
@@ -131,17 +134,17 @@ int main() {
 	//}
 
 	//// Load the ele file
-	if (!in.load_tet(argsEle)) {
+	/*if (!in.load_tet(argsEle)) {
 	    std::cerr << "Error loading .ele file!" << std::endl;
 	    return 1;
-	}
+	}*/
 
 	// Call TetGen to tetrahedralize the geometry
 	tetrahedralize(&behavior, &in, &out);
 	
 
 
-	out = in;
+	//out = in;
 
 	Object object;
 	groupNum = groupNumX * groupNumY * groupNumZ;
@@ -246,8 +249,8 @@ int main() {
 		object.groups[i].calCenterofMass();
 		object.groups[i].calInitCOM();//initial com
 		object.groups[i].calLocalPos(); // initial local positions
-		object.groups[i].calGroupK(youngs, poisson);	
-		//object.groups[i].calGroupKAni(youngs1, youngs2, youngs3, poisson);
+		//object.groups[i].calGroupK(youngs, poisson);	
+		object.groups[i].calGroupKAni(youngs1, youngs2, youngs3, poisson);
 		object.groups[i].setVertexMassesFromMassMatrix();//vertex mass
 		object.groups[i].calMassGroup();
 		object.groups[i].calMassDistributionMatrix();
