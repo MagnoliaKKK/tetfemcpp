@@ -4,8 +4,8 @@
 const float timeStep = 0.01f;
 const float dampingConst = 80.0f;// 10.2f;
 const float PI = 3.1415926535f;
-const float Gravity = -9.80f;
-const float bindForce = -500.0f;
+const float Gravity = -200.0f;
+const float bindForce = -10.0f;
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -1197,18 +1197,57 @@ void Group::calPrimeVec(int w) {
 }
 void Group::calPrimeVec() {
 	primeVec = Eigen::VectorXf::Zero(3 * verticesVector.size());
-
+	/*float sumX = 0.0f;
+	for (const auto& vertexPair : verticesVector) {
+		Vertex* vertex = vertexPair;
+		sumX += vertex->x;
+	}
+	float meanX = sumX / verticesVector.size();*/
 	if (!gravityApplied) {
 		
 
 		// 初始化gravity向量，只在y方向施加重力
 		for (int i = 0; i < 3 * verticesVector.size(); i += 3) {
-			gravity(i) = -Gravity; // y方向上设置重力
+			gravity(i) = -0; // y方向上设置重力
+			//int indexX = 3 * vertex->localIndex;
+			
 		}
 
 		// 仅在初始时刻更新groupVelocity
 		
 		gravityApplied = true; // 标记重力已被应用，防止未来的更新
+	}
+
+	float maxY = std::numeric_limits<float>::lowest();
+	float minY = std::numeric_limits<float>::max();
+	std::vector<int> maxYVertices;
+	std::vector<int> minYVertices;
+
+	for (const auto& vertexPair : verticesVector) {
+		Vertex* vertex = vertexPair;
+		if (vertex->y > maxY) {
+			maxY = vertex->y;
+			maxYVertices.clear();
+			maxYVertices.push_back(vertex->localIndex);
+		}
+		else if (vertex->y == maxY) {
+			maxYVertices.push_back(vertex->localIndex);
+		}
+
+		if (vertex->y < minY) {
+			minY = vertex->y;
+			minYVertices.clear();
+			minYVertices.push_back(vertex->localIndex);
+		}
+		else if (vertex->y == minY) {
+			minYVertices.push_back(vertex->localIndex);
+		}
+	}
+	for (int localPi : maxYVertices) {
+		gravity(3 * localPi + 1) = Gravity;
+	}
+	for (int localPi : minYVertices) {
+		gravity(3 * localPi + 1) = -Gravity;
 	}
 	//groupVelocity += gravity * timeStep;
 	// 使用整个矩阵计算velocityUpdate

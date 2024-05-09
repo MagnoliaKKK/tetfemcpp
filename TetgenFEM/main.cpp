@@ -20,12 +20,12 @@
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 float youngs = 100000;
-float youngs1 = 100000;
+float youngs1 = 100;
 float youngs2 = 100000;
 float youngs3 = 100000;
 float poisson = 0.49;
 float density = 1000;
-int groupNum, groupNumX =6, groupNumY = 3, groupNumZ =3;//Objectﾀ犲ﾍﾑﾕﾉｫｶｼﾐｴﾋﾀﾁﾋ ｲｻﾄﾜｳｬｳlass Object {ﾀ・ﾄﾗ鯡?
+int groupNum, groupNumX =4, groupNumY = 1, groupNumZ =4;//Objectﾀ犲ﾍﾑﾕﾉｫｶｼﾐｴﾋﾀﾁﾋ ｲｻﾄﾜｳｬｳlass Object {ﾀ・ﾄﾗ鯡?
 int wKey = 0;
 
 
@@ -118,7 +118,7 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/cylinderY.stl", in);
+	readSTL("stls/tube.stl", in);
 	//readOBJ("C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/ring.obj", in);
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
@@ -154,8 +154,8 @@ int main() {
 	object.groupNumZ = groupNumZ;
 	divideIntoGroups(out, object, groupNumX, groupNumY, groupNumZ); //convert tetgen to our data structure
 
-	//out.save_nodes("ring");
-	//out.save_elements("ring");
+	//out.save_nodes("tube");
+	//out.save_elements("tube");
 	//writeOBJ(object, "ring.obj");
 
 
@@ -215,7 +215,7 @@ int main() {
 			// ｶﾔﾃｿｸ･ｵ羞ﾃsetFixedIfBelowThresholdｷｽｷｨ
 			Vertex* vertex = vertexPair.second;
 
-			vertex->setFixedIfBelowThreshold();
+			//vertex->setFixedIfBelowThreshold();
 		}
 
 	}
@@ -346,7 +346,7 @@ int main() {
 		object.PBDLOOP(10);
 
 		if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {//是否开启保存点坐标
-			std::ofstream file("DeformResultLocalFEM80000_0.49.txt", std::ios::out | std::ios::trunc);
+			std::ofstream file("Ani_y1=10000000.txt", std::ios::out | std::ios::trunc);
 			if (!file.is_open()) {
 				std::cerr << "Failed to open file." << std::endl;
 				return 0;
@@ -540,7 +540,7 @@ int main() {
 			object.bodyVolume += object.groups[i].groupVolume;
 		}
 		
-		std::cout << object.bodyVolume << std::endl;
+		//std::cout << object.bodyVolume << std::endl;
 		
 	
 		double totalKE = 0.0;
