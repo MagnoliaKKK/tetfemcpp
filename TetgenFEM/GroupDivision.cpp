@@ -2,10 +2,10 @@
 
 
 const float timeStep = 0.01f;
-const float dampingConst = 80.0f;// 10.2f;
+const float dampingConst = 100.0f;// 10.2f;
 const float PI = 3.1415926535f;
-const float Gravity = -200.0f;
-const float bindForce = -10.0f;
+const float Gravity = 9.80f;
+const float bindForce = -100.0f;
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -19,7 +19,7 @@ void Object::assignLocalIndicesToAllGroups() { // local index generation
 
 				// 检查顶点是否已经处理过
 				if (processedVertices.find(vertex) == processedVertices.end()) {
-					vertex->localIndex = currentLocalIndex++; // 分配本地索引
+					vertex->localIndex = currentLocalIndex++; // 分配本地
 					processedVertices.insert(vertex); // 标记为已处理
 				}
 			}
@@ -1206,9 +1206,9 @@ void Group::calPrimeVec() {
 	if (!gravityApplied) {
 		
 
-		// 初始化gravity向量，只在y方向施加重力
+		// 初始化gravity向量，只在x方向施加重力
 		for (int i = 0; i < 3 * verticesVector.size(); i += 3) {
-			gravity(i) = -0; // y方向上设置重力
+			gravity(i ) = Gravity; // y方向上设置重力
 			//int indexX = 3 * vertex->localIndex;
 			
 		}
@@ -1218,7 +1218,7 @@ void Group::calPrimeVec() {
 		gravityApplied = true; // 标记重力已被应用，防止未来的更新
 	}
 
-	float maxY = std::numeric_limits<float>::lowest();
+	/*float maxY = std::numeric_limits<float>::lowest();
 	float minY = std::numeric_limits<float>::max();
 	std::vector<int> maxYVertices;
 	std::vector<int> minYVertices;
@@ -1248,7 +1248,7 @@ void Group::calPrimeVec() {
 	}
 	for (int localPi : minYVertices) {
 		gravity(3 * localPi + 1) = -Gravity;
-	}
+	}*/
 	//groupVelocity += gravity * timeStep;
 	// 使用整个矩阵计算velocityUpdate
 	//Eigen::VectorXf exfUpdate = timeStep * timeStep * massMatrix * gravity;
@@ -1258,17 +1258,27 @@ void Group::calPrimeVec() {
 
 	// 更新primeVec和顶点位置
 	for (auto& vertexPair : verticesVector) {
+	
 		Vertex* vertex = vertexPair;
-		int localPi = vertex->localIndex; // 使用局部索引
+		if (vertex->isFixed == false)
+		{
+			int localPi = vertex->localIndex; // 使用局部索引
 
-		// 获取当前顶点的速度更新部分
-		Eigen::Vector3f currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
-		Eigen::Vector3f currentExfUpdate = exfUpdate.segment<3>(3 * localPi);
-		// 计算新的位置
-		Eigen::Vector3f newPosition = Eigen::Vector3f(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate + currentExfUpdate;
+			// 获取当前顶点的速度更新部分
+			Eigen::Vector3f currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
+			Eigen::Vector3f currentExfUpdate = exfUpdate.segment<3>(3 * localPi);
+			// 计算新的位置
+			Eigen::Vector3f newPosition = Eigen::Vector3f(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate + currentExfUpdate;
 
-		// 更新primeVec
-		primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
+			// 更新primeVec
+			primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
+		}
+		else {
+			int localPi = vertex->localIndex;
+			primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = Eigen::Vector3f(vertex->initx, vertex->inity, vertex->initz);
+		}
+			
+		
 	}
 }
 
