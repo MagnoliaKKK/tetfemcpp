@@ -1,11 +1,11 @@
 ﻿#include "GroupDivision.h"
 
 
-const float timeStep = 0.01f;
-const float dampingConst = 100.0f;// 10.2f;
+const float timeStep = 0.005f;
+const float dampingConst = 10.0f;// 10.2f;
 const float PI = 3.1415926535f;
-const float Gravity = 9.80f;
-const float bindForce = -100.0f;
+const float Gravity = 5.80f;
+const float bindForce = -21.0f;
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -1208,7 +1208,7 @@ void Group::calPrimeVec() {
 
 		// 初始化gravity向量，只在x方向施加重力
 		for (int i = 0; i < 3 * verticesVector.size(); i += 3) {
-			gravity(i ) = Gravity; // y方向上设置重力
+			gravity(i + 1) = -Gravity; // y方向上设置重力
 			//int indexX = 3 * vertex->localIndex;
 			
 		}
@@ -1260,8 +1260,8 @@ void Group::calPrimeVec() {
 	for (auto& vertexPair : verticesVector) {
 	
 		Vertex* vertex = vertexPair;
-		if (vertex->isFixed == false)
-		{
+		/*if (vertex->isFixed == false)
+		{*/
 			int localPi = vertex->localIndex; // 使用局部索引
 
 			// 获取当前顶点的速度更新部分
@@ -1272,11 +1272,11 @@ void Group::calPrimeVec() {
 
 			// 更新primeVec
 			primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
-		}
-		else {
+		
+		/*else {
 			int localPi = vertex->localIndex;
 			primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = Eigen::Vector3f(vertex->initx, vertex->inity, vertex->initz);
-		}
+		}*/
 			
 		
 	}
@@ -1645,10 +1645,10 @@ void Group::updatePosition() {
 		vertex->z = pos.z();*/
 		if (vertex->isFixed == true) {
 			// 对于固定点，将位置设置为初始位置
-			//vertex->x = vertex->x = vertex->initx + 0.3 * sin(0.02 * frameTime);
-			//vertex->y = vertex->y = vertex->inity + 0.4 * cos(0.02 * frameTime);
-			vertex->x = vertex->initx;
-			vertex->y = vertex->inity;
+			vertex->x = vertex->x = vertex->initx + sin(0.02 * frameTime);
+			vertex->y = vertex->y = vertex->inity + 0.4 * cos(0.02 * frameTime);
+			//vertex->x = vertex->initx;
+			//vertex->y = vertex->inity;
 			vertex->z = vertex->initz;
 		}
 		else {
