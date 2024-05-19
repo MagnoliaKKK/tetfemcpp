@@ -19,11 +19,11 @@
  
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
-float youngs = 1000000;
+float youngs = 10000;
 float youngs1 = 10000;
 float youngs2 = 1000;
 float youngs3 = 100000;
-float poisson = 0.49;
+float poisson = 0.45;
 float density = 1000;
 int groupNum, groupNumX =4, groupNumY = 2, groupNumZ =2;//Objectﾀ犲ﾍﾑﾕﾉｫｶｼﾐｴﾋﾀﾁﾋ ｲｻﾄﾜｳｬｳlass Object {ﾀ・ﾄﾗ鯡?
 int wKey = 0;
@@ -118,7 +118,7 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/bunnyFront.stl", in);
+	//readSTL("stls/bunnyFront.stl", in);
 	//readOBJ("C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/ring.obj", in);
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
@@ -126,25 +126,25 @@ int main() {
 	char args[] = "pq2.5a1";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
-	//char argsNode[] = "./cubeX4000";
-	//char argsEle[] = "./cubeX4000";
-	//if (!in.load_node(argsNode)) {
-	//    std::cerr << "Error loading .node file!" << std::endl;
-	//    return 1;
-	//}
+	char argsNode[] = "./cubeX4000";
+	char argsEle[] = "./cubeX4000";
+	if (!in.load_node(argsNode)) {
+	    std::cerr << "Error loading .node file!" << std::endl;
+	    return 1;
+	}
 
-	//// Load the ele file
-	//if (!in.load_tet(argsEle)) {
-	//    std::cerr << "Error loading .ele file!" << std::endl;
-	//    return 1;
-	//}
+	// Load the ele file
+	if (!in.load_tet(argsEle)) {
+	    std::cerr << "Error loading .ele file!" << std::endl;
+	    return 1;
+	}
 
 	// Call TetGen to tetrahedralize the geometry
 	tetrahedralize(&behavior, &in, &out);
 	
 
 
-	//out = in;
+	out = in;
 
 	Object object;
 	groupNum = groupNumX * groupNumY * groupNumZ;
@@ -343,7 +343,7 @@ int main() {
 		}*/
 
 
-		object.PBDLOOP(20);
+		object.PBDLOOP(10);
 
 		if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {//是否开启保存点坐标
 			std::ofstream file("VolumeLocal.txt", std::ios::out | std::ios::trunc);
@@ -543,12 +543,12 @@ int main() {
 		//std::cout << object.bodyVolume << std::endl;
 		
 	
-		double totalKE = 0.0;
+		/*double totalKE = 0.0;
 		for (int i = 0; i < objectUniqueVertices.size(); i++) {
 			double speedSquared = objectUniqueVertices[i]->velx * objectUniqueVertices[i]->velx + objectUniqueVertices[i]->vely * objectUniqueVertices[i]->vely + objectUniqueVertices[i]->velz * objectUniqueVertices[i]->velz;
 			double kineticEnergy = 0.5 * objectUniqueVertices[i]->vertexMass * speedSquared;
 			totalKE += kineticEnergy;
-		}
+		}*/
 	}
 	
 	

@@ -1,11 +1,11 @@
 ﻿#include "GroupDivision.h"
 
 
-const float timeStep = 0.005f;
-const float dampingConst = 10.0f;// 10.2f;
+const float timeStep = 0.001f;
+const float dampingConst = 8.0f;// 10.2f;
 const float PI = 3.1415926535f;
-const float Gravity = 5.80f;
-const float bindForce = -21.0f;
+const float Gravity = 29.80f;
+const float bindForce = -300.0f;
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -1197,58 +1197,19 @@ void Group::calPrimeVec(int w) {
 }
 void Group::calPrimeVec() {
 	primeVec = Eigen::VectorXf::Zero(3 * verticesVector.size());
-	/*float sumX = 0.0f;
-	for (const auto& vertexPair : verticesVector) {
-		Vertex* vertex = vertexPair;
-		sumX += vertex->x;
-	}
-	float meanX = sumX / verticesVector.size();*/
-	if (!gravityApplied) {
-		
 
-		// 初始化gravity向量，只在x方向施加重力
+	if (!gravityApplied) {
+
+
+		// 初始化gravity向量，只在y方向施加重力
 		for (int i = 0; i < 3 * verticesVector.size(); i += 3) {
-			gravity(i + 1) = -Gravity; // y方向上设置重力
-			//int indexX = 3 * vertex->localIndex;
-			
+			gravity(i) = Gravity; // y方向上设置重力
 		}
 
 		// 仅在初始时刻更新groupVelocity
-		
+
 		gravityApplied = true; // 标记重力已被应用，防止未来的更新
 	}
-
-	/*float maxY = std::numeric_limits<float>::lowest();
-	float minY = std::numeric_limits<float>::max();
-	std::vector<int> maxYVertices;
-	std::vector<int> minYVertices;
-
-	for (const auto& vertexPair : verticesVector) {
-		Vertex* vertex = vertexPair;
-		if (vertex->y > maxY) {
-			maxY = vertex->y;
-			maxYVertices.clear();
-			maxYVertices.push_back(vertex->localIndex);
-		}
-		else if (vertex->y == maxY) {
-			maxYVertices.push_back(vertex->localIndex);
-		}
-
-		if (vertex->y < minY) {
-			minY = vertex->y;
-			minYVertices.clear();
-			minYVertices.push_back(vertex->localIndex);
-		}
-		else if (vertex->y == minY) {
-			minYVertices.push_back(vertex->localIndex);
-		}
-	}
-	for (int localPi : maxYVertices) {
-		gravity(3 * localPi + 1) = Gravity;
-	}
-	for (int localPi : minYVertices) {
-		gravity(3 * localPi + 1) = -Gravity;
-	}*/
 	//groupVelocity += gravity * timeStep;
 	// 使用整个矩阵计算velocityUpdate
 	//Eigen::VectorXf exfUpdate = timeStep * timeStep * massMatrix * gravity;
@@ -1258,27 +1219,17 @@ void Group::calPrimeVec() {
 
 	// 更新primeVec和顶点位置
 	for (auto& vertexPair : verticesVector) {
-	
 		Vertex* vertex = vertexPair;
-		/*if (vertex->isFixed == false)
-		{*/
-			int localPi = vertex->localIndex; // 使用局部索引
+		int localPi = vertex->localIndex; // 使用局部索引
 
-			// 获取当前顶点的速度更新部分
-			Eigen::Vector3f currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
-			Eigen::Vector3f currentExfUpdate = exfUpdate.segment<3>(3 * localPi);
-			// 计算新的位置
-			Eigen::Vector3f newPosition = Eigen::Vector3f(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate + currentExfUpdate;
+		// 获取当前顶点的速度更新部分
+		Eigen::Vector3f currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
+		Eigen::Vector3f currentExfUpdate = exfUpdate.segment<3>(3 * localPi);
+		// 计算新的位置
+		Eigen::Vector3f newPosition = Eigen::Vector3f(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate + currentExfUpdate;
 
-			// 更新primeVec
-			primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
-		
-		/*else {
-			int localPi = vertex->localIndex;
-			primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = Eigen::Vector3f(vertex->initx, vertex->inity, vertex->initz);
-		}*/
-			
-		
+		// 更新primeVec
+		primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
 	}
 }
 
@@ -1645,10 +1596,10 @@ void Group::updatePosition() {
 		vertex->z = pos.z();*/
 		if (vertex->isFixed == true) {
 			// 对于固定点，将位置设置为初始位置
-			vertex->x = vertex->x = vertex->initx + sin(0.02 * frameTime);
-			vertex->y = vertex->y = vertex->inity + 0.4 * cos(0.02 * frameTime);
-			//vertex->x = vertex->initx;
-			//vertex->y = vertex->inity;
+			/*vertex->x = vertex->x = vertex->initx - 0.25 * sin(0.4 * frameTime);
+			vertex->y = vertex->y = vertex->inity + 0.1 * sin(0.7 * frameTime);*/
+			vertex->x = vertex->initx;
+			vertex->y = vertex->inity;
 			vertex->z = vertex->initz;
 		}
 		else {
