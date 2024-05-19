@@ -19,7 +19,7 @@
  
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
-float youngs = 10000;
+float youngs = 100000;
 float youngs1 = 10000;
 float youngs2 = 1000;
 float youngs3 = 100000;

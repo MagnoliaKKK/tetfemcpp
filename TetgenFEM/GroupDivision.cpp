@@ -4,8 +4,8 @@
 const float timeStep = 0.001f;
 const float dampingConst = 8.0f;// 10.2f;
 const float PI = 3.1415926535f;
-const float Gravity = 29.80f;
-const float bindForce = -300.0f;
+const float Gravity = -9.80f;// bunny 9.8
+const float bindForce = -880.0f;//bunny 880
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -1202,7 +1202,7 @@ void Group::calPrimeVec() {
 
 
 		// 初始化gravity向量，只在y方向施加重力
-		for (int i = 0; i < 3 * verticesVector.size(); i += 3) {
+		for (int i = 1; i < 3 * verticesVector.size(); i += 3) {
 			gravity(i) = Gravity; // y方向上设置重力
 		}
 
