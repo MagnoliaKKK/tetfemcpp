@@ -4,8 +4,8 @@
 const float timeStep = 0.01f;
 const float dampingConst = 2.0f;// 10.2f;
 const float PI = 3.1415926535f;
-const float Gravity = -0.0f;
-const float bindForce = -200.0f;
+const float Gravity = -10.0f;
+const float bindForce = -400.0f;
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -1218,32 +1218,29 @@ void Object::PBDLOOP(int looptime) {
 				if (adjacentGroupIdx != -1) {
 					Group& adjacentGroup = groups[adjacentGroupIdx];
 					const auto& commonVerticesPair = currentGroup.commonVerticesInDirections[direction];
-					/*if (commonVerticesPair.first.size() >= 60)
-					{
-						currentGroup.calFbind1(commonVerticesPair.first, commonVerticesPair.second,
-							currentGroup.currentPosition, adjacentGroup.currentPosition, bindForce * commonVerticesPair.first.size(), 0);
-					}*/
-					if (commonVerticesPair.first.size() >= 50)
-					{
-						currentGroup.calFbind1(commonVerticesPair.first, commonVerticesPair.second,
-							currentGroup.currentPosition, adjacentGroup.currentPosition, bindForce * commonVerticesPair.first.size(), 100);
-					}
-					if (commonVerticesPair.first.size() >= 30 && commonVerticesPair.first.size() <= 50)
-					{
-						currentGroup.calFbind1(commonVerticesPair.first, commonVerticesPair.second,
-							currentGroup.currentPosition, adjacentGroup.currentPosition, bindForce * commonVerticesPair.first.size(), 10);
-					}
-					if (commonVerticesPair.first.size() >= 20 && commonVerticesPair.first.size() <= 30)
-					{
-						currentGroup.calFbind1(commonVerticesPair.first, commonVerticesPair.second,
-							currentGroup.currentPosition, adjacentGroup.currentPosition, bindForce * commonVerticesPair.first.size(), 100);
-					}
-					
 
 					// 使用 calFbind1 计算约束力
-					/*currentGroup.calFbind1(commonVerticesPair.first, commonVerticesPair.second,
-						currentGroup.currentPosition, adjacentGroup.currentPosition, bindForce * commonVerticesPair.first.size(), 600);*/
+					currentGroup.calFbind1(commonVerticesPair.first, commonVerticesPair.second,
+						currentGroup.currentPosition, adjacentGroup.currentPosition, bindForce);
+					if (direction == 0 || direction == 1) {
+						//currentGroup.distancesX = Eigen::VectorXf::Zero(commonVerticesPair.first.size() * 3);
+
+						for (size_t i = 0; i < commonVerticesPair.first.size(); ++i) {
+							Vertex* vertexThisGroup = commonVerticesPair.first[i];
+							Vertex* vertexOtherGroup = commonVerticesPair.second[i];
+
+							// 获取两个组中对应顶点的位置
+							Eigen::Vector3f posThisGroup = currentGroup.currentPosition.segment<3>(3 * vertexThisGroup->localIndex);
+							Eigen::Vector3f posOtherGroup = adjacentGroup.currentPosition.segment<3>(3 * vertexOtherGroup->localIndex);
+
+							// 计算两组间的绝对位置差异并存储
+							//currentGroup.distancesX.segment<3>(3 * i) = (posThisGroup - posOtherGroup);
+						}
+
+						// 此处可添加额外的逻辑使用 distances 向量
+					}
 				}
+
 			}
 		}
 	}
@@ -1365,8 +1362,8 @@ void Group::calculateCurrentPositionsFEM() {
 void Group::calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
 	const std::vector<Vertex*>& commonVerticesGroup2,
 	const Eigen::VectorXf& currentPositionGroup1,
-	const Eigen::VectorXf& currentPositionGroup2, float k, float maxForce
-	) {
+	const Eigen::VectorXf& currentPositionGroup2,
+	float k) {
 	// Initialize Fbind, with a length three times the number of vertices in the group
 	//Fbind = Eigen::VectorXf::Zero(verticesMap.size() * 3);
 	Eigen::Vector3f posThisGroup;
@@ -1374,6 +1371,7 @@ void Group::calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
 	Eigen::Vector3f avgPosition;
 	Eigen::Vector3f posDifference;
 	Eigen::Vector3f force;
+	Eigen::VectorXf distances = Eigen::VectorXf::Zero(commonVerticesGroup1.size() * 3);
 	posThisGroup = Eigen::Vector3f::Zero();
 	posOtherGroup = Eigen::Vector3f::Zero();
 	avgPosition = Eigen::Vector3f::Zero();
@@ -1395,8 +1393,7 @@ void Group::calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
 		posDifference = posThisGroup - avgPosition;
 		// Compute the constraint force
 		force = k * posDifference;
-		
-		//float maxForce = 1000;// *commonVerticesGroup1.size();
+		float maxForce = 100000;
 		if (abs(force.x()) > maxForce)
 		{
 			force.x() = force.x() / abs(force.x()) * maxForce;
@@ -1409,11 +1406,11 @@ void Group::calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
 		{
 			force.z() = force.z() / abs(force.z()) * maxForce;
 		}
-
 		// Place the constraint force in Fbind at the appropriate position using the local index
 		Fbind.segment<3>(3 * vertexThisGroup->localIndex) += force;
+		distances.segment<3>(3 * i) = (posThisGroup - posOtherGroup).cwiseAbs();
 	}
-	
+
 }
 
 void Group::calFbind(const Eigen::VectorXf& currentPositionThisGroup, const std::vector<Eigen::VectorXf>& allCurrentPositionsOtherGroups, float k) {
@@ -1449,7 +1446,7 @@ void Group::calFbind(const Eigen::VectorXf& currentPositionThisGroup, const std:
 	}
 }
 
-double angleIncrement = 3.1415926 / 180 * 0.4; // 每次旋转 5 度
+double angleIncrement = 3.1415926 / 180 * 0.1; // 每次旋转 5 度
 double currentAngle = 0.0;              // 当前角度
 
 void Group::updatePosition() {
@@ -1478,15 +1475,15 @@ void Group::updatePosition() {
 			vertex->y = vertex->inity;
 			vertex->z = vertex->initz;*/
 			vertex->x = vertex->initx;
-			vertex->y = vertex->inity;
-			vertex->z = vertex->initz;
-			/*vertex->y = vertex->inity* cos(currentAngle) - vertex->initz * sin(currentAngle);
-			vertex->z = vertex->inity * sin(currentAngle) + vertex->initz * cos(currentAngle);*/
+			//vertex->y = vertex->inity;
+			//vertex->z = vertex->initz;
+			vertex->y = vertex->inity* cos(currentAngle) - vertex->initz * sin(currentAngle);
+			vertex->z = vertex->inity * sin(currentAngle) + vertex->initz * cos(currentAngle);
 
 
 
 			//vertex->inity * sin(currentAngle) - vertex->initz * cos(currentAngle)
-			//vertex->x = vertex->initx + 0.6 * sin(0.5 * frameTime);
+			//vertex->y = vertex->inity + 0.6 * sin(0.5 * frameTime);
 		}
 		else {
 			// 使用旋转矩阵块乘以primeVec中的位置

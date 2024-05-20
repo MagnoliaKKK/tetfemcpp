@@ -22,7 +22,7 @@ Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 float youngs = 1000000;
 float poisson = 0.45;
 float density = 1000;
-int groupNum, groupNumX =2, groupNumY = 2, groupNumZ = 1;//Objectﾀ犲ﾍﾑﾕﾉｫｶｼﾐｴﾋﾀﾁﾋ ｲｻﾄﾜｳｬｳlass Object {ﾀ・ﾄﾗ鯡?
+int groupNum, groupNumX =3, groupNumY = 3, groupNumZ = 3;//Objectﾀ犲ﾍﾑﾕﾉｫｶｼﾐｴﾋﾀﾁﾋ ｲｻﾄﾜｳｬｳlass Object {ﾀ・ﾄﾗ鯡?
 int wKey = 0;
 
 
@@ -115,33 +115,33 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/cubeLong.stl", in);
+	readSTL("stls/shell.stl", in);
 	//readOBJ("C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/cubeX12000.obj", in);
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.414a0.0001";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
+	char args[] = "pq1.414a1";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
-	char argsNode[] = "./stls/armadillo_4k";
-	char argsEle[] = "./stls/armadillo_4k";
-	if (!in.load_node(argsNode)) {
-	    std::cerr << "Error loading .node file!" << std::endl;
-	    return 1;
-	}
+	//char argsNode[] = "./stls/armadillo_4k";
+	//char argsEle[] = "./stls/armadillo_4k";
+	//if (!in.load_node(argsNode)) {
+	//    std::cerr << "Error loading .node file!" << std::endl;
+	//    return 1;
+	//}
 
-	//// Load the ele file
-	if (!in.load_tet(argsEle)) {
-	    std::cerr << "Error loading .ele file!" << std::endl;
-	    return 1;
-	}
+	////// Load the ele file
+	//if (!in.load_tet(argsEle)) {
+	//    std::cerr << "Error loading .ele file!" << std::endl;
+	//    return 1;
+	//}
 
 	// Call TetGen to tetrahedralize the geometry
-	//tetrahedralize(&behavior, &in, &out);
+	tetrahedralize(&behavior, &in, &out);
 	
 
 
-	out = in;
+	//out = in;
 
 	Object object;
 	groupNum = groupNumX * groupNumY * groupNumZ;
@@ -211,9 +211,9 @@ int main() {
 		for (const auto& vertexPair : g.verticesMap) {
 			// ｶﾔﾃｿｸ･ｵ羞ﾃsetFixedIfBelowThresholdｷｽｷｨ
 			Vertex* vertex = vertexPair.second;
-			if (vertex->x > 0.91189f && vertex->y > 1.1693f)
-				vertex->isFixed = true;
-			//vertex->setFixedIfBelowThreshold();
+			//if (vertex->x > 0.91189f && vertex->y > 1.1693f)
+			//	vertex->isFixed = true;
+			vertex->setFixedIfBelowThreshold();
 		}
 
 	}
@@ -290,30 +290,30 @@ int main() {
 
 
 	////////////// 爆炸
-	std::srand(static_cast<unsigned int>(std::time(0))); // 初始化随机种子
-	float maxDisplacement = 6;
-	for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
-		Group& group = object.getGroup(groupIdx);
+	//std::srand(static_cast<unsigned int>(std::time(0))); // 初始化随机种子
+	//float maxDisplacement = 6;
+	//for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
+	//	Group& group = object.getGroup(groupIdx);
 
-		std::vector<Vertex*> uniqueVertices = group.getUniqueVertices();
-		for (size_t i = 0; i < uniqueVertices.size(); ++i) {
-			Vertex* vertex = uniqueVertices[i];
+	//	std::vector<Vertex*> uniqueVertices = group.getUniqueVertices();
+	//	for (size_t i = 0; i < uniqueVertices.size(); ++i) {
+	//		Vertex* vertex = uniqueVertices[i];
 
-			// 随机扰动位置
-			float dx = (static_cast<float>(std::rand()) / RAND_MAX - 0.5f) * 2 * maxDisplacement;
-			float dy = (static_cast<float>(std::rand()) / RAND_MAX - 0.5f) * 2 * maxDisplacement;
-			float dz = (static_cast<float>(std::rand()) / RAND_MAX - 0.5f) * 2 * maxDisplacement;
+	//		// 随机扰动位置
+	//		float dx = (static_cast<float>(std::rand()) / RAND_MAX - 0.5f) * 2 * maxDisplacement;
+	//		float dy = (static_cast<float>(std::rand()) / RAND_MAX - 0.5f) * 2 * maxDisplacement;
+	//		float dz = (static_cast<float>(std::rand()) / RAND_MAX - 0.5f) * 2 * maxDisplacement;
 
-			vertex->x += dx;
-			vertex->y += dy;
-			vertex->z += dz;
+	//		vertex->x += dx;
+	//		vertex->y += dy;
+	//		vertex->z += dz;
 
-			vertex->x = 0;
-			vertex->y = 0;
-			vertex->z = 0;
+	//		vertex->x = 0;
+	//		vertex->y = 0;
+	//		vertex->z = 0;
 
-		}
-	}
+	//	}
+	//}
 	/////////////
 
 

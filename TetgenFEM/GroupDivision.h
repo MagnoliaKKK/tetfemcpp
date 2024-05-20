@@ -180,7 +180,10 @@ public:
 	void calPrimeVec();
 	//void updateVertexPositions();
 	void calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
-		const std::vector<Vertex*>& commonVerticesGroup2, const Eigen::VectorXf& currentPositionGroup1, const Eigen::VectorXf& currentPositionGroup2, float k, float maxForce);
+		const std::vector<Vertex*>& commonVerticesGroup2,
+		const Eigen::VectorXf& currentPositionGroup1,
+		const Eigen::VectorXf& currentPositionGroup2,
+		float k);
 	void calRInvLocalPos();
 	void calGroupKFEM(float E, float nu);
 
