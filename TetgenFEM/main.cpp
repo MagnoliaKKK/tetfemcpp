@@ -20,7 +20,7 @@
 // Global variables to store zoom factor and transformation matrix
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 float youngs = 100000;
-float youngs1 = 1000;
+float youngs1 = 100000;
 float youngs2 = 100000;
 float youngs3 = 100000;
 float poisson = 0.49;
@@ -522,6 +522,22 @@ int main() {
 			printf("%d frames/sec\n", nbFrames);
 			nbFrames = 0;
 			lastTime += 1.0;
+		}
+
+		if (1) {
+			static int globalNumFrame = 0;
+			globalNumFrame++;
+			writeOBJ(object, "./anim/" + std::to_string(globalNumFrame) + ".obj");
+			//std::ofstream file("./anim/" + std::to_string(globalNumFrame) + ".txt", std::ios::out | std::ios::trunc);
+			/*if (!file.is_open()) {
+				std::cerr << "Failed to open file." << std::endl;
+				return 0;
+			}
+			for (int i = 0; i < objectUniqueVertices.size(); i++) {
+				file << i + 1 << " " << objectUniqueVertices[i]->x << " " << objectUniqueVertices[i]->y << " " << objectUniqueVertices[i]->z << std::endl;
+			}
+			file.close();*/
+			std::cout << "Data has been written to the file." << globalNumFrame << std::endl;
 		}
 		/*printf("%d frame number\n", frame);
 		frame++;*/
