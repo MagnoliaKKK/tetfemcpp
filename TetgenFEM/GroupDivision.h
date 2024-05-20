@@ -104,6 +104,7 @@ public:
 	Eigen::VectorXf initLocalPos;//initial position - center of mass
 	Eigen::MatrixXf FEMLHS;
 	Eigen::MatrixXf FEMLHS_Inv;
+	Eigen::MatrixXf invMulMass;
 	Eigen::VectorXf FEMRHS;
 	Eigen::VectorXf Fbind;
 	Eigen::VectorXf deltaX;
@@ -179,7 +180,7 @@ public:
 	void calPrimeVec();
 	//void updateVertexPositions();
 	void calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
-		const std::vector<Vertex*>& commonVerticesGroup2, const Eigen::VectorXf& currentPositionGroup1, const Eigen::VectorXf& currentPositionGroup2, float k);
+		const std::vector<Vertex*>& commonVerticesGroup2, const Eigen::VectorXf& currentPositionGroup1, const Eigen::VectorXf& currentPositionGroup2, float k, float maxForce);
 	void calRInvLocalPos();
 	void calGroupKFEM(float E, float nu);
 

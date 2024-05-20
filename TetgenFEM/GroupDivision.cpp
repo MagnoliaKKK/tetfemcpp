@@ -2,10 +2,10 @@
 
 
 const float timeStep = 0.01f;
-const float dampingConst = 55.0f;// 10.2f;
+const float dampingConst = 2.0f;// 10.2f;
 const float PI = 3.1415926535f;
 const float Gravity = -0.0f;
-const float bindForce = -840.0f;
+const float bindForce = -200.0f;
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -263,93 +263,90 @@ Eigen::Vector3f Group::clamp2(Eigen::Vector3f x, float y, float z) {
 	}
 }
 Eigen::Quaternionf Group::Exp2(Eigen::Vector3f a) {
-	float s = sin((a * 0.5).norm());
-	float x = s * a.x() / a.norm();
-	float y = s * a.y() / a.norm();
-	float z = s * a.z() / a.norm();
-	Eigen::Quaternionf qq = Eigen::Quaternionf(cos((a * 0.5).norm()), x, y, z);
-	return  qq;
+	float angle = a.norm();
+	float half_angle = 0.5f * angle;
+	float sine_half_angle = std::sin(half_angle);
+
+	if (angle < 1e-6) {
+		// 对于非常小的角度，使用泰勒级数展开的前几项
+		return Eigen::Quaternionf(1.0f, 0.5f * a.x(), 0.5f * a.y(), 0.5f * a.z());
+	}
+	else {
+		float cos_half_angle = std::cos(half_angle);
+		float sin_half_angle_div_angle = sine_half_angle / angle;
+		return Eigen::Quaternionf(cos_half_angle,
+			sin_half_angle_div_angle * a.x(),
+			sin_half_angle_div_angle * a.y(),
+			sin_half_angle_div_angle * a.z());
+	}
 }
 void Group::calRotationMatrix() {
 	Eigen::MatrixXf Apq = Eigen::MatrixXf::Zero(3, 3);
-	Eigen::Matrix3f tempA = Eigen::Matrix3f::Zero();
 	Eigen::Vector3f center_grid = Eigen::Vector3f::Zero();
 
+	// 计算质心
 	Eigen::Vector3f tempCenterGrid = Eigen::Vector3f::Zero();
-#pragma omp parallel num_threads(4)
+//#pragma omp parallel num_threads(4)
 	{
 		Eigen::Vector3f localCenterGrid = Eigen::Vector3f::Zero();
-#pragma omp for
+//#pragma omp for
 		for (int i = 0; i < static_cast<int>(verticesMap.size()); ++i) {
 			auto it = verticesMap.begin();
 			std::advance(it, i);
 			const std::pair<const int, Vertex*>& vertexEntry = *it;
-
 			localCenterGrid.noalias() += massDistribution(0, 3 * vertexEntry.second->localIndex) * primeVec.segment<3>(3 * vertexEntry.second->localIndex);
 		}
-#pragma omp critical
+//#pragma omp critical
 		{
 			tempCenterGrid += localCenterGrid;
 		}
 	}
 	center_grid = tempCenterGrid;
 
-
 	// 计算Apq矩阵
-	Eigen::MatrixXf tempApq = Eigen::MatrixXf::Zero(3, 3);
-#pragma omp parallel num_threads(4)
+//#pragma omp parallel num_threads(4)
 	{
 		Eigen::MatrixXf localApq = Eigen::MatrixXf::Zero(3, 3);
-#pragma omp for
+//#pragma omp for
 		for (int i = 0; i < static_cast<int>(verticesMap.size()); ++i) {
 			auto it = verticesMap.begin();
 			std::advance(it, i);
 			const std::pair<const int, Vertex*>& vertexEntry = *it;
-
-			tempA.noalias() = (primeVec.segment<3>(3 * vertexEntry.second->localIndex) - center_grid) * initLocalPos.segment<3>(3 * vertexEntry.second->localIndex).transpose();
+			Eigen::MatrixXf tempA = (primeVec.segment<3>(3 * vertexEntry.second->localIndex) - center_grid) * initLocalPos.segment<3>(3 * vertexEntry.second->localIndex).transpose();
 			localApq.noalias() += massMatrix(3 * vertexEntry.second->localIndex, 3 * vertexEntry.second->localIndex) * tempA;
 		}
-#pragma omp critical
+//#pragma omp critical
 		{
-			tempApq += localApq;
+			Apq += localApq;
 		}
 	}
-	Apq = tempApq;
 
-	// 初始化四元数和旋转矩阵
-	Eigen::Vector3f omega = Eigen::Vector3f::Identity();
-	Eigen::Quaternionf quaternion(Eigen::Quaternionf::Identity());
-	rotate_matrix = Eigen::Matrix3f::Identity();
-	Eigen::Vector3f gradR = Eigen::Vector3f::Zero();
-	Eigen::Matrix3f HesseR = Eigen::Matrix3f::Zero();
-	Eigen::Matrix3f S = Eigen::Matrix3f::Zero();
+	// 进行极分解以确保Apq为正交矩阵
+	Eigen::JacobiSVD<Eigen::MatrixXf> svd(Apq, Eigen::ComputeFullU | Eigen::ComputeFullV);
+	Eigen::MatrixXf U = svd.matrixU();
+	Eigen::MatrixXf V = svd.matrixV();
+	Eigen::MatrixXf R = U * V.transpose();
 
-	// 迭代寻找最佳旋转
-	for (unsigned int ci = 0; ci < 20; ci++) {
-		Eigen::Matrix3f R = quaternion.matrix();
-		Eigen::Matrix3f S = R.transpose() * Apq;
-		Eigen::Vector3f gradR = axlAPD(S);
-		Eigen::Matrix3f HesseR = S.trace() * Eigen::Matrix3f::Identity() - (S + S.transpose()) * 0.5;
-		Eigen::Vector3f omega = -HesseR.inverse() * gradR;
-		float w = omega.norm();
-		if (w < 1.0e-9) {
-			break;
-		}
-		omega = clamp2(omega, -PI, PI);
-		Eigen::Quaternionf temp2 = Exp2(omega);
-		quaternion = quaternion * temp2;
+	// 如果行列式为负，调整U矩阵
+	if (R.determinant() < 0) {
+		U.col(2) *= -1;
+		R = U * V.transpose();
 	}
 
-	rotate_matrix = quaternion.matrix();
+	// 最终的旋转矩阵
+	rotate_matrix = R;
 
 	// 构建旋转矩阵的3N x 3N版本
 	rotationMatrix = Eigen::MatrixXf::Zero(3 * verticesMap.size(), 3 * verticesMap.size());
-	
-	#pragma omp parallel for
+//#pragma omp parallel for
 	for (int pi = 0; pi < static_cast<int>(verticesMap.size()); pi++) {
 		rotationMatrix.block<3, 3>(3 * pi, 3 * pi) = rotate_matrix;
 	}
+
+	// 打印调试信息
+	//std::cout << "Final rotation matrix: " << rotate_matrix << std::endl;
 }
+
 //
 Eigen::MatrixXf Tetrahedron::createElementK(float E, float nu, const Eigen::Vector3f& groupCenterOfMass) {
 	// 定义节点坐标
@@ -1083,8 +1080,8 @@ void Group::calPrimeVec() {
 	// 使用整个矩阵计算velocityUpdate
 	//Eigen::VectorXf exfUpdate = timeStep * timeStep * massMatrix * gravity;
 	//Eigen::VectorXf exfUpdate = timeStep * timeStep *inverseTerm * massMatrix * gravity;
-	Eigen::VectorXf exfUpdate = timeStep * timeStep * inverseTerm * massMatrix * gravity;
-	Eigen::VectorXf velocityUpdate = inverseTerm * massMatrix * groupVelocity * timeStep;
+	Eigen::VectorXf exfUpdate = timeStep * timeStep * invMulMass * gravity;
+	Eigen::VectorXf velocityUpdate = invMulMass * groupVelocity * timeStep;
 
 	// 更新primeVec和顶点位置
 	for (auto& vertexPair : verticesVector) {
@@ -1115,6 +1112,7 @@ void Group::calLHS() {
 	// 计算逆矩阵 下面不属于LHS，顺便算
 	inverseTerm = (massMatrix + dampingMatrix * timeStep).inverse(); //顺顺便把这个算了
 	inverseTermSparse = inverseTerm.sparseView();
+	invMulMass = inverseTerm * massMatrix;
 	RHS_E = timeStep * timeStep * massDampingSparseInv * kSparse ;
 	RHS_A = RHS_E * initLocalPos;
 
@@ -1220,10 +1218,31 @@ void Object::PBDLOOP(int looptime) {
 				if (adjacentGroupIdx != -1) {
 					Group& adjacentGroup = groups[adjacentGroupIdx];
 					const auto& commonVerticesPair = currentGroup.commonVerticesInDirections[direction];
+					/*if (commonVerticesPair.first.size() >= 60)
+					{
+						currentGroup.calFbind1(commonVerticesPair.first, commonVerticesPair.second,
+							currentGroup.currentPosition, adjacentGroup.currentPosition, bindForce * commonVerticesPair.first.size(), 0);
+					}*/
+					if (commonVerticesPair.first.size() >= 50)
+					{
+						currentGroup.calFbind1(commonVerticesPair.first, commonVerticesPair.second,
+							currentGroup.currentPosition, adjacentGroup.currentPosition, bindForce * commonVerticesPair.first.size(), 100);
+					}
+					if (commonVerticesPair.first.size() >= 30 && commonVerticesPair.first.size() <= 50)
+					{
+						currentGroup.calFbind1(commonVerticesPair.first, commonVerticesPair.second,
+							currentGroup.currentPosition, adjacentGroup.currentPosition, bindForce * commonVerticesPair.first.size(), 10);
+					}
+					if (commonVerticesPair.first.size() >= 20 && commonVerticesPair.first.size() <= 30)
+					{
+						currentGroup.calFbind1(commonVerticesPair.first, commonVerticesPair.second,
+							currentGroup.currentPosition, adjacentGroup.currentPosition, bindForce * commonVerticesPair.first.size(), 100);
+					}
+					
 
 					// 使用 calFbind1 计算约束力
-					currentGroup.calFbind1(commonVerticesPair.first, commonVerticesPair.second,
-						currentGroup.currentPosition, adjacentGroup.currentPosition, bindForce);
+					/*currentGroup.calFbind1(commonVerticesPair.first, commonVerticesPair.second,
+						currentGroup.currentPosition, adjacentGroup.currentPosition, bindForce * commonVerticesPair.first.size(), 600);*/
 				}
 			}
 		}
@@ -1346,8 +1365,8 @@ void Group::calculateCurrentPositionsFEM() {
 void Group::calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
 	const std::vector<Vertex*>& commonVerticesGroup2,
 	const Eigen::VectorXf& currentPositionGroup1,
-	const Eigen::VectorXf& currentPositionGroup2,
-	float k) {
+	const Eigen::VectorXf& currentPositionGroup2, float k, float maxForce
+	) {
 	// Initialize Fbind, with a length three times the number of vertices in the group
 	//Fbind = Eigen::VectorXf::Zero(verticesMap.size() * 3);
 	Eigen::Vector3f posThisGroup;
@@ -1377,6 +1396,20 @@ void Group::calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
 		// Compute the constraint force
 		force = k * posDifference;
 		
+		//float maxForce = 1000;// *commonVerticesGroup1.size();
+		if (abs(force.x()) > maxForce)
+		{
+			force.x() = force.x() / abs(force.x()) * maxForce;
+		}
+		if (abs(force.y()) > maxForce)
+		{
+			force.y() = force.y() / abs(force.y()) * maxForce;
+		}
+		if (abs(force.z()) > maxForce)
+		{
+			force.z() = force.z() / abs(force.z()) * maxForce;
+		}
+
 		// Place the constraint force in Fbind at the appropriate position using the local index
 		Fbind.segment<3>(3 * vertexThisGroup->localIndex) += force;
 	}
@@ -1416,7 +1449,7 @@ void Group::calFbind(const Eigen::VectorXf& currentPositionThisGroup, const std:
 	}
 }
 
-double angleIncrement = 3.1415926 / 180 * 0.001; // 每次旋转 5 度
+double angleIncrement = 3.1415926 / 180 * 0.4; // 每次旋转 5 度
 double currentAngle = 0.0;              // 当前角度
 
 void Group::updatePosition() {
@@ -1441,14 +1474,19 @@ void Group::updatePosition() {
 		vertex->z = pos.z();*/
 		if (vertex->isFixed == true) {
 			// 对于固定点，将位置设置为初始位置
-			vertex->x = vertex->initx + 0.6 * sin(0.01 * frameTime);
+			/*vertex->x = vertex->initx;
+			vertex->y = vertex->inity;
+			vertex->z = vertex->initz;*/
+			vertex->x = vertex->initx;
 			vertex->y = vertex->inity;
 			vertex->z = vertex->initz;
-			//vertex->y = vertex->inity * sin(currentAngle) - vertex->initz * cos(currentAngle);
-			//vertex->z = vertex->inity * cos(currentAngle) + vertex->initz * sin(currentAngle);
+			/*vertex->y = vertex->inity* cos(currentAngle) - vertex->initz * sin(currentAngle);
+			vertex->z = vertex->inity * sin(currentAngle) + vertex->initz * cos(currentAngle);*/
+
+
 
 			//vertex->inity * sin(currentAngle) - vertex->initz * cos(currentAngle)
-			//vertex->x = vertex->initx + 0.6 * sin(0.01 * frameTime);
+			//vertex->x = vertex->initx + 0.6 * sin(0.5 * frameTime);
 		}
 		else {
 			// 使用旋转矩阵块乘以primeVec中的位置
@@ -1590,26 +1628,30 @@ void Object::storeAllGroups() {
 } 
 
 void Object::updateAdjacentGroupIndices(int numX, int numY, int numZ) {
-	for (int z = 0; z < numZ; ++z) {
-		for (int y = 0; y < numY; ++y) {
-			for (int x = 0; x < numX; ++x) {
-				int groupIdx = z * numX * numY + y * numX + x;
-				Group& currentGroup = groups[groupIdx];
+	if (numY == -1) { //if not using XYZ divide group
 
-				// +x方向
-				if (x < numX - 1) currentGroup.adjacentGroupIDs[0] = groupIdx + 1;
-				// -x方向
-				if (x > 0) currentGroup.adjacentGroupIDs[1] = groupIdx - 1;
-				// +y方向
-				if (y < numY - 1) currentGroup.adjacentGroupIDs[2] = groupIdx + numX;
-				// -y方向
-				if (y > 0) currentGroup.adjacentGroupIDs[3] = groupIdx - numX;
-				// +z方向
-				if (z < numZ - 1) currentGroup.adjacentGroupIDs[4] = groupIdx + numX * numY;
-				// -z方向
-				if (z > 0) currentGroup.adjacentGroupIDs[5] = groupIdx - numX * numY;
+	}
+	else
+		for (int z = 0; z < numZ; ++z) {
+			for (int y = 0; y < numY; ++y) {
+				for (int x = 0; x < numX; ++x) {
+					int groupIdx = z * numX * numY + y * numX + x;
+					Group& currentGroup = groups[groupIdx];
+
+					// +x方向
+					if (x < numX - 1) currentGroup.adjacentGroupIDs[0] = groupIdx + 1;
+					// -x方向
+					if (x > 0) currentGroup.adjacentGroupIDs[1] = groupIdx - 1;
+					// +y方向
+					if (y < numY - 1) currentGroup.adjacentGroupIDs[2] = groupIdx + numX;
+					// -y方向
+					if (y > 0) currentGroup.adjacentGroupIDs[3] = groupIdx - numX;
+					// +z方向
+					if (z < numZ - 1) currentGroup.adjacentGroupIDs[4] = groupIdx + numX * numY;
+					// -z方向
+					if (z > 0) currentGroup.adjacentGroupIDs[5] = groupIdx - numX * numY;
+				}
 			}
-		}
 	}
 }
 

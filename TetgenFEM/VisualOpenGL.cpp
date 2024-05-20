@@ -74,7 +74,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
 	float bottom = -zoomFactor;
 	float top = zoomFactor;
 	float nearVal = -1.0f;
-	float farVal = 1.0f;
+	float farVal = 10.0f;
 
 	Eigen::Matrix4f projectionMatrix;
 	projectionMatrix <<
