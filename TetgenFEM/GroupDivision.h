@@ -38,7 +38,7 @@ public:
 		isFixed(false) // 默认不是固定点
 	{}
 	void setFixedIfBelowThreshold() {
-		if (initx < -0.619 || initx > 2.50) {//-0.619
+		if (initx < -0.64/*inity > 0.3*/ /*|| initx > -0.15*//*|| -0.38initx > 0.62*/) {//-0.619 0.38
 			isFixed = true;
 		}
 
@@ -72,6 +72,7 @@ public:
 		vertices[3] = v4;
 	}
 	Eigen::MatrixXf createElementK(float E, float nu, const Eigen::Vector3f& groupCenterOfMass);
+	Eigen::MatrixXf createElementKAni(float E1, float E2, float E3, float nu, const Eigen::Vector3f& groupCenterOfMass);
 	float calMassTetra(float den);
 	float calVolumeTetra();
 	Eigen::MatrixXf createElementKFEM(float E, float nu);
@@ -104,7 +105,6 @@ public:
 	Eigen::VectorXf initLocalPos;//initial position - center of mass
 	Eigen::MatrixXf FEMLHS;
 	Eigen::MatrixXf FEMLHS_Inv;
-	Eigen::MatrixXf invMulMass;
 	Eigen::VectorXf FEMRHS;
 	Eigen::VectorXf Fbind;
 	Eigen::VectorXf deltaX;
@@ -120,6 +120,7 @@ public:
 	Eigen::SparseMatrix<float> inverseTermSparse;
 	Eigen::VectorXf currentPosition;//计算bindf用的位置信息，不用做位置更新
 	Eigen::VectorXf currentPositionFEM;
+	Eigen::VectorXf distancesX; //X方向的组间距离
 	std::array<int, 6> adjacentGroupIDs;
 	int groupIndex;//每组的编号
 	std::vector<std::pair<std::vector<Vertex*>, std::vector<Vertex*>>> commonVerticesInDirections;//各个相邻组的共同点
@@ -142,7 +143,7 @@ public:
 	float Kinematics;
 
 
-	
+
 	void addTetrahedron(Tetrahedron* tet);
 	std::vector<Vertex*> getUniqueVertices();
 	void calCenterofMass();
@@ -151,6 +152,7 @@ public:
 	void setVertexMassesFromMassMatrix();
 	void calMassDistributionMatrix();
 	void calGroupK(float E, float nu);
+	void calGroupKAni(float E1, float E2, float E3, float nu);
 	void calPrimeVec(int w);
 	void calPrimeVec1(int w);
 	void calPrimeVecT(int w);
@@ -180,10 +182,7 @@ public:
 	void calPrimeVec();
 	//void updateVertexPositions();
 	void calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
-		const std::vector<Vertex*>& commonVerticesGroup2,
-		const Eigen::VectorXf& currentPositionGroup1,
-		const Eigen::VectorXf& currentPositionGroup2,
-		float k);
+		const std::vector<Vertex*>& commonVerticesGroup2, const Eigen::VectorXf& currentPositionGroup1, const Eigen::VectorXf& currentPositionGroup2, float k);
 	void calRInvLocalPos();
 	void calGroupKFEM(float E, float nu);
 
@@ -194,7 +193,7 @@ public:
 		verticesMap(),
 		adjacentGroupIDs({ -1, -1, -1, -1, -1, -1 }),
 		commonVerticesInDirections(6)
-		
+
 	{
 		// Additional initialization logic, if needed
 	}
@@ -205,7 +204,7 @@ class Object {
 public:
 	std::vector<Group> groups; // change this
 	//std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints;
-	
+
 	int groupNum, groupNumX, groupNumY, groupNumZ;
 	std::vector<Group> allGroup;
 	float bodyVolume;

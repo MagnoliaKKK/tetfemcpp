@@ -2,10 +2,10 @@
 
 
 const float timeStep = 0.01f;
-const float dampingConst = 2.0f;// 10.2f;
+const float dampingConst = 80.0f;// 10.2f;
 const float PI = 3.1415926535f;
-const float Gravity = -0.0f;
-const float bindForce = -2200.0f;
+const float Gravity = -200.0f;
+const float bindForce = -10.0f;
 const float bindVelocity = -0.0f;
 
 void Object::assignLocalIndicesToAllGroups() { // local index generation
@@ -75,7 +75,7 @@ void Object::updateIndices() {
 
 void Object::generateUniqueVertices() { //执行这个函数以后，verticesMap就会装满这个组的vertices， 不重复
 	//std::vector<Vertex*> uniqueVertices;
-	
+
 	for (Group& group : groups) {
 		group.verticesMap.clear(); // 清空现有的映射
 
@@ -263,93 +263,96 @@ Eigen::Vector3f Group::clamp2(Eigen::Vector3f x, float y, float z) {
 	}
 }
 Eigen::Quaternionf Group::Exp2(Eigen::Vector3f a) {
-	float angle = a.norm();
-	float half_angle = 0.5f * angle;
-	float sine_half_angle = std::sin(half_angle);
-
-	if (angle < 1e-6) {
-		// 对于非常小的角度，使用泰勒级数展开的前几项
-		return Eigen::Quaternionf(1.0f, 0.5f * a.x(), 0.5f * a.y(), 0.5f * a.z());
-	}
-	else {
-		float cos_half_angle = std::cos(half_angle);
-		float sin_half_angle_div_angle = sine_half_angle / angle;
-		return Eigen::Quaternionf(cos_half_angle,
-			sin_half_angle_div_angle * a.x(),
-			sin_half_angle_div_angle * a.y(),
-			sin_half_angle_div_angle * a.z());
-	}
+	float s = sin((a * 0.5).norm());
+	float x = s * a.x() / a.norm();
+	float y = s * a.y() / a.norm();
+	float z = s * a.z() / a.norm();
+	Eigen::Quaternionf qq = Eigen::Quaternionf(cos((a * 0.5).norm()), x, y, z);
+	return  qq;
 }
 void Group::calRotationMatrix() {
 	Eigen::MatrixXf Apq = Eigen::MatrixXf::Zero(3, 3);
+	Eigen::Matrix3f tempA = Eigen::Matrix3f::Zero();
 	Eigen::Vector3f center_grid = Eigen::Vector3f::Zero();
 
-	// 计算质心
 	Eigen::Vector3f tempCenterGrid = Eigen::Vector3f::Zero();
-//#pragma omp parallel num_threads(4)
+#pragma omp parallel num_threads(4)
 	{
 		Eigen::Vector3f localCenterGrid = Eigen::Vector3f::Zero();
-//#pragma omp for
+#pragma omp for
 		for (int i = 0; i < static_cast<int>(verticesMap.size()); ++i) {
 			auto it = verticesMap.begin();
 			std::advance(it, i);
 			const std::pair<const int, Vertex*>& vertexEntry = *it;
+
 			localCenterGrid.noalias() += massDistribution(0, 3 * vertexEntry.second->localIndex) * primeVec.segment<3>(3 * vertexEntry.second->localIndex);
 		}
-//#pragma omp critical
+#pragma omp critical
 		{
 			tempCenterGrid += localCenterGrid;
 		}
 	}
 	center_grid = tempCenterGrid;
 
+
 	// 计算Apq矩阵
-//#pragma omp parallel num_threads(4)
+	Eigen::MatrixXf tempApq = Eigen::MatrixXf::Zero(3, 3);
+#pragma omp parallel num_threads(4)
 	{
 		Eigen::MatrixXf localApq = Eigen::MatrixXf::Zero(3, 3);
-//#pragma omp for
+#pragma omp for
 		for (int i = 0; i < static_cast<int>(verticesMap.size()); ++i) {
 			auto it = verticesMap.begin();
 			std::advance(it, i);
 			const std::pair<const int, Vertex*>& vertexEntry = *it;
-			Eigen::MatrixXf tempA = (primeVec.segment<3>(3 * vertexEntry.second->localIndex) - center_grid) * initLocalPos.segment<3>(3 * vertexEntry.second->localIndex).transpose();
+
+			tempA.noalias() = (primeVec.segment<3>(3 * vertexEntry.second->localIndex) - center_grid) * initLocalPos.segment<3>(3 * vertexEntry.second->localIndex).transpose();
 			localApq.noalias() += massMatrix(3 * vertexEntry.second->localIndex, 3 * vertexEntry.second->localIndex) * tempA;
 		}
-//#pragma omp critical
+#pragma omp critical
 		{
-			Apq += localApq;
+			tempApq += localApq;
 		}
 	}
+	Apq = tempApq;
 
-	// 进行极分解以确保Apq为正交矩阵
-	Eigen::JacobiSVD<Eigen::MatrixXf> svd(Apq, Eigen::ComputeFullU | Eigen::ComputeFullV);
-	Eigen::MatrixXf U = svd.matrixU();
-	Eigen::MatrixXf V = svd.matrixV();
-	Eigen::MatrixXf R = U * V.transpose();
+	// 初始化四元数和旋转矩阵
+	Eigen::Vector3f omega = Eigen::Vector3f::Identity();
+	Eigen::Quaternionf quaternion(Eigen::Quaternionf::Identity());
+	rotate_matrix = Eigen::Matrix3f::Identity();
+	Eigen::Vector3f gradR = Eigen::Vector3f::Zero();
+	Eigen::Matrix3f HesseR = Eigen::Matrix3f::Zero();
+	Eigen::Matrix3f S = Eigen::Matrix3f::Zero();
 
-	// 如果行列式为负，调整U矩阵
-	if (R.determinant() < 0) {
-		U.col(2) *= -1;
-		R = U * V.transpose();
+	// 迭代寻找最佳旋转
+	for (unsigned int ci = 0; ci < 20; ci++) {
+		Eigen::Matrix3f R = quaternion.matrix();
+		Eigen::Matrix3f S = R.transpose() * Apq;
+		Eigen::Vector3f gradR = axlAPD(S);
+		Eigen::Matrix3f HesseR = S.trace() * Eigen::Matrix3f::Identity() - (S + S.transpose()) * 0.5;
+		Eigen::Vector3f omega = -HesseR.inverse() * gradR;
+		float w = omega.norm();
+		if (w < 1.0e-9) {
+			break;
+		}
+		omega = clamp2(omega, -PI, PI);
+		Eigen::Quaternionf temp2 = Exp2(omega);
+		quaternion = quaternion * temp2;
 	}
 
-	// 最终的旋转矩阵
-	rotate_matrix = R;
+	rotate_matrix = quaternion.matrix();
 
 	// 构建旋转矩阵的3N x 3N版本
 	rotationMatrix = Eigen::MatrixXf::Zero(3 * verticesMap.size(), 3 * verticesMap.size());
-//#pragma omp parallel for
+
+#pragma omp parallel for
 	for (int pi = 0; pi < static_cast<int>(verticesMap.size()); pi++) {
 		rotationMatrix.block<3, 3>(3 * pi, 3 * pi) = rotate_matrix;
 	}
-
-	// 打印调试信息
-	//std::cout << "Final rotation matrix: " << rotate_matrix << std::endl;
 }
-
 //
-Eigen::MatrixXf Tetrahedron::createElementK(float E, float nu, const Eigen::Vector3f& groupCenterOfMass) {
-	// 定义节点坐标
+Eigen::MatrixXf Tetrahedron::createElementKAni(float E1, float E2, float E3, float nu, const Eigen::Vector3f& groupCenterOfMass)
+{
 	float x1 = vertices[0]->x - groupCenterOfMass.x();
 	float y1 = vertices[0]->y - groupCenterOfMass.y();
 	float z1 = vertices[0]->z - groupCenterOfMass.z();
@@ -363,17 +366,17 @@ Eigen::MatrixXf Tetrahedron::createElementK(float E, float nu, const Eigen::Vect
 	float y4 = vertices[3]->y - groupCenterOfMass.y();
 	float z4 = vertices[3]->z - groupCenterOfMass.z();
 
-		// 构建体积计算矩阵 A
+	// 构建体积计算矩阵 A
 	Eigen::Matrix4d A;
 	A << x1, y1, z1, 1,
-		 x2, y2, z2, 1,
-		 x3, y3, z3, 1,
-		 x4, y4, z4, 1;
+		x2, y2, z2, 1,
+		x3, y3, z3, 1,
+		x4, y4, z4, 1;
 
-		// 计算四面体的体积
+	// 计算四面体的体积
 	float V = std::abs(A.determinant() / 6);
 
-		// 定义 mbeta, mgamma, mdelta 矩阵
+	// 定义 mbeta, mgamma, mdelta 矩阵
 	Eigen::Matrix3f mbeta1, mbeta2, mbeta3, mbeta4, mgamma1, mgamma2, mgamma3, mgamma4, mdelta1, mdelta2, mdelta3, mdelta4;
 
 
@@ -392,7 +395,7 @@ Eigen::MatrixXf Tetrahedron::createElementK(float E, float nu, const Eigen::Vect
 	mdelta3 << 1, x1, y1, 1, x2, y2, 1, x4, y4;
 	mdelta4 << 1, x1, y1, 1, x2, y2, 1, x3, y3;
 
-		// 计算 beta, gamma 和 delta 值
+	// 计算 beta, gamma 和 delta 值
 	float beta1 = -mbeta1.determinant();
 	float beta2 = mbeta2.determinant();
 	float beta3 = -mbeta3.determinant();
@@ -410,7 +413,7 @@ Eigen::MatrixXf Tetrahedron::createElementK(float E, float nu, const Eigen::Vect
 
 	// 定义 B 矩阵
 	Eigen::MatrixXf B(6, 12);
-	
+
 	B << beta1, 0, 0, beta2, 0, 0, beta3, 0, 0, beta4, 0, 0,
 		0, gamma1, 0, 0, gamma2, 0, 0, gamma3, 0, 0, gamma4, 0,
 		0, 0, delta1, 0, 0, delta2, 0, 0, delta3, 0, 0, delta4,
@@ -420,10 +423,112 @@ Eigen::MatrixXf Tetrahedron::createElementK(float E, float nu, const Eigen::Vect
 
 	B /= (6 * V);
 
-		// 定义材料属性矩阵 D
-	    // 泊松比
+	// 定义材料属性矩阵 D
+	// 泊松比
 	Eigen::MatrixXf D = Eigen::MatrixXf::Zero(6, 6);
-	
+
+	Eigen::Matrix3f A1;
+	A1 << E1 * (1 - nu), std::sqrt(E1 * E2)* nu, std::sqrt(E1 * E3)* nu,
+		std::sqrt(E1 * E2)* nu, E2* (1 - nu), std::sqrt(E2 * E3)* nu,
+		std::sqrt(E1 * E3)* nu, std::sqrt(E2 * E3)* nu, E3* (1 - nu);
+
+	A1 /= (nu + 1) * (1 - 2 * nu);
+
+	// Calculate the orthotropic matrix 'B' based on the uploaded image
+	Eigen::Matrix3f B1;
+	B1 << std::sqrt(E1 * E2) / 2, 0, 0,
+		0, std::sqrt(E2 * E3) / 2, 0,
+		0, 0, std::sqrt(E1 * E3) / 2;
+
+	B1 /= (1 + nu);
+
+	// Now construct the complete compliance matrix
+	//Eigen::MatrixXf D = Eigen::MatrixXf::Zero(6, 6);
+	D.topLeftCorner<3, 3>() = A1;
+	D.bottomRightCorner<3, 3>() = B1;
+
+	// 计算刚度矩阵 k
+	Eigen::MatrixXf k = V * (B.transpose() * D * B);
+
+	elementK = k;
+	return k;
+}
+Eigen::MatrixXf Tetrahedron::createElementK(float E, float nu, const Eigen::Vector3f& groupCenterOfMass) {
+	// 定义节点坐标
+	float x1 = vertices[0]->x - groupCenterOfMass.x();
+	float y1 = vertices[0]->y - groupCenterOfMass.y();
+	float z1 = vertices[0]->z - groupCenterOfMass.z();
+	float x2 = vertices[1]->x - groupCenterOfMass.x();
+	float y2 = vertices[1]->y - groupCenterOfMass.y();
+	float z2 = vertices[1]->z - groupCenterOfMass.z();
+	float x3 = vertices[2]->x - groupCenterOfMass.x();
+	float y3 = vertices[2]->y - groupCenterOfMass.y();
+	float z3 = vertices[2]->z - groupCenterOfMass.z();
+	float x4 = vertices[3]->x - groupCenterOfMass.x();
+	float y4 = vertices[3]->y - groupCenterOfMass.y();
+	float z4 = vertices[3]->z - groupCenterOfMass.z();
+
+	// 构建体积计算矩阵 A
+	Eigen::Matrix4d A;
+	A << x1, y1, z1, 1,
+		x2, y2, z2, 1,
+		x3, y3, z3, 1,
+		x4, y4, z4, 1;
+
+	// 计算四面体的体积
+	float V = std::abs(A.determinant() / 6);
+
+	// 定义 mbeta, mgamma, mdelta 矩阵
+	Eigen::Matrix3f mbeta1, mbeta2, mbeta3, mbeta4, mgamma1, mgamma2, mgamma3, mgamma4, mdelta1, mdelta2, mdelta3, mdelta4;
+
+
+	mbeta1 << 1, y2, z2, 1, y3, z3, 1, y4, z4;
+	mbeta2 << 1, y1, z1, 1, y3, z3, 1, y4, z4;
+	mbeta3 << 1, y1, z1, 1, y2, z2, 1, y4, z4;
+	mbeta4 << 1, y1, z1, 1, y2, z2, 1, y3, z3;
+
+	mgamma1 << 1, x2, z2, 1, x3, z3, 1, x4, z4;
+	mgamma2 << 1, x1, z1, 1, x3, z3, 1, x4, z4;
+	mgamma3 << 1, x1, z1, 1, x2, z2, 1, x4, z4;
+	mgamma4 << 1, x1, z1, 1, x2, z2, 1, x3, z3;
+
+	mdelta1 << 1, x2, y2, 1, x3, y3, 1, x4, y4;
+	mdelta2 << 1, x1, y1, 1, x3, y3, 1, x4, y4;
+	mdelta3 << 1, x1, y1, 1, x2, y2, 1, x4, y4;
+	mdelta4 << 1, x1, y1, 1, x2, y2, 1, x3, y3;
+
+	// 计算 beta, gamma 和 delta 值
+	float beta1 = -mbeta1.determinant();
+	float beta2 = mbeta2.determinant();
+	float beta3 = -mbeta3.determinant();
+	float beta4 = mbeta4.determinant();
+
+	float gamma1 = mgamma1.determinant();
+	float gamma2 = -mgamma2.determinant();
+	float gamma3 = mgamma3.determinant();
+	float gamma4 = -mgamma4.determinant();
+
+	float delta1 = -mdelta1.determinant();
+	float delta2 = mdelta2.determinant();
+	float delta3 = -mdelta3.determinant();
+	float delta4 = mdelta4.determinant();
+
+	// 定义 B 矩阵
+	Eigen::MatrixXf B(6, 12);
+
+	B << beta1, 0, 0, beta2, 0, 0, beta3, 0, 0, beta4, 0, 0,
+		0, gamma1, 0, 0, gamma2, 0, 0, gamma3, 0, 0, gamma4, 0,
+		0, 0, delta1, 0, 0, delta2, 0, 0, delta3, 0, 0, delta4,
+		gamma1, beta1, 0, gamma2, beta2, 0, gamma3, beta3, 0, gamma4, beta4, 0,
+		0, delta1, gamma1, 0, delta2, gamma2, 0, delta3, gamma3, 0, delta4, gamma4,
+		delta1, 0, beta1, delta2, 0, beta2, delta3, 0, beta3, delta4, 0, beta4;
+
+	B /= (6 * V);
+
+	// 定义材料属性矩阵 D
+	// 泊松比
+	Eigen::MatrixXf D = Eigen::MatrixXf::Zero(6, 6);
+
 	D << 1 - nu, nu, nu, 0, 0, 0,
 		nu, 1 - nu, nu, 0, 0, 0,
 		nu, nu, 1 - nu, 0, 0, 0,
@@ -434,11 +539,12 @@ Eigen::MatrixXf Tetrahedron::createElementK(float E, float nu, const Eigen::Vect
 	D *= (E / ((1 + nu) * (1 - 2 * nu)));
 
 	// 计算刚度矩阵 k
-	Eigen::MatrixXf k=V * (B.transpose() * D * B);
-	
+	Eigen::MatrixXf k = V * (B.transpose() * D * B);
+
 	elementK = k;
 	return k;
 }
+
 Eigen::MatrixXf Tetrahedron::createElementKFEM(float E, float nu) {
 	// 定义节点坐标
 	float x1 = vertices[0]->x;
@@ -555,7 +661,35 @@ void Group::calGroupK(float E, float nu) {
 			}
 		}
 	}
-	
+
+	kSparse = groupK.sparseView();
+}
+void Group::calGroupKAni(float E1, float E2, float E3, float nu) {
+	// Initialize groupK to the right size. Assuming 3 degrees of freedom per vertex
+	int dof = verticesMap.size() * 3;
+	groupK.resize(dof, dof);
+	groupK.setZero();
+
+	// Iterate over each tetrahedron to assemble the global stiffness matrix
+	for (auto& tetra : tetrahedra) {
+		// Get the local stiffness matrix for the current tetrahedron
+		Eigen::MatrixXf localK = tetra->createElementKAni(E1, E2, E3, nu, initCOM);
+
+		// Determine where to add the local stiffness matrix in the global stiffness matrix
+		for (int i = 0; i < 4; ++i) { // Each tetrahedron has 4 vertices
+			Vertex* vertex = tetra->vertices[i];
+			int localIndex = vertex->localIndex * 3; // Use local index
+
+			for (int j = 0; j < 4; ++j) {
+				Vertex* otherVertex = tetra->vertices[j];
+				int otherLocalIndex = otherVertex->localIndex * 3;
+
+				// Add the 3x3 submatrix of localK to the correct place in groupK
+				groupK.block<3, 3>(localIndex, otherLocalIndex) += localK.block<3, 3>(i * 3, j * 3);
+			}
+		}
+	}
+
 	kSparse = groupK.sparseView();
 }
 void Group::calGroupKFEM(float E, float nu) {
@@ -893,7 +1027,7 @@ void Group::calPrimeVecT(int w) {
 	Eigen::VectorXf twistForce = Eigen::VectorXf::Zero(3 * verticesVector.size());
 
 	// 特定顶点局部索引数组
-	std::vector<int> indices = {22, 17, 9, 15 };
+	std::vector<int> indices = { 22, 17, 9, 15 };
 	std::vector<int> indices1 = { 24, 18, 5, 17 };
 	if (this->groupIndex == 0) {
 		// 先计算平均位置
@@ -1013,7 +1147,7 @@ void Group::calPrimeVec(int w) {
 	// 确保groupVelocity已经初始化且设置为正确的尺寸
 	//groupVelocity = Eigen::VectorXf::Zero(3 * verticesMap.size());
 	primeVec = Eigen::VectorXf::Zero(3 * verticesVector.size());
-	
+
 
 	gravity = Eigen::VectorXf::Zero(3 * verticesVector.size());
 
@@ -1038,7 +1172,7 @@ void Group::calPrimeVec(int w) {
 			gravity(i) = Gravity; // y方向上设置重力 左
 		}
 	}
-	
+
 
 	// 更新groupVelocity
 	//groupVelocityFEM += gravity * timeStep;
@@ -1063,25 +1197,64 @@ void Group::calPrimeVec(int w) {
 }
 void Group::calPrimeVec() {
 	primeVec = Eigen::VectorXf::Zero(3 * verticesVector.size());
-
+	/*float sumX = 0.0f;
+	for (const auto& vertexPair : verticesVector) {
+		Vertex* vertex = vertexPair;
+		sumX += vertex->x;
+	}
+	float meanX = sumX / verticesVector.size();*/
 	if (!gravityApplied) {
-		
+
 
 		// 初始化gravity向量，只在y方向施加重力
-		for (int i = 1; i < 3 * verticesVector.size(); i += 3) {
-			gravity(i) = Gravity; // y方向上设置重力
+		for (int i = 0; i < 3 * verticesVector.size(); i += 3) {
+			gravity(i) = -0; // y方向上设置重力
+			//int indexX = 3 * vertex->localIndex;
+
 		}
 
 		// 仅在初始时刻更新groupVelocity
-		
+
 		gravityApplied = true; // 标记重力已被应用，防止未来的更新
+	}
+
+	float maxY = std::numeric_limits<float>::lowest();
+	float minY = std::numeric_limits<float>::max();
+	std::vector<int> maxYVertices;
+	std::vector<int> minYVertices;
+
+	for (const auto& vertexPair : verticesVector) {
+		Vertex* vertex = vertexPair;
+		if (vertex->y > maxY) {
+			maxY = vertex->y;
+			maxYVertices.clear();
+			maxYVertices.push_back(vertex->localIndex);
+		}
+		else if (vertex->y == maxY) {
+			maxYVertices.push_back(vertex->localIndex);
+		}
+
+		if (vertex->y < minY) {
+			minY = vertex->y;
+			minYVertices.clear();
+			minYVertices.push_back(vertex->localIndex);
+		}
+		else if (vertex->y == minY) {
+			minYVertices.push_back(vertex->localIndex);
+		}
+	}
+	for (int localPi : maxYVertices) {
+		gravity(3 * localPi + 1) = Gravity;
+	}
+	for (int localPi : minYVertices) {
+		gravity(3 * localPi + 1) = -Gravity;
 	}
 	//groupVelocity += gravity * timeStep;
 	// 使用整个矩阵计算velocityUpdate
 	//Eigen::VectorXf exfUpdate = timeStep * timeStep * massMatrix * gravity;
 	//Eigen::VectorXf exfUpdate = timeStep * timeStep *inverseTerm * massMatrix * gravity;
-	Eigen::VectorXf exfUpdate = timeStep * timeStep * invMulMass * gravity;
-	Eigen::VectorXf velocityUpdate = invMulMass * groupVelocity * timeStep;
+	Eigen::VectorXf exfUpdate = timeStep * timeStep * inverseTerm * massMatrix * gravity;
+	Eigen::VectorXf velocityUpdate = inverseTerm * massMatrix * groupVelocity * timeStep;
 
 	// 更新primeVec和顶点位置
 	for (auto& vertexPair : verticesVector) {
@@ -1112,8 +1285,7 @@ void Group::calLHS() {
 	// 计算逆矩阵 下面不属于LHS，顺便算
 	inverseTerm = (massMatrix + dampingMatrix * timeStep).inverse(); //顺顺便把这个算了
 	inverseTermSparse = inverseTerm.sparseView();
-	invMulMass = inverseTerm * massMatrix;
-	RHS_E = timeStep * timeStep * massDampingSparseInv * kSparse ;
+	RHS_E = timeStep * timeStep * massDampingSparseInv * kSparse;
 	RHS_A = RHS_E * initLocalPos;
 
 	FEMLHS = LHS_I + LHS_A - LHS_B;
@@ -1128,19 +1300,19 @@ void Group::calLHSFEM() {
 	LHSFEM = (massMatrix.sparseView() + timeStep * dampingMatrix.sparseView() + timeStep * timeStep * kSparseFEM);
 }
 void Group::calRHS() {
-	
+
 	//Fbind = Eigen::VectorXf::Zero(3 * verticesMap.size());
 	//A = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * initLocalPos;
 	//B = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * rotationMatrix.transpose() * primeVec;
 	//C = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * rotationMatrix.transpose() * massDistribution * primeVec;
 	//D = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * rotationMatrix.inverse() * Fbind;
 	//rotationTransSparse = rotationMatrix.transpose().sparseView();
-	
-	
-	
-	
+
+
+
+
 	RHS_D = RHS_G * Fbind;
-	FEMRHS = RHS_AsubBplusC + RHS_D; 
+	FEMRHS = RHS_AsubBplusC + RHS_D;
 
 }
 void Group::calRHSFEM()
@@ -1165,12 +1337,12 @@ void Group::calRInvLocalPos() {
 }
 
 void Object::PBDLOOP(int looptime) {
-// 1. 初始化：将每个组的 Fbind 置零
-	
-     //#pragma omp parallel for
+	// 1. 初始化：将每个组的 Fbind 置零
+
+		 //#pragma omp parallel for
 	float reference = 0.0f; // float类型的参考值
 	float epsilon = std::numeric_limits<float>::epsilon(); // float类型的epsilon
-    #pragma omp parallel for
+#pragma omp parallel for
 	for (int i = 0; i < groupNum; ++i) {
 		auto& g = groups[i];
 		g.Fbind = Eigen::VectorXf::Zero(3 * g.verticesMap.size()); // 假设 Group 类有一个方法来清除 Fbind
@@ -1178,7 +1350,7 @@ void Object::PBDLOOP(int looptime) {
 
 		g.RHS_F = g.RHS_E * g.rotationTransSparse;//RHS的部分
 		g.RHS_B = g.RHS_F * g.primeVec; //46ms
-		
+
 		//g.RHS_F_MassD = g.RHS_F * g.massDistributionSparse;
 
 		//auto fff = g.RHS_F.toDense();
@@ -1198,7 +1370,7 @@ void Object::PBDLOOP(int looptime) {
 	for (int iter = 0; iter < looptime; ++iter) {
 		// 每组计算 RHS
 
-		#pragma omp parallel for //500fps to 300, -optimization
+#pragma omp parallel for //500fps to 300, -optimization
 		for (int i = 0; i < groupNum; ++i) {
 			auto& g = groups[i];
 			g.calRHS();
@@ -1223,7 +1395,7 @@ void Object::PBDLOOP(int looptime) {
 					currentGroup.calFbind1(commonVerticesPair.first, commonVerticesPair.second,
 						currentGroup.currentPosition, adjacentGroup.currentPosition, bindForce);
 					if (direction == 0 || direction == 1) {
-						//currentGroup.distancesX = Eigen::VectorXf::Zero(commonVerticesPair.first.size() * 3);
+						currentGroup.distancesX = Eigen::VectorXf::Zero(commonVerticesPair.first.size() * 3);
 
 						for (size_t i = 0; i < commonVerticesPair.first.size(); ++i) {
 							Vertex* vertexThisGroup = commonVerticesPair.first[i];
@@ -1234,10 +1406,10 @@ void Object::PBDLOOP(int looptime) {
 							Eigen::Vector3f posOtherGroup = adjacentGroup.currentPosition.segment<3>(3 * vertexOtherGroup->localIndex);
 
 							// 计算两组间的绝对位置差异并存储
-							//currentGroup.distancesX.segment<3>(3 * i) = (posThisGroup - posOtherGroup);
+							currentGroup.distancesX.segment<3>(3 * i) = (posThisGroup - posOtherGroup);
 						}
 
-						// 此处可添加额外的逻辑使用 distances 向量
+						// 此处可添加额外的逻辑使用 `distances` 向量
 					}
 				}
 
@@ -1246,7 +1418,7 @@ void Object::PBDLOOP(int looptime) {
 	}
 	//std::cout << "Bind is" << std::endl << groups[0].Fbind(58) << std::endl;
 //#pragma omp parallel for
-	
+
 	for (int i = 0; i < groupNum; ++i) {
 		auto& g = groups[i];
 		g.updateVelocity();
@@ -1279,7 +1451,7 @@ void Object::PBDLOOP(int looptime) {
 
 
 void Group::calDeltaX() {
-	
+
 	// 解线性方程Ax = b
 	deltaX = FEMLHS_Inv * FEMRHS;
 	//deltaX = FEMLHS.colPivHouseholderQr().solve(FEMRHS);
@@ -1446,18 +1618,10 @@ void Group::calFbind(const Eigen::VectorXf& currentPositionThisGroup, const std:
 	}
 }
 
-double angleIncrement = 3.1415926 / 180 * 0.05; // 每次旋转 5 度
-double currentAngle = 0.0;              // 当前角度
 
 void Group::updatePosition() {
 	static float frameTime = 0;
 	frameTime += timeStep;
-	currentAngle += angleIncrement;
-	//if (currentAngle >= 2 * 3.1415926) {
-	//	currentAngle -= 2 * 3.1415926; // 保持角度在 0 到 2π 之间
-	//}
-
-
 	Eigen::Vector3f pos = Eigen::Vector3f::Zero();
 	// 遍历所有顶点
 	for (auto& vertexPair : verticesMap) {
@@ -1469,32 +1633,21 @@ void Group::updatePosition() {
 		/*vertex->x = pos.x();
 		vertex->y = pos.y();
 		vertex->z = pos.z();*/
-		if (vertex->isFixed == true ) {
+		if (vertex->isFixed == true) {
 			// 对于固定点，将位置设置为初始位置
-			//vertex->x = vertex->initx;
+			//vertex->x = vertex->x = vertex->initx + 0.3 * sin(0.02 * frameTime);
+			//vertex->y = vertex->y = vertex->inity + 0.4 * cos(0.02 * frameTime);
+			vertex->x = vertex->initx;
 			vertex->y = vertex->inity;
 			vertex->z = vertex->initz;
-			vertex->x = vertex->initx;
-			//vertex->y = vertex->inity;
-			//vertex->z = vertex->initz;
-			if (vertex->x < 0) {
-				vertex->y = vertex->inity * cos(currentAngle) - vertex->initz * sin(currentAngle);
-				vertex->z = vertex->inity * sin(currentAngle) + vertex->initz * cos(currentAngle);
-			}
-			
-
-
-
-			//vertex->inity * sin(currentAngle) - vertex->initz * cos(currentAngle)
-			//vertex->y = vertex->inity + 0.6 * sin(0.5 * frameTime);
 		}
 		else {
 			// 使用旋转矩阵块乘以primeVec中的位置
+
+
 			vertex->x = pos.x();
 			vertex->y = pos.y();
 			vertex->z = pos.z();
-
-			
 		}
 
 		/* 更新顶点的位置
@@ -1538,9 +1691,9 @@ void Group::updatePositionFEM() {
 void Group::updateVelocity() {
 	Eigen::Vector3f previousPos = Eigen::Vector3f::Zero();
 	Eigen::Vector3f currentPos = Eigen::Vector3f::Zero();
-	Eigen::Vector3f velocity =  Eigen::Vector3f::Zero();
+	Eigen::Vector3f velocity = Eigen::Vector3f::Zero();
 	Kinematics = 0.0;
-	
+
 	// 遍历所有顶点，更新速度并保存当前位置
 	for (auto& vertexPair : verticesMap) {
 		Vertex* vertex = vertexPair.second;
@@ -1563,7 +1716,7 @@ void Group::updateVelocity() {
 		/*std::cout << "\r";
 		std::cout << groupVelocity << std::endl;*/
 		// 获取当前位置
-		
+
 		// 更新 vertex 的速度
 		// 例如：vertex->velocity = velocity;
 
@@ -1625,33 +1778,29 @@ void Object::storeAllGroups() {
 		Group& group = getGroup(i); // 获取第 i 个 Group 对象的引用
 		allGroup.push_back(group); // 将 Group 对象添加到集合中
 	}
-} 
+}
 
 void Object::updateAdjacentGroupIndices(int numX, int numY, int numZ) {
-	if (numY == -1) { //if not using XYZ divide group
+	for (int z = 0; z < numZ; ++z) {
+		for (int y = 0; y < numY; ++y) {
+			for (int x = 0; x < numX; ++x) {
+				int groupIdx = z * numX * numY + y * numX + x;
+				Group& currentGroup = groups[groupIdx];
 
-	}
-	else
-		for (int z = 0; z < numZ; ++z) {
-			for (int y = 0; y < numY; ++y) {
-				for (int x = 0; x < numX; ++x) {
-					int groupIdx = z * numX * numY + y * numX + x;
-					Group& currentGroup = groups[groupIdx];
-
-					// +x方向
-					if (x < numX - 1) currentGroup.adjacentGroupIDs[0] = groupIdx + 1;
-					// -x方向
-					if (x > 0) currentGroup.adjacentGroupIDs[1] = groupIdx - 1;
-					// +y方向
-					if (y < numY - 1) currentGroup.adjacentGroupIDs[2] = groupIdx + numX;
-					// -y方向
-					if (y > 0) currentGroup.adjacentGroupIDs[3] = groupIdx - numX;
-					// +z方向
-					if (z < numZ - 1) currentGroup.adjacentGroupIDs[4] = groupIdx + numX * numY;
-					// -z方向
-					if (z > 0) currentGroup.adjacentGroupIDs[5] = groupIdx - numX * numY;
-				}
+				// +x方向
+				if (x < numX - 1) currentGroup.adjacentGroupIDs[0] = groupIdx + 1;
+				// -x方向
+				if (x > 0) currentGroup.adjacentGroupIDs[1] = groupIdx - 1;
+				// +y方向
+				if (y < numY - 1) currentGroup.adjacentGroupIDs[2] = groupIdx + numX;
+				// -y方向
+				if (y > 0) currentGroup.adjacentGroupIDs[3] = groupIdx - numX;
+				// +z方向
+				if (z < numZ - 1) currentGroup.adjacentGroupIDs[4] = groupIdx + numX * numY;
+				// -z方向
+				if (z > 0) currentGroup.adjacentGroupIDs[5] = groupIdx - numX * numY;
 			}
+		}
 	}
 }
 
@@ -1740,7 +1889,7 @@ void divideIntoGroups(tetgenio& out, Object& object, int numX, int numY, int num
 }
 
 float Tetrahedron::calMassTetra(float den) {
-	
+
 	//float volume;
 	Eigen::Vector3f AB(vertices[1]->x - vertices[0]->x, vertices[1]->y - vertices[0]->y, vertices[1]->z - vertices[0]->z);
 	Eigen::Vector3f AC(vertices[2]->x - vertices[0]->x, vertices[2]->y - vertices[0]->y, vertices[2]->z - vertices[0]->z);
@@ -1752,7 +1901,7 @@ float Tetrahedron::calMassTetra(float den) {
 	massTetra = volumeTetra * den;
 	return massTetra;
 
-	
+
 }
 float Tetrahedron::calVolumeTetra() {
 
@@ -1786,8 +1935,8 @@ void Object::calDistance(std::pair<std::vector<Vertex*>, std::vector<Vertex*>> c
 			std::pow(vertex1->y - vertex2->y, 2) +
 			std::pow(vertex1->z - vertex2->z, 2));
 
-	
-		std::cout << "Distance of: "<< i << "is" << distance << std::endl;
+
+		std::cout << "Distance of: " << i << "is" << distance << std::endl;
 	}
 }
 
