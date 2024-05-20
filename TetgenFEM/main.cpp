@@ -295,6 +295,21 @@ int main() {
 	int frame = 1;
 	while (!glfwWindowShouldClose(window)) {
 
+		if (1) {
+			static int globalNumFrame = 0;
+			globalNumFrame++;
+			writeOBJ(object, "./anim/" + std::to_string(globalNumFrame) + ".obj");
+			//std::ofstream file("./anim/" + std::to_string(globalNumFrame) + ".txt", std::ios::out | std::ios::trunc);
+			/*if (!file.is_open()) {
+				std::cerr << "Failed to open file." << std::endl;
+				return 0;
+			}
+			for (int i = 0; i < objectUniqueVertices.size(); i++) {
+				file << i + 1 << " " << objectUniqueVertices[i]->x << " " << objectUniqueVertices[i]->y << " " << objectUniqueVertices[i]->z << std::endl;
+			}
+			file.close();*/
+			std::cout << "Data has been written to the file." << globalNumFrame << std::endl;
+		}
 		//object.commonPoints1 = object.findCommonVertices(object.groups[1], object.groups[2]);
 		//ｹﾌｶｨｵ翹靹ﾃ
 
@@ -524,21 +539,7 @@ int main() {
 			lastTime += 1.0;
 		}
 
-		if (1) {
-			static int globalNumFrame = 0;
-			globalNumFrame++;
-			writeOBJ(object, "./anim/" + std::to_string(globalNumFrame) + ".obj");
-			//std::ofstream file("./anim/" + std::to_string(globalNumFrame) + ".txt", std::ios::out | std::ios::trunc);
-			/*if (!file.is_open()) {
-				std::cerr << "Failed to open file." << std::endl;
-				return 0;
-			}
-			for (int i = 0; i < objectUniqueVertices.size(); i++) {
-				file << i + 1 << " " << objectUniqueVertices[i]->x << " " << objectUniqueVertices[i]->y << " " << objectUniqueVertices[i]->z << std::endl;
-			}
-			file.close();*/
-			std::cout << "Data has been written to the file." << globalNumFrame << std::endl;
-		}
+		
 		/*printf("%d frame number\n", frame);
 		frame++;*/
 		//object.writeVerticesToFile("ourMethodResult.txt");
