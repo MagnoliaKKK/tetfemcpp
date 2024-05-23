@@ -25,7 +25,7 @@ float youngs2 = 1000;
 float youngs3 = 100000;
 float poisson = 0.45;
 float density = 1000;
-int groupNum, groupNumX =4, groupNumY = 2, groupNumZ =2;//Objectﾀ犲ﾍﾑﾕﾉｫｶｼﾐｴﾋﾀﾁﾋ ｲｻﾄﾜｳｬｳlass Object {ﾀ・ﾄﾗ鯡?
+int groupNum, groupNumX =1, groupNumY = 1, groupNumZ =1;//Objectﾀ犲ﾍﾑﾕﾉｫｶｼﾐｴﾋﾀﾁﾋ ｲｻﾄﾜｳｬｳlass Object {ﾀ・ﾄﾗ鯡?
 int wKey = 0;
 
 
@@ -126,8 +126,8 @@ int main() {
 	char args[] = "pq2.5a1";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
-	char argsNode[] = "./cubeX4000";
-	char argsEle[] = "./cubeX4000";
+	char argsNode[] = "./cubeX14000";
+	char argsEle[] = "./cubeX14000";
 	if (!in.load_node(argsNode)) {
 	    std::cerr << "Error loading .node file!" << std::endl;
 	    return 1;
@@ -549,6 +549,38 @@ int main() {
 			double kineticEnergy = 0.5 * objectUniqueVertices[i]->vertexMass * speedSquared;
 			totalKE += kineticEnergy;
 		}*/
+		double totalMass = 0.0;
+		double centerX = 0.0;
+		double centerY = 0.0;
+		double centerZ = 0.0;
+
+		for (int i = 0; i < objectUniqueVertices.size(); i++) {
+			double vertexMass = objectUniqueVertices[i]->vertexMass;
+			double vertexX = objectUniqueVertices[i]->x;
+			double vertexY = objectUniqueVertices[i]->y;
+			double vertexZ = objectUniqueVertices[i]->z;
+
+			totalMass += vertexMass;
+			centerX += vertexX * vertexMass;
+			centerY += vertexY * vertexMass;
+			centerZ += vertexZ * vertexMass;
+		}
+
+		if (totalMass != 0) {
+			centerX /= totalMass;
+			centerY /= totalMass;
+			centerZ /= totalMass;
+		}
+		else {
+			// Handle the case where totalMass is 0 to avoid division by zero
+			centerX = 0.0;
+			centerY = 0.0;
+			centerZ = 0.0;
+		}
+
+		// Output the center of mass
+		std::cout << "Center of Mass: (" << centerX << ", " << centerY << ", " << centerZ << ")" << std::endl;
+
 	}
 	
 	
