@@ -16,45 +16,10 @@
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 #include <Eigen/Eigenvalues>
+#include "Vertex.h"
+#include "Edge.h"
+#include "Object.h"
 
-
-
-class Vertex {
-public:
-	float x, y, z;
-	const float initx, inity, initz; //初始化后不可更改
-	int index;  // global index
-	int localIndex; // 组内的本地索引
-	float vertexMass; // mass of vertices
-	float velx, vely, velz;//速度的三个分量
-	bool isFixed;
-
-	//Vertex(float x, float y, float z, int index) : x(x), y(y), z(z), index(index) {}
-	Vertex(float x, float y, float z, int index)
-		: initx(x), inity(y), initz(z), // 首先初始化const成员
-		x(x), y(y), z(z), // 然后是可变成员
-		index(index), vertexMass(1), // 其他成员可以直接赋值
-		velx(0), vely(0), velz(0), // 初始化速度分量为0
-		isFixed(false) // 默认不是固定点
-	{}
-	void setFixedIfBelowThreshold() {
-		if (initx < -0.64/*inity > 0.3*/ /*|| initx > -0.15*//*|| -0.38initx > 0.62*/) {//-0.619 0.38
-			isFixed = true;
-		}
-
-	}
-};
-
-class Edge {
-public:
-	Vertex* vertices[2];
-	bool isBoundary;
-
-	Edge(Vertex* v1, Vertex* v2) : isBoundary(false) {
-		vertices[0] = v1;
-		vertices[1] = v2;
-	}
-};
 
 class Tetrahedron {
 public:
@@ -204,7 +169,7 @@ class Object {
 public:
 	std::vector<Group> groups; // change this
 	//std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints;
-	
+
 	int groupNum, groupNumX, groupNumY, groupNumZ;
 	std::vector<Group> allGroup;
 	float bodyVolume;

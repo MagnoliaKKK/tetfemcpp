@@ -1,187 +1,9 @@
 ﻿#include "GroupDivision.h"
+#include "params.h"
+#include "Edge.h"
+#include "Object.h"
 
 
-const float timeStep = 0.001f;
-const float dampingConst = 8.0f;// 10.2f;
-const float PI = 3.1415926535f;
-const float Gravity = -9.80f;// bunny 9.8
-const float bindForce = -880.0f;//bunny 880
-const float bindVelocity = -0.0f;
-
-void Object::assignLocalIndicesToAllGroups() { // local index generation
-	for (Group& group : groups) {
-		int currentLocalIndex = 0;
-		std::unordered_set<Vertex*> processedVertices; // 用于跟踪已处理的顶点
-
-		for (Tetrahedron* tetra : group.tetrahedra) {
-			for (int i = 0; i < 4; ++i) {
-				Vertex* vertex = tetra->vertices[i];
-
-				// 检查顶点是否已经处理过
-				if (processedVertices.find(vertex) == processedVertices.end()) {
-					vertex->localIndex = currentLocalIndex++; // 分配本地
-					processedVertices.insert(vertex); // 标记为已处理
-				}
-			}
-		}
-	}
-}
-
-void Object::updateIndices() {
-	std::unordered_set<int> globalIndices;
-	std::unordered_map<int, Vertex*> indexToVertexMap; // 旧索引到新顶点的映射
-	int maxIndex = 0;
-
-	// 首先遍历所有顶点以找到最大索引值
-	for (Group& group : groups) {
-		for (Tetrahedron* tetra : group.tetrahedra) {
-			for (int i = 0; i < 4; ++i) {
-				Vertex* vertex = tetra->vertices[i];
-				maxIndex = std::max(maxIndex, vertex->index);
-			}
-		}
-	}
-
-	int nextAvailableIndex = maxIndex + 1;
-
-	// 再次遍历所有顶点以更新索引
-	for (Group& group : groups) {
-		std::unordered_set<int> localIndices; // 每个组内的本地索引集合
-
-		for (Tetrahedron* tetra : group.tetrahedra) {
-			for (int i = 0; i < 4; ++i) {
-				Vertex* vertex = tetra->vertices[i];
-
-				if (localIndices.find(vertex->index) == localIndices.end()) { //如果在 localIndices 集合中找不到 vertex->index 的值
-					localIndices.insert(vertex->index);
-
-					if (globalIndices.find(vertex->index) != globalIndices.end()) {
-						// 如果索引已在全局集合中，创建新顶点并更新映射
-						Vertex* newVertex = new Vertex(vertex->x, vertex->y, vertex->z, nextAvailableIndex++);
-						indexToVertexMap[vertex->index] = newVertex;
-						tetra->vertices[i] = newVertex;
-						vertex = newVertex;
-					}
-					globalIndices.insert(vertex->index);
-				}
-				else if (indexToVertexMap.find(vertex->index) != indexToVertexMap.end()) {
-					// 更新为新的顶点引用
-					tetra->vertices[i] = indexToVertexMap[vertex->index];
-				}
-			}
-		}
-	}
-}
-
-void Object::generateUniqueVertices() { //执行这个函数以后，verticesMap就会装满这个组的vertices， 不重复
-	//std::vector<Vertex*> uniqueVertices;
-	
-	for (Group& group : groups) {
-		group.verticesMap.clear(); // 清空现有的映射
-
-		for (Tetrahedron* tetra : group.tetrahedra) {
-			for (int i = 0; i < 4; ++i) {
-				Vertex* vertex = tetra->vertices[i];
-
-				// 如果顶点尚未在verticesMap中，则添加
-				if (group.verticesMap.find(vertex->index) == group.verticesMap.end()) {
-					group.verticesMap[vertex->index] = vertex;
-				}
-			}
-		}
-		group.initialize();
-	}
-
-}
-
-std::pair<std::vector<Vertex*>, std::vector<Vertex*>> Object::findCommonVertices1(const Group& group1, const Group& group2) { //寻找共同点
-	std::vector<Vertex*> commonVerticesGroup1;
-	std::vector<Vertex*> commonVerticesGroup2;
-
-	// 遍历group1的verticesMap中的所有顶点
-	for (auto& mapEntry1 : group1.verticesMap) {
-		Vertex* vertex1 = mapEntry1.second;
-
-		// 遍历group2的verticesMap中的所有顶点
-		for (auto& mapEntry2 : group2.verticesMap) {
-			Vertex* vertex2 = mapEntry2.second;
-
-			// 检查坐标是否相同
-			if (vertex1->x == vertex2->x && vertex1->y == vertex2->y && vertex1->z == vertex2->z) {
-				commonVerticesGroup1.push_back(vertex1);
-				commonVerticesGroup2.push_back(vertex2);
-			}
-		}
-	}
-
-	return { commonVerticesGroup1, commonVerticesGroup2 };
-}
-
-void Object::findCommonVertices() {
-	// Assuming 'groups' is a member of Object class and contains all groups
-	for (Group& group : groups) {
-		// Initialize commonVerticesInDirections for the current group
-		//group.commonVerticesInDirections = std::vector<std::pair<std::vector<Vertex*>, std::vector<Vertex*>>>(6);
-
-		// Iterate through all possible directions
-		for (int direction = 0; direction < 6; ++direction) {
-			int adjacentGroupIdx = group.adjacentGroupIDs[direction];
-
-			// Check if there is an adjacent group in this direction
-			if (adjacentGroupIdx != -1) {
-				Group& adjacentGroup = groups[adjacentGroupIdx];
-
-				std::vector<Vertex*> commonVerticesCurrentGroup;
-				std::vector<Vertex*> commonVerticesAdjacentGroup;
-
-				// Find common vertices between group and adjacentGroup
-				for (auto& vertexCurrent : group.verticesMap) {
-					for (auto& vertexAdjacent : adjacentGroup.verticesMap) {
-						if (vertexCurrent.second->x == vertexAdjacent.second->x &&
-							vertexCurrent.second->y == vertexAdjacent.second->y &&
-							vertexCurrent.second->z == vertexAdjacent.second->z) {
-							commonVerticesCurrentGroup.push_back(vertexCurrent.second);
-							commonVerticesAdjacentGroup.push_back(vertexAdjacent.second);
-						}
-					}
-				}
-
-				// Store the common vertices in the appropriate direction
-				group.commonVerticesInDirections[direction] = { commonVerticesCurrentGroup, commonVerticesAdjacentGroup };
-			}
-		}
-	}
-}
-
-void Object::storeAdjacentGroupsCommonVertices(int groupIndex) {
-	// 确保指定的组索引在有效范围内
-	if (groupIndex < 0 || groupIndex >= groups.size()) {
-		std::cerr << "Invalid group index." << std::endl;
-		return;
-	}
-
-	// 存储共同顶点的结构，每个条目对应一个方向的相邻组
-	//std::vector<std::pair<std::vector<Vertex*>, std::vector<Vertex*>>> commonVerticesInDirections(6);
-
-	// 获取当前组
-	Group& currentGroup = groups[groupIndex];
-
-	// 遍历所有6个方向的相邻组
-	for (int direction = 0; direction < 6; ++direction) {
-		int adjacentGroupIdx = currentGroup.adjacentGroupIDs[direction];
-
-		// 检查是否存在相邻组
-		if (adjacentGroupIdx != -1) {
-			Group& adjacentGroup = groups[adjacentGroupIdx];
-
-			// 使用 findCommonVertices1 函数找到共同顶点
-			std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonVertices = findCommonVertices1(currentGroup, adjacentGroup);
-
-			// 存储找到的共同顶点
-			currentGroup.commonVerticesInDirections[direction] = commonVertices;
-		}
-	}
-}
 
 
 void Group::initialize() {
@@ -1297,118 +1119,7 @@ void Group::calRInvLocalPos() {
 	std::cout << RInvPos << std::endl;
 }
 
-void Object::PBDLOOP(int looptime) {
-// 1. 初始化：将每个组的 Fbind 置零
-	
-     //#pragma omp parallel for
-	float reference = 0.0f; // float类型的参考值
-	float epsilon = std::numeric_limits<float>::epsilon(); // float类型的epsilon
-    #pragma omp parallel for
-	for (int i = 0; i < groupNum; ++i) {
-		auto& g = groups[i];
-		g.Fbind = Eigen::VectorXf::Zero(3 * g.verticesMap.size()); // 假设 Group 类有一个方法来清除 Fbind
-		g.rotationTransSparse = g.rotationMatrix.transpose().sparseView(reference, epsilon);
 
-		g.RHS_F = g.RHS_E * g.rotationTransSparse;//RHS的部分
-		g.RHS_B = g.RHS_F * g.primeVec; //46ms
-		
-		//g.RHS_F_MassD = g.RHS_F * g.massDistributionSparse;
-
-		//auto fff = g.RHS_F.toDense();
-		//auto massssss = g.massDistributionSparse.toDense();
-
-		//Eigen::MatrixXf producttt = (10000*fff) * (10000*massssss);
-		//auto aa = g.RHS_F_MassD.toDense();
-
-		//g.RHS_C = g.RHS_F_MassD * g.primeVec; //54ms
-		g.RHS_G = timeStep * timeStep * g.massDampingSparseInv * g.rotationTransSparse;
-		g.RHS_AsubBplusC = g.RHS_A - g.RHS_B;// +g.RHS_C; //24ms
-
-	}
-
-	// 2. 开始迭代
-
-	for (int iter = 0; iter < looptime; ++iter) {
-		// 每组计算 RHS
-
-		#pragma omp parallel for //500fps to 300, -optimization
-		for (int i = 0; i < groupNum; ++i) {
-			auto& g = groups[i];
-			g.calRHS();
-			g.calDeltaX();
-			g.calculateCurrentPositions();
-			//g.calFbind(allGroup, bindForce);
-
-		}
-		for (int groupIdx = 0; groupIdx < groups.size(); ++groupIdx) {
-			Group& currentGroup = groups[groupIdx];
-
-			// 遍历所有6个方向的相邻组
-			for (int direction = 0; direction < 6; ++direction) {
-				int adjacentGroupIdx = currentGroup.adjacentGroupIDs[direction];
-
-				// 检查是否存在相邻组
-				if (adjacentGroupIdx != -1) {
-					Group& adjacentGroup = groups[adjacentGroupIdx];
-					const auto& commonVerticesPair = currentGroup.commonVerticesInDirections[direction];
-
-					// 使用 calFbind1 计算约束力
-					currentGroup.calFbind1(commonVerticesPair.first, commonVerticesPair.second,
-						currentGroup.currentPosition, adjacentGroup.currentPosition, bindForce);
-					if (direction == 0 || direction == 1) {
-						currentGroup.distancesX = Eigen::VectorXf::Zero(commonVerticesPair.first.size() * 3);
-
-						for (size_t i = 0; i < commonVerticesPair.first.size(); ++i) {
-							Vertex* vertexThisGroup = commonVerticesPair.first[i];
-							Vertex* vertexOtherGroup = commonVerticesPair.second[i];
-
-							// 获取两个组中对应顶点的位置
-							Eigen::Vector3f posThisGroup = currentGroup.currentPosition.segment<3>(3 * vertexThisGroup->localIndex);
-							Eigen::Vector3f posOtherGroup = adjacentGroup.currentPosition.segment<3>(3 * vertexOtherGroup->localIndex);
-
-							// 计算两组间的绝对位置差异并存储
-							currentGroup.distancesX.segment<3>(3 * i) = (posThisGroup - posOtherGroup);
-						}
-
-						// 此处可添加额外的逻辑使用 `distances` 向量
-					}
-				}
-
-			}
-		}
-	}
-	//std::cout << "Bind is" << std::endl << groups[0].Fbind(58) << std::endl;
-//#pragma omp parallel for
-	
-	for (int i = 0; i < groupNum; ++i) {
-		auto& g = groups[i];
-		g.updateVelocity();
-		g.updatePosition();
-		/*g.groupVolume = 0.0f;
-		for (auto& tet : g.tetrahedra) {
-			float tetMass = tet->calMassTetra(1000);
-			g.groupVolume += tet->volumeTetra;
-		}*/
-		/*float bodyVolume = 0.0f;
-		bodyVolume += g.groupVolume;
-		std::cout << bodyVolume << std::endl;*/
-		//g.calRInvLocalPos();
-	}
-
-	//calDistance(commonPoints);
-	//calDistance(commonPoints1);
-	// 迭代完成后更新位置和速度
-	//for (int i = 0; i < 3; ++i) {
-	//	// 更新位置，这里可能需要一些逻辑来获取最后一次迭代的结果
-	//	groups[i].updateFinalPositions(); // 假设这个方法用最后一次迭代的结果更新顶点位置
-
-	//	// 更新速度
-	//	groups[i].updateVelocities(timestep); // 假设这个方法用 (现在位置 - 上一帧位置) / timestep 计算速度
-	//}
-
-	// ... 现在，所有的组都应该有了更新后的位置和速度，可以传递给绘图功能
-	// drawGroups(); // 假设有一个方法来绘制或输出最新的组状态
-}
 
 
 void Group::calDeltaX() {
@@ -1729,41 +1440,7 @@ void Group::updateVelocityFEM() {
 	//	currentPosition.segment<3>(3 * localIndex) = Eigen::Vector3f(vertex->x, vertex->y, vertex->z);
 	//}
 }
-Group& Object::getGroup(int index) {
-	return groups[index];
-}
 
-void Object::storeAllGroups() {
-	allGroup.reserve(groupNum);
-	for (int i = 0; i < groupNum; ++i) {
-		Group& group = getGroup(i); // 获取第 i 个 Group 对象的引用
-		allGroup.push_back(group); // 将 Group 对象添加到集合中
-	}
-} 
-
-void Object::updateAdjacentGroupIndices(int numX, int numY, int numZ) {
-	for (int z = 0; z < numZ; ++z) {
-		for (int y = 0; y < numY; ++y) {
-			for (int x = 0; x < numX; ++x) {
-				int groupIdx = z * numX * numY + y * numX + x;
-				Group& currentGroup = groups[groupIdx];
-
-				// +x方向
-				if (x < numX - 1) currentGroup.adjacentGroupIDs[0] = groupIdx + 1;
-				// -x方向
-				if (x > 0) currentGroup.adjacentGroupIDs[1] = groupIdx - 1;
-				// +y方向
-				if (y < numY - 1) currentGroup.adjacentGroupIDs[2] = groupIdx + numX;
-				// -y方向
-				if (y > 0) currentGroup.adjacentGroupIDs[3] = groupIdx - numX;
-				// +z方向
-				if (z < numZ - 1) currentGroup.adjacentGroupIDs[4] = groupIdx + numX * numY;
-				// -z方向
-				if (z > 0) currentGroup.adjacentGroupIDs[5] = groupIdx - numX * numY;
-			}
-		}
-	}
-}
 
 std::unordered_set<std::string> boundaryEdgesSet;  // Set to store boundary edges
 
@@ -1876,6 +1553,181 @@ float Tetrahedron::calVolumeTetra() {
 	volumeTetra = std::abs(volumeTetra);
 	return volumeTetra;
 }
+
+void Object::assignLocalIndicesToAllGroups() { // local index generation
+	for (Group& group : groups) {
+		int currentLocalIndex = 0;
+		std::unordered_set<Vertex*> processedVertices; // 用于跟踪已处理的顶点
+
+		for (Tetrahedron* tetra : group.tetrahedra) {
+			for (int i = 0; i < 4; ++i) {
+				Vertex* vertex = tetra->vertices[i];
+
+				// 检查顶点是否已经处理过
+				if (processedVertices.find(vertex) == processedVertices.end()) {
+					vertex->localIndex = currentLocalIndex++; // 分配本地
+					processedVertices.insert(vertex); // 标记为已处理
+				}
+			}
+		}
+	}
+}
+
+void Object::updateIndices() {
+	std::unordered_set<int> globalIndices;
+	std::unordered_map<int, Vertex*> indexToVertexMap; // 旧索引到新顶点的映射
+	int maxIndex = 0;
+
+	// 首先遍历所有顶点以找到最大索引值
+	for (Group& group : groups) {
+		for (Tetrahedron* tetra : group.tetrahedra) {
+			for (int i = 0; i < 4; ++i) {
+				Vertex* vertex = tetra->vertices[i];
+				maxIndex = std::max(maxIndex, vertex->index);
+			}
+		}
+	}
+
+	int nextAvailableIndex = maxIndex + 1;
+
+	// 再次遍历所有顶点以更新索引
+	for (Group& group : groups) {
+		std::unordered_set<int> localIndices; // 每个组内的本地索引集合
+
+		for (Tetrahedron* tetra : group.tetrahedra) {
+			for (int i = 0; i < 4; ++i) {
+				Vertex* vertex = tetra->vertices[i];
+
+				if (localIndices.find(vertex->index) == localIndices.end()) { //如果在 localIndices 集合中找不到 vertex->index 的值
+					localIndices.insert(vertex->index);
+
+					if (globalIndices.find(vertex->index) != globalIndices.end()) {
+						// 如果索引已在全局集合中，创建新顶点并更新映射
+						Vertex* newVertex = new Vertex(vertex->x, vertex->y, vertex->z, nextAvailableIndex++);
+						indexToVertexMap[vertex->index] = newVertex;
+						tetra->vertices[i] = newVertex;
+						vertex = newVertex;
+					}
+					globalIndices.insert(vertex->index);
+				}
+				else if (indexToVertexMap.find(vertex->index) != indexToVertexMap.end()) {
+					// 更新为新的顶点引用
+					tetra->vertices[i] = indexToVertexMap[vertex->index];
+				}
+			}
+		}
+	}
+}
+
+void Object::generateUniqueVertices() { //执行这个函数以后，verticesMap就会装满这个组的vertices， 不重复
+	//std::vector<Vertex*> uniqueVertices;
+
+	for (Group& group : groups) {
+		group.verticesMap.clear(); // 清空现有的映射
+
+		for (Tetrahedron* tetra : group.tetrahedra) {
+			for (int i = 0; i < 4; ++i) {
+				Vertex* vertex = tetra->vertices[i];
+
+				// 如果顶点尚未在verticesMap中，则添加
+				if (group.verticesMap.find(vertex->index) == group.verticesMap.end()) {
+					group.verticesMap[vertex->index] = vertex;
+				}
+			}
+		}
+		group.initialize();
+	}
+
+}
+
+std::pair<std::vector<Vertex*>, std::vector<Vertex*>> Object::findCommonVertices1(const Group& group1, const Group& group2) { //寻找共同点
+	std::vector<Vertex*> commonVerticesGroup1;
+	std::vector<Vertex*> commonVerticesGroup2;
+
+	// 遍历group1的verticesMap中的所有顶点
+	for (auto& mapEntry1 : group1.verticesMap) {
+		Vertex* vertex1 = mapEntry1.second;
+
+		// 遍历group2的verticesMap中的所有顶点
+		for (auto& mapEntry2 : group2.verticesMap) {
+			Vertex* vertex2 = mapEntry2.second;
+
+			// 检查坐标是否相同
+			if (vertex1->x == vertex2->x && vertex1->y == vertex2->y && vertex1->z == vertex2->z) {
+				commonVerticesGroup1.push_back(vertex1);
+				commonVerticesGroup2.push_back(vertex2);
+			}
+		}
+	}
+
+	return { commonVerticesGroup1, commonVerticesGroup2 };
+}
+
+void Object::findCommonVertices() {
+	// Assuming 'groups' is a member of Object class and contains all groups
+	for (Group& group : groups) {
+		// Initialize commonVerticesInDirections for the current group
+		//group.commonVerticesInDirections = std::vector<std::pair<std::vector<Vertex*>, std::vector<Vertex*>>>(6);
+
+		// Iterate through all possible directions
+		for (int direction = 0; direction < 6; ++direction) {
+			int adjacentGroupIdx = group.adjacentGroupIDs[direction];
+
+			// Check if there is an adjacent group in this direction
+			if (adjacentGroupIdx != -1) {
+				Group& adjacentGroup = groups[adjacentGroupIdx];
+
+				std::vector<Vertex*> commonVerticesCurrentGroup;
+				std::vector<Vertex*> commonVerticesAdjacentGroup;
+
+				// Find common vertices between group and adjacentGroup
+				for (auto& vertexCurrent : group.verticesMap) {
+					for (auto& vertexAdjacent : adjacentGroup.verticesMap) {
+						if (vertexCurrent.second->x == vertexAdjacent.second->x &&
+							vertexCurrent.second->y == vertexAdjacent.second->y &&
+							vertexCurrent.second->z == vertexAdjacent.second->z) {
+							commonVerticesCurrentGroup.push_back(vertexCurrent.second);
+							commonVerticesAdjacentGroup.push_back(vertexAdjacent.second);
+						}
+					}
+				}
+
+				// Store the common vertices in the appropriate direction
+				group.commonVerticesInDirections[direction] = { commonVerticesCurrentGroup, commonVerticesAdjacentGroup };
+			}
+		}
+	}
+}
+
+void Object::storeAdjacentGroupsCommonVertices(int groupIndex) {
+	// 确保指定的组索引在有效范围内
+	if (groupIndex < 0 || groupIndex >= groups.size()) {
+		std::cerr << "Invalid group index." << std::endl;
+		return;
+	}
+
+	// 存储共同顶点的结构，每个条目对应一个方向的相邻组
+	//std::vector<std::pair<std::vector<Vertex*>, std::vector<Vertex*>>> commonVerticesInDirections(6);
+
+	// 获取当前组
+	Group& currentGroup = groups[groupIndex];
+
+	// 遍历所有6个方向的相邻组
+	for (int direction = 0; direction < 6; ++direction) {
+		int adjacentGroupIdx = currentGroup.adjacentGroupIDs[direction];
+
+		// 检查是否存在相邻组
+		if (adjacentGroupIdx != -1) {
+			Group& adjacentGroup = groups[adjacentGroupIdx];
+
+			// 使用 findCommonVertices1 函数找到共同顶点
+			std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonVertices = findCommonVertices1(currentGroup, adjacentGroup);
+
+			// 存储找到的共同顶点
+			currentGroup.commonVerticesInDirections[direction] = commonVertices;
+		}
+	}
+}
 void Object::calDistance(std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints) {
 	const auto& verticesGroup1 = commonPoints.first;
 	const auto& verticesGroup2 = commonPoints.second;
@@ -1896,8 +1748,8 @@ void Object::calDistance(std::pair<std::vector<Vertex*>, std::vector<Vertex*>> c
 			std::pow(vertex1->y - vertex2->y, 2) +
 			std::pow(vertex1->z - vertex2->z, 2));
 
-	
-		std::cout << "Distance of: "<< i << "is" << distance << std::endl;
+
+		std::cout << "Distance of: " << i << "is" << distance << std::endl;
 	}
 }
 
@@ -1925,4 +1777,151 @@ void Object::writeVerticesToFile(const std::string& filename) {
 
 	outfile.close();
 	std::cout << "顶点数据已成功写入文件: " << filename << std::endl;
+}
+void Object::PBDLOOP(int looptime) {
+	// 1. 初始化：将每个组的 Fbind 置零
+
+		 //#pragma omp parallel for
+	float reference = 0.0f; // float类型的参考值
+	float epsilon = std::numeric_limits<float>::epsilon(); // float类型的epsilon
+#pragma omp parallel for
+	for (int i = 0; i < groupNum; ++i) {
+		auto& g = groups[i];
+		g.Fbind = Eigen::VectorXf::Zero(3 * g.verticesMap.size()); // 假设 Group 类有一个方法来清除 Fbind
+		g.rotationTransSparse = g.rotationMatrix.transpose().sparseView(reference, epsilon);
+
+		g.RHS_F = g.RHS_E * g.rotationTransSparse;//RHS的部分
+		g.RHS_B = g.RHS_F * g.primeVec; //46ms
+
+		//g.RHS_F_MassD = g.RHS_F * g.massDistributionSparse;
+
+		//auto fff = g.RHS_F.toDense();
+		//auto massssss = g.massDistributionSparse.toDense();
+
+		//Eigen::MatrixXf producttt = (10000*fff) * (10000*massssss);
+		//auto aa = g.RHS_F_MassD.toDense();
+
+		//g.RHS_C = g.RHS_F_MassD * g.primeVec; //54ms
+		g.RHS_G = timeStep * timeStep * g.massDampingSparseInv * g.rotationTransSparse;
+		g.RHS_AsubBplusC = g.RHS_A - g.RHS_B;// +g.RHS_C; //24ms
+
+	}
+
+	// 2. 开始迭代
+
+	for (int iter = 0; iter < looptime; ++iter) {
+		// 每组计算 RHS
+
+#pragma omp parallel for //500fps to 300, -optimization
+		for (int i = 0; i < groupNum; ++i) {
+			auto& g = groups[i];
+			g.calRHS();
+			g.calDeltaX();
+			g.calculateCurrentPositions();
+			//g.calFbind(allGroup, bindForce);
+
+		}
+		for (int groupIdx = 0; groupIdx < groups.size(); ++groupIdx) {
+			Group& currentGroup = groups[groupIdx];
+
+			// 遍历所有6个方向的相邻组
+			for (int direction = 0; direction < 6; ++direction) {
+				int adjacentGroupIdx = currentGroup.adjacentGroupIDs[direction];
+
+				// 检查是否存在相邻组
+				if (adjacentGroupIdx != -1) {
+					Group& adjacentGroup = groups[adjacentGroupIdx];
+					const auto& commonVerticesPair = currentGroup.commonVerticesInDirections[direction];
+
+					// 使用 calFbind1 计算约束力
+					currentGroup.calFbind1(commonVerticesPair.first, commonVerticesPair.second,
+						currentGroup.currentPosition, adjacentGroup.currentPosition, bindForce);
+					if (direction == 0 || direction == 1) {
+						currentGroup.distancesX = Eigen::VectorXf::Zero(commonVerticesPair.first.size() * 3);
+
+						for (size_t i = 0; i < commonVerticesPair.first.size(); ++i) {
+							Vertex* vertexThisGroup = commonVerticesPair.first[i];
+							Vertex* vertexOtherGroup = commonVerticesPair.second[i];
+
+							// 获取两个组中对应顶点的位置
+							Eigen::Vector3f posThisGroup = currentGroup.currentPosition.segment<3>(3 * vertexThisGroup->localIndex);
+							Eigen::Vector3f posOtherGroup = adjacentGroup.currentPosition.segment<3>(3 * vertexOtherGroup->localIndex);
+
+							// 计算两组间的绝对位置差异并存储
+							currentGroup.distancesX.segment<3>(3 * i) = (posThisGroup - posOtherGroup);
+						}
+
+						// 此处可添加额外的逻辑使用 `distances` 向量
+					}
+				}
+
+			}
+		}
+	}
+	//std::cout << "Bind is" << std::endl << groups[0].Fbind(58) << std::endl;
+//#pragma omp parallel for
+
+	for (int i = 0; i < groupNum; ++i) {
+		auto& g = groups[i];
+		g.updateVelocity();
+		g.updatePosition();
+		/*g.groupVolume = 0.0f;
+		for (auto& tet : g.tetrahedra) {
+			float tetMass = tet->calMassTetra(1000);
+			g.groupVolume += tet->volumeTetra;
+		}*/
+		/*float bodyVolume = 0.0f;
+		bodyVolume += g.groupVolume;
+		std::cout << bodyVolume << std::endl;*/
+		//g.calRInvLocalPos();
+	}
+
+	//calDistance(commonPoints);
+	//calDistance(commonPoints1);
+	// 迭代完成后更新位置和速度
+	//for (int i = 0; i < 3; ++i) {
+	//	// 更新位置，这里可能需要一些逻辑来获取最后一次迭代的结果
+	//	groups[i].updateFinalPositions(); // 假设这个方法用最后一次迭代的结果更新顶点位置
+
+	//	// 更新速度
+	//	groups[i].updateVelocities(timestep); // 假设这个方法用 (现在位置 - 上一帧位置) / timestep 计算速度
+	//}
+
+	// ... 现在，所有的组都应该有了更新后的位置和速度，可以传递给绘图功能
+	// drawGroups(); // 假设有一个方法来绘制或输出最新的组状态
+}
+Group& Object::getGroup(int index) {
+	return groups[index];
+}
+
+void Object::storeAllGroups() {
+	allGroup.reserve(groupNum);
+	for (int i = 0; i < groupNum; ++i) {
+		Group& group = getGroup(i); // 获取第 i 个 Group 对象的引用
+		allGroup.push_back(group); // 将 Group 对象添加到集合中
+	}
+}
+
+void Object::updateAdjacentGroupIndices(int numX, int numY, int numZ) {
+	for (int z = 0; z < numZ; ++z) {
+		for (int y = 0; y < numY; ++y) {
+			for (int x = 0; x < numX; ++x) {
+				int groupIdx = z * numX * numY + y * numX + x;
+				Group& currentGroup = groups[groupIdx];
+
+				// +x方向
+				if (x < numX - 1) currentGroup.adjacentGroupIDs[0] = groupIdx + 1;
+				// -x方向
+				if (x > 0) currentGroup.adjacentGroupIDs[1] = groupIdx - 1;
+				// +y方向
+				if (y < numY - 1) currentGroup.adjacentGroupIDs[2] = groupIdx + numX;
+				// -y方向
+				if (y > 0) currentGroup.adjacentGroupIDs[3] = groupIdx - numX;
+				// +z方向
+				if (z < numZ - 1) currentGroup.adjacentGroupIDs[4] = groupIdx + numX * numY;
+				// -z方向
+				if (z > 0) currentGroup.adjacentGroupIDs[5] = groupIdx - numX * numY;
+			}
+		}
+	}
 }
