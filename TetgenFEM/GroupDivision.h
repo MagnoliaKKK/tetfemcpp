@@ -19,30 +19,10 @@
 #include "Vertex.h"
 #include "Edge.h"
 #include "Object.h"
+#include "Tetrahedron.h"
 
 
-class Tetrahedron {
-public:
-	Vertex* vertices[4];
-	Edge* edges[6];  // Each tetrahedron has six edges
-	float massTetra;
-	float volumeTetra;
-	Eigen::MatrixXf elementK;
-	Eigen::MatrixXf elementKFEM;
 
-	Tetrahedron(Vertex* v1, Vertex* v2, Vertex* v3, Vertex* v4) {
-		vertices[0] = v1;
-		vertices[1] = v2;
-		vertices[2] = v3;
-		vertices[3] = v4;
-	}
-	Eigen::MatrixXf createElementK(float E, float nu, const Eigen::Vector3f& groupCenterOfMass);
-	Eigen::MatrixXf createElementKAni(float E1, float E2, float E3, float nu, const Eigen::Vector3f& groupCenterOfMass);
-	float calMassTetra(float den);
-	float calVolumeTetra();
-	Eigen::MatrixXf createElementKFEM(float E, float nu);
-
-};
 
 
 class Group {

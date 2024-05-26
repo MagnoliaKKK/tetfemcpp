@@ -161,6 +161,7 @@
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="params.cpp" />
     <ClCompile Include="ReadSTL.cpp" />
+    <ClCompile Include="Tetrahedron.cpp" />
     <ClCompile Include="Vertex.cpp" />
     <ClCompile Include="VisualOpenGL.cpp" />
   </ItemGroup>
@@ -172,6 +173,7 @@
     <ClInclude Include="params.h" />
     <ClInclude Include="ReadSTL.h" />
     <ClInclude Include="tetgen.h" />
+    <ClInclude Include="Tetrahedron.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="VisualOpenGL.h" />
   </ItemGroup>
