@@ -1,4 +1,4 @@
-ï»¿#pragma once
+#pragma once
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
@@ -18,12 +18,8 @@
 #include <Eigen/Eigenvalues>
 #include "Vertex.h"
 #include "Edge.h"
-#include "Object.h"
 #include "Tetrahedron.h"
-
-
-
-
+#include "params.h"
 
 class Group {
 public:
@@ -32,7 +28,7 @@ public:
 	std::unordered_map<int, Vertex*> verticesMap;
 	std::vector<Vertex*> verticesVector;
 	Eigen::Vector3f centerofMass;
-	float groupMass;//æ¯ç»„çš„è´¨é‡
+	float groupMass;//??“I?—Ê
 	Eigen::MatrixXf massMatrix;//group mass matrix
 	Eigen::MatrixXf massDistribution;
 	Eigen::MatrixXf groupK;//group stiffness matrix
@@ -42,7 +38,7 @@ public:
 	Eigen::VectorXf groupVelocityFEM;
 	Eigen::VectorXf groupExf;
 	Eigen::MatrixXf rotationMatrix;
-	Eigen::Matrix3f rotate_matrix;//3*3çš„æ—‹è½¬çŸ©é˜µï¼Œæ‰©å±•æˆç»„çš„æ—‹è½¬çŸ©é˜µ
+	Eigen::Matrix3f rotate_matrix;//3*3“Iù?‹é?C?“W¬?“Iù?‹é?
 	Eigen::VectorXf gravity;
 	Eigen::MatrixXf dampingMatrix;
 	Eigen::MatrixXf inverseTerm;
@@ -63,12 +59,12 @@ public:
 	Eigen::SparseMatrix<float> massDistributionSparse;
 	Eigen::SparseMatrix<float> massDampingSparseInv; //(M+C').inv sparse
 	Eigen::SparseMatrix<float> inverseTermSparse;
-	Eigen::VectorXf currentPosition;//è®¡ç®—bindfç”¨çš„ä½ç½®ä¿¡æ¯ï¼Œä¸ç”¨åšä½ç½®æ›´æ–°
+	Eigen::VectorXf currentPosition;//?Zbindf—p“IˆÊ’uM‘§C•s—p˜ôˆÊ’uXV
 	Eigen::VectorXf currentPositionFEM;
-	Eigen::VectorXf distancesX; //Xæ–¹å‘çš„ç»„é—´è·ç¦»
+	Eigen::VectorXf distancesX; //X•ûŒü“I??‹—?
 	std::array<int, 6> adjacentGroupIDs;
-	int groupIndex;//æ¯ç»„çš„ç¼–å·
-	std::vector<std::pair<std::vector<Vertex*>, std::vector<Vertex*>>> commonVerticesInDirections;//å„ä¸ªç›¸é‚»ç»„çš„å…±åŒç‚¹
+	int groupIndex;//??“I?†
+	std::vector<std::pair<std::vector<Vertex*>, std::vector<Vertex*>>> commonVerticesInDirections;//Še˜¢‘Š??“I‹¤“¯“_
 
 	Eigen::MatrixXf LHS_I;
 	Eigen::MatrixXf LHS_A;
@@ -88,7 +84,7 @@ public:
 	float Kinematics;
 
 
-	
+
 	void addTetrahedron(Tetrahedron* tet);
 	std::vector<Vertex*> getUniqueVertices();
 	void calCenterofMass();
@@ -138,35 +134,8 @@ public:
 		verticesMap(),
 		adjacentGroupIDs({ -1, -1, -1, -1, -1, -1 }),
 		commonVerticesInDirections(6)
-		
+
 	{
 		// Additional initialization logic, if needed
 	}
 };
-
-
-class Object {
-public:
-	std::vector<Group> groups; // change this
-	//std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints;
-
-	int groupNum, groupNumX, groupNumY, groupNumZ;
-	std::vector<Group> allGroup;
-	float bodyVolume;
-
-	Group& getGroup(int index);
-	void findCommonVertices();// find common vertex
-	void assignLocalIndicesToAllGroups(); // local Index
-	void updateIndices();
-	void generateUniqueVertices();//generate unique vertices
-	void PBDLOOP(int looptime);
-	void storeAllGroups();
-	std::pair<std::vector<Vertex*>, std::vector<Vertex*>> findCommonVertices1(const Group& group1, const Group& group2);
-	void updateAdjacentGroupIndices(int numX, int numY, int numZ);
-	void calDistance(std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonpoints);
-	void storeAdjacentGroupsCommonVertices(int groupIndex);
-	void writeVerticesToFile(const std::string& filename);
-};
-
-void findBoundaryEdges(tetgenio& out);
-void divideIntoGroups(tetgenio& out, Object& object, int numX, int numY, int numZ);

@@ -3,7 +3,7 @@
 #include "tetgen.h"
 #include <Eigen/Core>
 #include <Eigen/Geometry>
-#include "GroupDivision.h"
+#include "Object.h"
 
 
 

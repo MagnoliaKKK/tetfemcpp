@@ -12,10 +12,10 @@
 #include <random>
 #include "VisualOpenGL.h"
 #include "ReadSTL.h"
-#include "GroupDivision.h"
+#include "Object.h"
 #include "Vertex.h"
 #include "Edge.h"
-#include "Object.h"
+
 
 
 //C:/Users/xu_yu/Desktop/tmp/arial.ttf

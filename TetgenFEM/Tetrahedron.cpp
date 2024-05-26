@@ -285,3 +285,30 @@ Eigen::MatrixXf Tetrahedron::createElementKFEM(float E, float nu) {
 	elementKFEM = k;
 	return k;
 }
+float Tetrahedron::calMassTetra(float den) {
+
+	//float volume;
+	Eigen::Vector3f AB(vertices[1]->x - vertices[0]->x, vertices[1]->y - vertices[0]->y, vertices[1]->z - vertices[0]->z);
+	Eigen::Vector3f AC(vertices[2]->x - vertices[0]->x, vertices[2]->y - vertices[0]->y, vertices[2]->z - vertices[0]->z);
+	Eigen::Vector3f AD(vertices[3]->x - vertices[0]->x, vertices[3]->y - vertices[0]->y, vertices[3]->z - vertices[0]->z);
+
+	// Calculate volume using the formula
+	volumeTetra = (AB.cross(AC)).dot(AD) / 6.0f;
+	volumeTetra = std::abs(volumeTetra);
+	massTetra = volumeTetra * den;
+	return massTetra;
+
+
+}
+float Tetrahedron::calVolumeTetra() {
+
+	//float volume;
+	Eigen::Vector3f AB(vertices[1]->x - vertices[0]->x, vertices[1]->y - vertices[0]->y, vertices[1]->z - vertices[0]->z);
+	Eigen::Vector3f AC(vertices[2]->x - vertices[0]->x, vertices[2]->y - vertices[0]->y, vertices[2]->z - vertices[0]->z);
+	Eigen::Vector3f AD(vertices[3]->x - vertices[0]->x, vertices[3]->y - vertices[0]->y, vertices[3]->z - vertices[0]->z);
+
+	// Calculate volume using the formula
+	volumeTetra = (AB.cross(AC)).dot(AD) / 6.0f;
+	volumeTetra = std::abs(volumeTetra);
+	return volumeTetra;
+}

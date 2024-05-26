@@ -156,9 +156,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Edge.cpp" />
-    <ClCompile Include="GroupDivision.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Group.cpp" />
     <ClCompile Include="Object.cpp" />
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="params.cpp" />
     <ClCompile Include="ReadSTL.cpp" />
     <ClCompile Include="Tetrahedron.cpp" />
@@ -168,7 +168,7 @@
   <ItemGroup>
     <ClInclude Include="Edge.h" />
     <ClInclude Include="GMRES.h" />
-    <ClInclude Include="GroupDivision.h" />
+    <ClInclude Include="Group.h" />
     <ClInclude Include="Object.h" />
     <ClInclude Include="params.h" />
     <ClInclude Include="ReadSTL.h" />

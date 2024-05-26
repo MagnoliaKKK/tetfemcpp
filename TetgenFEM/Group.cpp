@@ -1,10 +1,4 @@
-ï»¿#include "GroupDivision.h"
-#include "params.h"
-#include "Edge.h"
-#include "Object.h"
-
-
-
+#include "Group.h"
 
 void Group::initialize() {
 	groupVelocity = Eigen::VectorXf::Zero(3 * verticesMap.size());
@@ -22,10 +16,10 @@ void Group::initialize() {
 void Group::addTetrahedron(Tetrahedron* tet) {
 	tetrahedra.push_back(tet);
 	//for (int i = 0; i < 4; ++i) {
-	//	verticesMap[tet->vertices[i]->index] = tet->vertices[i]; //æ·»åŠ å››é¢ä½“çš„åŒæ—¶ï¼ŒæŠŠå››é¢ä½“çš„é¡¶ç‚¹åŠ å…¥verticesMap
+	//	verticesMap[tet->vertices[i]->index] = tet->vertices[i]; //“Y‰Ál–Ê‘Ì“I“¯?C”cl–Ê‘Ì“I?“_‰Á“üverticesMap
 	//}
 }
-std::vector<Vertex*> Group::getUniqueVertices() { //è¿™ä¸ªè¿˜æ˜¯éœ€è¦çš„ï¼Œç›¸å½“äºæŠŠhashmapè½¬æ¢æˆvertexGroup
+std::vector<Vertex*> Group::getUniqueVertices() { //?˜¢?¥ù—v“IC‘Š“–˜°”chashmap??¬vertexGroup
 	std::vector<Vertex*> uniqueVertices;
 	for (auto& pair : verticesMap) {
 		uniqueVertices.push_back(pair.second);
@@ -53,16 +47,16 @@ void Group::calCenterofMass() {
 	}
 }
 void Group::calLocalPos() {
-	// ç¡®ä¿initLocalPosæœ‰è¶³å¤Ÿçš„ç©ºé—´æ¥å­˜å‚¨æ‰€æœ‰çš„å±€éƒ¨ä½ç½®
+	// ?•ÛinitLocalPos—L‘«?“I‹ó?—ˆ‘¶?Š—L“I‹Ç•”ˆÊ’u
 	initLocalPos.resize(3 * verticesMap.size());
 
 	for (const auto& vertexPair : verticesMap) {
 		const Vertex* vertex = vertexPair.second;
 		Eigen::Vector3f initial_position(vertex->initx, vertex->inity, vertex->initz);
-		// è®¡ç®—åˆå§‹ä½ç½®ä¸åˆå§‹é‡å¿ƒçš„å·®å€¼
+		// ?Z‰nˆÊ’u—^‰ndS“I·?
 		Eigen::Vector3f local_position = initial_position - initCOM;
 
-		// å°†å±€éƒ¨ä½ç½®å­˜å‚¨åœ¨initLocalPosä¸­ï¼Œæ³¨æ„indexéœ€è¦ä¹˜ä»¥3å› ä¸ºæ¯ä¸ªé¡¶ç‚¹æœ‰3ä¸ªåæ ‡å€¼
+		// «‹Ç•”ˆÊ’u‘¶?İinitLocalPos’†C’ˆÓindexù—v˜©ˆÈ3ˆö??˜¢?“_—L3˜¢¿??
 		initLocalPos.segment<3>(vertex->localIndex * 3) = local_position;
 	}
 }
@@ -117,7 +111,7 @@ void Group::calRotationMatrix() {
 	center_grid = tempCenterGrid;
 
 
-	// è®¡ç®—ApqçŸ©é˜µ
+	// ?ZApq‹é?
 	Eigen::MatrixXf tempApq = Eigen::MatrixXf::Zero(3, 3);
 #pragma omp parallel num_threads(4)
 	{
@@ -138,7 +132,7 @@ void Group::calRotationMatrix() {
 	}
 	Apq = tempApq;
 
-	// åˆå§‹åŒ–å››å…ƒæ•°å’Œæ—‹è½¬çŸ©é˜µ
+	// ‰n‰»lŒ³”˜aù?‹é?
 	Eigen::Vector3f omega = Eigen::Vector3f::Identity();
 	Eigen::Quaternionf quaternion(Eigen::Quaternionf::Identity());
 	rotate_matrix = Eigen::Matrix3f::Identity();
@@ -146,7 +140,7 @@ void Group::calRotationMatrix() {
 	Eigen::Matrix3f HesseR = Eigen::Matrix3f::Zero();
 	Eigen::Matrix3f S = Eigen::Matrix3f::Zero();
 
-	// è¿­ä»£å¯»æ‰¾æœ€ä½³æ—‹è½¬
+	// “R‘ã?QÅ‰Àù?
 	for (unsigned int ci = 0; ci < 20; ci++) {
 		Eigen::Matrix3f R = quaternion.matrix();
 		Eigen::Matrix3f S = R.transpose() * Apq;
@@ -164,10 +158,10 @@ void Group::calRotationMatrix() {
 
 	rotate_matrix = quaternion.matrix();
 
-	// æ„å»ºæ—‹è½¬çŸ©é˜µçš„3N x 3Nç‰ˆæœ¬
+	// ?Œšù?‹é?“I3N x 3N”Å–{
 	rotationMatrix = Eigen::MatrixXf::Zero(3 * verticesMap.size(), 3 * verticesMap.size());
-	
-	#pragma omp parallel for
+
+#pragma omp parallel for
 	for (int pi = 0; pi < static_cast<int>(verticesMap.size()); pi++) {
 		rotationMatrix.block<3, 3>(3 * pi, 3 * pi) = rotate_matrix;
 	}
@@ -199,7 +193,7 @@ void Group::calGroupK(float E, float nu) {
 			}
 		}
 	}
-	
+
 	kSparse = groupK.sparseView();
 }
 void Group::calGroupKAni(float E1, float E2, float E3, float nu) {
@@ -211,7 +205,7 @@ void Group::calGroupKAni(float E1, float E2, float E3, float nu) {
 	// Iterate over each tetrahedron to assemble the global stiffness matrix
 	for (auto& tetra : tetrahedra) {
 		// Get the local stiffness matrix for the current tetrahedron
-		Eigen::MatrixXf localK = tetra->createElementKAni(E1,E2,E3, nu, initCOM);
+		Eigen::MatrixXf localK = tetra->createElementKAni(E1, E2, E3, nu, initCOM);
 
 		// Determine where to add the local stiffness matrix in the global stiffness matrix
 		for (int i = 0; i < 4; ++i) { // Each tetrahedron has 4 vertices
@@ -261,9 +255,9 @@ void Group::calGroupKFEM(float E, float nu) {
 
 
 void Group::calMassGroup() {
-	groupMass = 0.0; // åˆå§‹åŒ–ç»„çš„è´¨é‡ä¸º0
-	for (auto& tet : tetrahedra) { // éå†æ¯ä¸€ä¸ªå››é¢ä½“
-		groupMass += tet->massTetra; // ç´¯åŠ æ¯ä¸€ä¸ªå››é¢ä½“çš„è´¨é‡åˆ°ç»„çš„è´¨é‡
+	groupMass = 0.0; // ‰n‰»?“I?—Ê?0
+	for (auto& tet : tetrahedra) { // •Õ??ˆê˜¢l–Ê‘Ì
+		groupMass += tet->massTetra; // —İ‰Á?ˆê˜¢l–Ê‘Ì“I?—Ê“?“I?—Ê
 	}
 }
 
@@ -401,174 +395,174 @@ void Group::calPrimeVec1(int w) {
 	}
 }
 //void Group::calPrimeVecT(int w) {
-//	// ç¡®ä¿primeVecå·²ç»åˆå§‹åŒ–ä¸”è®¾ç½®ä¸ºæ­£ç¡®çš„å°ºå¯¸
+//	// ?•ÛprimeVec›ß?‰n‰»Š?’u?³?“IÚ¡
 //	primeVec = Eigen::VectorXf::Zero(3 * verticesVector.size());
 //
-//	// åˆå§‹åŒ–æ—‹è½¬åŠ›å‘é‡
+//	// ‰n‰»ù?—ÍŒü—Ê
 //	Eigen::VectorXf twistForce = Eigen::VectorXf::Zero(3 * verticesVector.size());
 //
-//	// æ£€æŸ¥æ˜¯å¦æ˜¯ç¬¬ä¸‰ç»„ï¼Œå¦‚æœæ˜¯ï¼Œåˆ™ä¸ºç‰¹å®šé¡¶ç‚¹æ–½åŠ æ—‹è½¬åŠ›
+//	// ??¥”Û¥‘æO?C”@‰Ê¥C??“Á’è?“_{‰Áù?—Í
 //	if (this->groupIndex == 2) {
-//		// è®¾ç½®æ¯ä¸ªé¡¶ç‚¹æ—‹è½¬åŠ›çš„å¤§å°ï¼Œè¿™é‡Œç®€åŒ–ä¸ºç»Ÿä¸€å¤§å°ï¼Œå…·ä½“å€¼éœ€è¦æ ¹æ®å®é™…æƒ…å†µè°ƒæ•´
-//		float forceMagnitude = 10.0f; // ç¤ºä¾‹åŠ›çš„å¤§å°
+//		// ?’u?˜¢?“_ù?—Í“I‘å¬C?—¢?‰»??ˆê‘å¬C‹ï‘Ì?ù—vª˜??î™v?®
+//		float forceMagnitude = 10.0f; // ¦—á—Í“I‘å¬
 //
-//		// é¡¶ç‚¹å±€éƒ¨ç´¢å¼•æ•°ç»„
+//		// ?“_‹Ç•”õˆø”?
 //		std::vector<int> indices = { 116, 91, 24, 22 };
 //
-//		// ä¸ºæ¯ä¸ªé¡¶ç‚¹æ–½åŠ æ—‹è½¬åŠ›
+//		// ??˜¢?“_{‰Áù?—Í
 //		for (int index : indices) {
-//			// ç¡®å®šåŠ›çš„æ–¹å‘ï¼šæ ¹æ®é¡¶ç‚¹åœ¨yzé¢ä¸Šçš„é¡ºæ—¶é’ˆæ—‹è½¬æ–¹å‘æ–½åŠ 
+//			// ?’è—Í“I•ûŒüFª˜?“_İyz–Êã“I???ù?•ûŒü{‰Á
 //			if (index == 116) {
-//				// å¯¹äº116ï¼Œå‡è®¾åŠ›å‘ä¸‹ï¼ˆyè½´è´Ÿæ–¹å‘ï¼‰
+//				// ?˜°116C˜ï?—ÍŒü‰ºiy??•ûŒüj
 //				twistForce(3 * index + 1) = -forceMagnitude;
 //			}
 //			else if (index == 91) {
-//				// å¯¹äº91ï¼Œå‡è®¾åŠ›å‘å³ï¼ˆzè½´æ­£æ–¹å‘ï¼‰
+//				// ?˜°91C˜ï?—ÍŒü‰Eiz?³•ûŒüj
 //				twistForce(3 * index + 2) = forceMagnitude;
 //			}
 //			else if (index == 24) {
-//				// å¯¹äº24ï¼Œå‡è®¾åŠ›å‘ä¸Šï¼ˆyè½´æ­£æ–¹å‘ï¼‰
+//				// ?˜°24C˜ï?—ÍŒüãiy?³•ûŒüj
 //				twistForce(3 * index + 1) = forceMagnitude;
 //			}
 //			else if (index == 22) {
-//				// å¯¹äº22ï¼Œå‡è®¾åŠ›å‘å·¦ï¼ˆzè½´è´Ÿæ–¹å‘ï¼‰
+//				// ?˜°22C˜ï?—ÍŒü¶iz??•ûŒüj
 //				twistForce(3 * index + 2) = -forceMagnitude;
 //			}
 //		}
 //	}
 //
-//	// æ›´æ–°groupVelocity
+//	// XVgroupVelocity
 //	groupVelocity += twistForce * timeStep;
 //
-//	// ä½¿ç”¨æ•´ä¸ªçŸ©é˜µè®¡ç®—velocityUpdate
+//	// g—p®˜¢‹é??ZvelocityUpdate
 //	Eigen::VectorXf velocityUpdate = inverseTermSparse * (massMatrix * groupVelocity) * timeStep;
 //
-//	// æ›´æ–°primeVecå’Œé¡¶ç‚¹ä½ç½®
+//	// XVprimeVec˜a?“_ˆÊ’u
 //	for (auto& vertexPair : verticesVector) {
 //		Vertex* vertex = vertexPair;
-//		int localPi = vertex->localIndex; // ä½¿ç”¨å±€éƒ¨ç´¢å¼•
+//		int localPi = vertex->localIndex; // g—p‹Ç•”õˆø
 //
-//		// è·å–å½“å‰é¡¶ç‚¹çš„é€Ÿåº¦æ›´æ–°éƒ¨åˆ†
+//		// ?æ“–‘O?“_“I‘¬“xXV•”•ª
 //		Eigen::Vector3f currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
 //
-//		// è®¡ç®—æ–°çš„ä½ç½®
+//		// ?ZV“IˆÊ’u
 //		Eigen::Vector3f newPosition = Eigen::Vector3f(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate;
 //
-//		// æ›´æ–°primeVec
+//		// XVprimeVec
 //		primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
 //	}
 //}
 //void Group::calPrimeVecS(int wKey) {
-//	// ç¡®ä¿primeVecå·²ç»åˆå§‹åŒ–ä¸”è®¾ç½®ä¸ºæ­£ç¡®çš„å°ºå¯¸
+//	// ?•ÛprimeVec›ß?‰n‰»Š?’u?³?“IÚ¡
 //	primeVec = Eigen::VectorXf::Zero(3 * verticesVector.size());
 //
-//	// åˆå§‹åŒ–ä¸€ä¸ªåŠ›å‘é‡
+//	// ‰n‰»ˆê˜¢—ÍŒü—Ê
 //	Eigen::VectorXf appliedForce = Eigen::VectorXf::Zero(3 * verticesVector.size());
 //
-//	// ç‰¹å®šé¡¶ç‚¹å±€éƒ¨ç´¢å¼•æ•°ç»„
+//	// “Á’è?“_‹Ç•”õˆø”?
 //	std::vector<int> indices = { 55, 35, 57, 70 };
 //
-//	// æ–½åŠ åŠ›çš„å¤§å°ï¼Œå¯ä»¥æ ¹æ®å®é™…æƒ…å†µè°ƒæ•´
+//	// {‰Á—Í“I‘å¬C‰ÂˆÈª˜??î™v?®
 //	float forceMagnitude = 1000.0f;
 //
-//	// å¦‚æœæ˜¯ç¬¬ä¸‰ç»„ï¼Œæ ¹æ®wKeyçš„å€¼ä¸ºç‰¹å®šé¡¶ç‚¹æ–½åŠ åŠ›
+//	// ”@‰Ê¥‘æO?Cª˜wKey“I??“Á’è?“_{‰Á—Í
 //	if (this->groupIndex == 2) {
 //		for (int localPi : indices) {
-//			int indexX = 3 * localPi; // xæ–¹å‘çš„ç´¢å¼•
+//			int indexX = 3 * localPi; // x•ûŒü“Iõˆø
 //
-//			// æ ¹æ®é”®ç›˜è¾“å…¥wKeyçš„å€¼åœ¨xæ–¹å‘ä¸Šæ–½åŠ åŠ›
+//			// ª˜???“üwKey“I?İx•ûŒüã{‰Á—Í
 //			if (wKey == 3) {
-//				appliedForce(indexX) -= forceMagnitude; // å‘å·¦æ–½åŠ åŠ›
+//				appliedForce(indexX) -= forceMagnitude; // Œü¶{‰Á—Í
 //			}
 //			else if (wKey == 4) {
-//				appliedForce(indexX) += forceMagnitude; // å‘å³æ–½åŠ åŠ›
+//				appliedForce(indexX) += forceMagnitude; // Œü‰E{‰Á—Í
 //			}
-//			// å¯¹äºwKey == 1æˆ–2ï¼Œæˆ‘ä»¬ä¸åœ¨xæ–¹å‘ä¸Šæ–½åŠ åŠ›
+//			// ?˜°wKey == 1ˆ½2C‰ä?•sİx•ûŒüã{‰Á—Í
 //		}
 //	}
 //
-//	// æ›´æ–°groupVelocity
+//	// XVgroupVelocity
 //	groupVelocity += appliedForce * timeStep;
 //
-//	// ä½¿ç”¨æ•´ä¸ªçŸ©é˜µè®¡ç®—velocityUpdate
+//	// g—p®˜¢‹é??ZvelocityUpdate
 //	Eigen::VectorXf velocityUpdate = inverseTermSparse * (massMatrix * groupVelocity) * timeStep;
 //
-//	// æ›´æ–°primeVecå’Œé¡¶ç‚¹ä½ç½®
+//	// XVprimeVec˜a?“_ˆÊ’u
 //	for (auto& vertexPair : verticesVector) {
 //		Vertex* vertex = vertexPair;
-//		int localPi = vertex->localIndex; // ä½¿ç”¨å±€éƒ¨ç´¢å¼•
+//		int localPi = vertex->localIndex; // g—p‹Ç•”õˆø
 //
-//		// è·å–å½“å‰é¡¶ç‚¹çš„é€Ÿåº¦æ›´æ–°éƒ¨åˆ†
+//		// ?æ“–‘O?“_“I‘¬“xXV•”•ª
 //		Eigen::Vector3f currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
 //
-//		// è®¡ç®—æ–°çš„ä½ç½®
+//		// ?ZV“IˆÊ’u
 //		Eigen::Vector3f newPosition = Eigen::Vector3f(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate;
 //
-//		// æ›´æ–°primeVec
+//		// XVprimeVec
 //		primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
 //	}
 //}
 void Group::calPrimeVecS(int wKey) {
-	// ç¡®ä¿primeVecå·²ç»åˆå§‹åŒ–ä¸”è®¾ç½®ä¸ºæ­£ç¡®çš„å°ºå¯¸
+	// ?•ÛprimeVec›ß?‰n‰»Š?’u?³?“IÚ¡
 	primeVec = Eigen::VectorXf::Zero(3 * verticesVector.size());
 
-	// åˆå§‹åŒ–ä¸€ä¸ªåŠ›å‘é‡
+	// ‰n‰»ˆê˜¢—ÍŒü—Ê
 	Eigen::VectorXf appliedForce = Eigen::VectorXf::Zero(3 * verticesVector.size());
 
-	// æ–½åŠ åŠ›çš„å¤§å°ï¼Œå¯ä»¥æ ¹æ®å®é™…æƒ…å†µè°ƒæ•´
+	// {‰Á—Í“I‘å¬C‰ÂˆÈª˜??î™v?®
 	float forceMagnitude = 10.0f;
 
-	// å¦‚æœæ˜¯ç¬¬ä¸‰ç»„ï¼Œæ ¹æ®wKeyçš„å€¼ä¸ºç»„å†…æ‰€æœ‰é¡¶ç‚¹æ–½åŠ åŠ›
+	// ”@‰Ê¥‘æO?Cª˜wKey“I???“àŠ—L?“_{‰Á—Í
 	if (this->groupIndex == 2) {
 		for (size_t i = 0; i < verticesVector.size(); ++i) {
-			int indexX = 3 * i; // xæ–¹å‘çš„ç´¢å¼•
+			int indexX = 3 * i; // x•ûŒü“Iõˆø
 
-			// æ ¹æ®é”®ç›˜è¾“å…¥wKeyçš„å€¼åœ¨xæ–¹å‘ä¸Šæ–½åŠ åŠ›
+			// ª˜???“üwKey“I?İx•ûŒüã{‰Á—Í
 			if (wKey == 3) {
-				appliedForce(indexX) -= forceMagnitude; // å‘å·¦æ–½åŠ åŠ›
+				appliedForce(indexX) -= forceMagnitude; // Œü¶{‰Á—Í
 			}
 			else if (wKey == 4) {
-				appliedForce(indexX) += forceMagnitude; // å‘å³æ–½åŠ åŠ›
+				appliedForce(indexX) += forceMagnitude; // Œü‰E{‰Á—Í
 			}
-			// å¯¹äºwKey == 1æˆ–2ï¼Œæˆ‘ä»¬ä¸åœ¨xæ–¹å‘ä¸Šæ–½åŠ åŠ›
+			// ?˜°wKey == 1ˆ½2C‰ä?•sİx•ûŒüã{‰Á—Í
 		}
 	}
 
-	// æ›´æ–°groupVelocity
+	// XVgroupVelocity
 	groupVelocity += appliedForce * timeStep;
 
-	// ä½¿ç”¨æ•´ä¸ªçŸ©é˜µè®¡ç®—velocityUpdate
+	// g—p®˜¢‹é??ZvelocityUpdate
 	Eigen::VectorXf velocityUpdate = inverseTermSparse * (massMatrix * groupVelocity) * timeStep;
 
-	// æ›´æ–°primeVecå’Œé¡¶ç‚¹ä½ç½®
+	// XVprimeVec˜a?“_ˆÊ’u
 	for (auto& vertexPair : verticesVector) {
 		Vertex* vertex = vertexPair;
-		int localPi = vertex->localIndex; // ä½¿ç”¨å±€éƒ¨ç´¢å¼•
+		int localPi = vertex->localIndex; // g—p‹Ç•”õˆø
 
-		// è·å–å½“å‰é¡¶ç‚¹çš„é€Ÿåº¦æ›´æ–°éƒ¨åˆ†
+		// ?æ“–‘O?“_“I‘¬“xXV•”•ª
 		Eigen::Vector3f currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
 
-		// è®¡ç®—æ–°çš„ä½ç½®
+		// ?ZV“IˆÊ’u
 		Eigen::Vector3f newPosition = Eigen::Vector3f(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate;
 
-		// æ›´æ–°primeVec
+		// XVprimeVec
 		primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
 	}
 }
 
 
 void Group::calPrimeVecT(int w) {
-	// ç¡®ä¿primeVecå·²ç»åˆå§‹åŒ–ä¸”è®¾ç½®ä¸ºæ­£ç¡®çš„å°ºå¯¸
+	// ?•ÛprimeVec›ß?‰n‰»Š?’u?³?“IÚ¡
 	primeVec = Eigen::VectorXf::Zero(3 * verticesVector.size());
 
-	// åˆå§‹åŒ–æ—‹è½¬åŠ›å‘é‡
+	// ‰n‰»ù?—ÍŒü—Ê
 	Eigen::VectorXf twistForce = Eigen::VectorXf::Zero(3 * verticesVector.size());
 
-	// ç‰¹å®šé¡¶ç‚¹å±€éƒ¨ç´¢å¼•æ•°ç»„
-	std::vector<int> indices = {22, 17, 9, 15 };
+	// “Á’è?“_‹Ç•”õˆø”?
+	std::vector<int> indices = { 22, 17, 9, 15 };
 	std::vector<int> indices1 = { 24, 18, 5, 17 };
 	if (this->groupIndex == 0) {
-		// å…ˆè®¡ç®—å¹³å‡ä½ç½®
+		// æ?Z•½‹ÏˆÊ’u
 		Eigen::Vector3f avgPosition = Eigen::Vector3f::Zero();
 		for (int index : indices1) {
 			Vertex* vertex = verticesVector[index];
@@ -576,26 +570,26 @@ void Group::calPrimeVecT(int w) {
 		}
 		avgPosition /= indices1.size();
 
-		// ä¸ºæ¯ä¸ªé¡¶ç‚¹æ–½åŠ æ—‹è½¬åŠ›
+		// ??˜¢?“_{‰Áù?—Í
 		for (int index : indices1) {
 			Vertex* vertex = verticesVector[index];
 			Eigen::Vector3f pos = Eigen::Vector3f(vertex->x, vertex->y, vertex->z);
 			Eigen::Vector3f toCenter = pos - avgPosition;
 
-			// åœ¨yzå¹³é¢ä¸Šè®¡ç®—ç›¸åˆ‡çš„åŠ›çš„æ–¹å‘
+			// İyz•½–Êã?Z‘ŠØ“I—Í“I•ûŒü
 			Eigen::Vector3f tangentForce = Eigen::Vector3f(0, -toCenter.z(), toCenter.y()).normalized();
 
-			// æ›´æ–°twistForceï¼Œè¿™é‡Œä½¿ç”¨tangentForceä¹˜ä»¥ä¸€ä¸ªæ ‡é‡æ¥è¡¨ç¤ºåŠ›çš„å¤§å°
-			float forceMagnitude = 150.0f; // ç¤ºä¾‹åŠ›çš„å¤§å°
-			twistForce(3 * index) += 0; // Xæ–¹å‘ä¸Šä¸æ–½åŠ åŠ›
-			twistForce(3 * index + 1) += forceMagnitude * tangentForce.y(); // Yæ–¹å‘
-			twistForce(3 * index + 2) += forceMagnitude * tangentForce.z(); // Zæ–¹å‘
+			// XVtwistForceC?—¢g—ptangentForce˜©ˆÈˆê˜¢?—Ê—ˆ•\¦—Í“I‘å¬
+			float forceMagnitude = 150.0f; // ¦—á—Í“I‘å¬
+			twistForce(3 * index) += 0; // X•ûŒüã•s{‰Á—Í
+			twistForce(3 * index + 1) += forceMagnitude * tangentForce.y(); // Y•ûŒü
+			twistForce(3 * index + 2) += forceMagnitude * tangentForce.z(); // Z•ûŒü
 		}
 	}
 
-	// æ£€æŸ¥æ˜¯å¦æ˜¯ç¬¬ä¸‰ç»„ï¼Œå¦‚æœæ˜¯ï¼Œåˆ™ä¸ºç‰¹å®šé¡¶ç‚¹æ–½åŠ æ—‹è½¬åŠ›
+	// ??¥”Û¥‘æO?C”@‰Ê¥C??“Á’è?“_{‰Áù?—Í
 	if (this->groupIndex == 3) {
-		// å…ˆè®¡ç®—å¹³å‡ä½ç½®
+		// æ?Z•½‹ÏˆÊ’u
 		Eigen::Vector3f avgPosition = Eigen::Vector3f::Zero();
 		for (int index : indices) {
 			Vertex* vertex = verticesVector[index];
@@ -603,132 +597,132 @@ void Group::calPrimeVecT(int w) {
 		}
 		avgPosition /= indices.size();
 
-		// ä¸ºæ¯ä¸ªé¡¶ç‚¹æ–½åŠ æ—‹è½¬åŠ›
+		// ??˜¢?“_{‰Áù?—Í
 		for (int index : indices) {
 			Vertex* vertex = verticesVector[index];
 			Eigen::Vector3f pos = Eigen::Vector3f(vertex->x, vertex->y, vertex->z);
 			Eigen::Vector3f toCenter = pos - avgPosition;
 
-			// åœ¨yzå¹³é¢ä¸Šè®¡ç®—ç›¸åˆ‡çš„åŠ›çš„æ–¹å‘
+			// İyz•½–Êã?Z‘ŠØ“I—Í“I•ûŒü
 			Eigen::Vector3f tangentForce = Eigen::Vector3f(0, toCenter.z(), -toCenter.y()).normalized();
 
-			// æ›´æ–°twistForceï¼Œè¿™é‡Œä½¿ç”¨tangentForceä¹˜ä»¥ä¸€ä¸ªæ ‡é‡æ¥è¡¨ç¤ºåŠ›çš„å¤§å°
-			float forceMagnitude = 150.0f; // ç¤ºä¾‹åŠ›çš„å¤§å°
-			twistForce(3 * index) += 0; // Xæ–¹å‘ä¸Šä¸æ–½åŠ åŠ›
-			twistForce(3 * index + 1) += forceMagnitude * tangentForce.y(); // Yæ–¹å‘
-			twistForce(3 * index + 2) += forceMagnitude * tangentForce.z(); // Zæ–¹å‘
+			// XVtwistForceC?—¢g—ptangentForce˜©ˆÈˆê˜¢?—Ê—ˆ•\¦—Í“I‘å¬
+			float forceMagnitude = 150.0f; // ¦—á—Í“I‘å¬
+			twistForce(3 * index) += 0; // X•ûŒüã•s{‰Á—Í
+			twistForce(3 * index + 1) += forceMagnitude * tangentForce.y(); // Y•ûŒü
+			twistForce(3 * index + 2) += forceMagnitude * tangentForce.z(); // Z•ûŒü
 		}
 	}
 
-	// æ›´æ–°groupVelocity
+	// XVgroupVelocity
 	groupVelocity += twistForce * timeStep;
 
-	// ä½¿ç”¨æ•´ä¸ªçŸ©é˜µè®¡ç®—velocityUpdate
+	// g—p®˜¢‹é??ZvelocityUpdate
 	Eigen::VectorXf velocityUpdate = inverseTermSparse * (massMatrix * groupVelocity) * timeStep;
 
-	// æ›´æ–°primeVecå’Œé¡¶ç‚¹ä½ç½®
+	// XVprimeVec˜a?“_ˆÊ’u
 	for (auto& vertexPair : verticesVector) {
 		Vertex* vertex = vertexPair;
-		int localPi = vertex->localIndex; // ä½¿ç”¨å±€éƒ¨ç´¢å¼•
+		int localPi = vertex->localIndex; // g—p‹Ç•”õˆø
 
-		// è·å–å½“å‰é¡¶ç‚¹çš„é€Ÿåº¦æ›´æ–°éƒ¨åˆ†
+		// ?æ“–‘O?“_“I‘¬“xXV•”•ª
 		Eigen::Vector3f currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
 
-		// è®¡ç®—æ–°çš„ä½ç½®
+		// ?ZV“IˆÊ’u
 		Eigen::Vector3f newPosition = Eigen::Vector3f(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate;
 
-		// æ›´æ–°primeVec
+		// XVprimeVec
 		primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
 	}
 }
 
 
 void Group::calPrimeVec2(int w) {
-	// ... [ç°æœ‰ä»£ç ] ...
+	// ... [?—L‘ã?] ...
 	primeVec = Eigen::VectorXf::Zero(3 * verticesVector.size());
 
 
 	gravity = Eigen::VectorXf::Zero(3 * verticesVector.size());
-	// è®¾ç½®æŒ‡å®šç‚¹çš„ gravity
-	int localPi = 2; // æŒ‡å®šçš„ localIndex
+	// ?’uw’è“_“I gravity
+	int localPi = 2; // w’è“I localIndex
 	int globalPi = 69;
 	if (globalPi < verticesVector.size()) {
 		Vertex* v = verticesVector[globalPi];
-		int gravityIndex = 3 * (v->localIndex) + 1; // å‡è®¾åœ¨ y æ–¹å‘ä¸Šæ–½åŠ åŠ›
+		int gravityIndex = 3 * (v->localIndex) + 1; // ˜ï?İ y •ûŒüã{‰Á—Í
 		if (w == 1 || w == 2) {
-			gravity(gravityIndex) = (w == 1) ? Gravity : -Gravity; // æ ¹æ® w çš„å€¼å†³å®šåŠ›çš„æ–¹å‘
+			gravity(gravityIndex) = (w == 1) ? Gravity : -Gravity; // ª˜ w “I?™r’è—Í“I•ûŒü
 		}
 	}
 	groupVelocity += gravity * timeStep;
 
-	// ä½¿ç”¨æ•´ä¸ªçŸ©é˜µè®¡ç®—velocityUpdate
+	// g—p®˜¢‹é??ZvelocityUpdate
 	Eigen::VectorXf velocityUpdate = inverseTermSparse * (massMatrix * groupVelocity) * timeStep;
 
-	// æ›´æ–°primeVecå’Œé¡¶ç‚¹ä½ç½®
+	// XVprimeVec˜a?“_ˆÊ’u
 	for (auto& vertexPair : verticesVector) {
 		Vertex* vertex = vertexPair;
-		int localPi = vertex->localIndex; // ä½¿ç”¨å±€éƒ¨ç´¢å¼•
+		int localPi = vertex->localIndex; // g—p‹Ç•”õˆø
 
-		// è·å–å½“å‰é¡¶ç‚¹çš„é€Ÿåº¦æ›´æ–°éƒ¨åˆ†
+		// ?æ“–‘O?“_“I‘¬“xXV•”•ª
 		Eigen::Vector3f currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
 
-		// è®¡ç®—æ–°çš„ä½ç½®
+		// ?ZV“IˆÊ’u
 		Eigen::Vector3f newPosition = Eigen::Vector3f(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate;
 
-		// æ›´æ–°primeVec
+		// XVprimeVec
 		primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
 
 	}
-	// ... [æ›´æ–° groupVelocity å’Œ primeVec çš„ä»£ç ] ...
+	// ... [XV groupVelocity ˜a primeVec “I‘ã?] ...
 }
 void Group::calPrimeVec(int w) {
-	// ç¡®ä¿groupVelocityå·²ç»åˆå§‹åŒ–ä¸”è®¾ç½®ä¸ºæ­£ç¡®çš„å°ºå¯¸
+	// ?•ÛgroupVelocity›ß?‰n‰»Š?’u?³?“IÚ¡
 	//groupVelocity = Eigen::VectorXf::Zero(3 * verticesMap.size());
 	primeVec = Eigen::VectorXf::Zero(3 * verticesVector.size());
-	
+
 
 	gravity = Eigen::VectorXf::Zero(3 * verticesVector.size());
 
-	// åˆå§‹åŒ–gravityå‘é‡
+	// ‰n‰»gravityŒü—Ê
 	if (w == 4) {
 		for (int i = 0; i < 3 * verticesVector.size(); i += 3) {
-			gravity(i) = -Gravity; // yæ–¹å‘ä¸Šè®¾ç½®é‡åŠ› å³
+			gravity(i) = -Gravity; // y•ûŒüã?’ud—Í ‰E
 		}
 	}
 	else if (w == 2) {
 		for (int i = 1; i < 3 * verticesVector.size(); i += 3) {
-			gravity(i) = Gravity; // yæ–¹å‘ä¸Šè®¾ç½®é‡åŠ› ä¸‹
+			gravity(i) = Gravity; // y•ûŒüã?’ud—Í ‰º
 		}
 	}
 	else if (w == 1) {
 		for (int i = 1; i < 3 * verticesVector.size(); i += 3) {
-			gravity(i) = -Gravity; // yæ–¹å‘ä¸Šè®¾ç½®é‡åŠ› ä¸Š
+			gravity(i) = -Gravity; // y•ûŒüã?’ud—Í ã
 		}
 	}
 	else if (w == 3) {
 		for (int i = 0; i < 3 * verticesVector.size(); i += 3) {
-			gravity(i) = Gravity; // yæ–¹å‘ä¸Šè®¾ç½®é‡åŠ› å·¦
+			gravity(i) = Gravity; // y•ûŒüã?’ud—Í ¶
 		}
 	}
-	
 
-	// æ›´æ–°groupVelocity
+
+	// XVgroupVelocity
 	//groupVelocityFEM += gravity * timeStep;
 	Eigen::VectorXf exfUpdate = timeStep * timeStep * inverseTerm * massMatrix * gravity;
 	Eigen::VectorXf velocityUpdate = inverseTerm * massMatrix * groupVelocity * timeStep;
 
-	// æ›´æ–°primeVecå’Œé¡¶ç‚¹ä½ç½®
+	// XVprimeVec˜a?“_ˆÊ’u
 	for (auto& vertexPair : verticesVector) {
 		Vertex* vertex = vertexPair;
-		int localPi = vertex->localIndex; // ä½¿ç”¨å±€éƒ¨ç´¢å¼•
+		int localPi = vertex->localIndex; // g—p‹Ç•”õˆø
 
-		// è·å–å½“å‰é¡¶ç‚¹çš„é€Ÿåº¦æ›´æ–°éƒ¨åˆ†
+		// ?æ“–‘O?“_“I‘¬“xXV•”•ª
 		Eigen::Vector3f currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
 		Eigen::Vector3f currentExfUpdate = exfUpdate.segment<3>(3 * localPi);
-		// è®¡ç®—æ–°çš„ä½ç½®
+		// ?ZV“IˆÊ’u
 		Eigen::Vector3f newPosition = Eigen::Vector3f(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate + currentExfUpdate;
 
-		// æ›´æ–°primeVec
+		// XVprimeVec
 		primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
 	}
 
@@ -739,34 +733,34 @@ void Group::calPrimeVec() {
 	if (!gravityApplied) {
 
 
-		// åˆå§‹åŒ–gravityå‘é‡ï¼Œåªåœ¨yæ–¹å‘æ–½åŠ é‡åŠ›
+		// ‰n‰»gravityŒü—ÊC‘üİy•ûŒü{‰Ád—Í
 		for (int i = 1; i < 3 * verticesVector.size(); i += 3) {
-			gravity(i) = Gravity; // yæ–¹å‘ä¸Šè®¾ç½®é‡åŠ›
+			gravity(i) = Gravity; // y•ûŒüã?’ud—Í
 		}
 
-		// ä»…åœ¨åˆå§‹æ—¶åˆ»æ›´æ–°groupVelocity
+		// ?İ‰n?XVgroupVelocity
 
-		gravityApplied = true; // æ ‡è®°é‡åŠ›å·²è¢«åº”ç”¨ï¼Œé˜²æ­¢æœªæ¥çš„æ›´æ–°
+		gravityApplied = true; // ??d—Í›ß”í?—pC–h~–¢—ˆ“IXV
 	}
 	//groupVelocity += gravity * timeStep;
-	// ä½¿ç”¨æ•´ä¸ªçŸ©é˜µè®¡ç®—velocityUpdate
+	// g—p®˜¢‹é??ZvelocityUpdate
 	//Eigen::VectorXf exfUpdate = timeStep * timeStep * massMatrix * gravity;
 	//Eigen::VectorXf exfUpdate = timeStep * timeStep *inverseTerm * massMatrix * gravity;
 	Eigen::VectorXf exfUpdate = timeStep * timeStep * inverseTerm * massMatrix * gravity;
 	Eigen::VectorXf velocityUpdate = inverseTerm * massMatrix * groupVelocity * timeStep;
 
-	// æ›´æ–°primeVecå’Œé¡¶ç‚¹ä½ç½®
+	// XVprimeVec˜a?“_ˆÊ’u
 	for (auto& vertexPair : verticesVector) {
 		Vertex* vertex = vertexPair;
-		int localPi = vertex->localIndex; // ä½¿ç”¨å±€éƒ¨ç´¢å¼•
+		int localPi = vertex->localIndex; // g—p‹Ç•”õˆø
 
-		// è·å–å½“å‰é¡¶ç‚¹çš„é€Ÿåº¦æ›´æ–°éƒ¨åˆ†
+		// ?æ“–‘O?“_“I‘¬“xXV•”•ª
 		Eigen::Vector3f currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
 		Eigen::Vector3f currentExfUpdate = exfUpdate.segment<3>(3 * localPi);
-		// è®¡ç®—æ–°çš„ä½ç½®
+		// ?ZV“IˆÊ’u
 		Eigen::Vector3f newPosition = Eigen::Vector3f(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate + currentExfUpdate;
 
-		// æ›´æ–°primeVec
+		// XVprimeVec
 		primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
 	}
 }
@@ -775,16 +769,16 @@ void Group::calLHS() {
 	//A = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK;
 	//B = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * massDistribution;
 
-	float reference = 0.0f; // floatç±»å‹çš„å‚è€ƒå€¼
-	float epsilon = std::numeric_limits<float>::epsilon(); // floatç±»å‹çš„epsilon
+	float reference = 0.0f; // float?Œ^“IQl?
+	float epsilon = std::numeric_limits<float>::epsilon(); // float?Œ^“Iepsilon
 	massDampingSparseInv = (massMatrix + timeStep * dampingMatrix).inverse().sparseView(reference, epsilon);
 	LHS_A = timeStep * timeStep * massDampingSparseInv * kSparse;
 	LHS_B = LHS_A * massDistributionSparse;
 
-	// è®¡ç®—é€†çŸ©é˜µ ä¸‹é¢ä¸å±äºLHSï¼Œé¡ºä¾¿ç®—
-	inverseTerm = (massMatrix + dampingMatrix * timeStep).inverse(); //é¡ºé¡ºä¾¿æŠŠè¿™ä¸ªç®—äº†
+	// ?Z‹t‹é? ‰º–Ê•s‘®˜°LHSC?•ÖZ
+	inverseTerm = (massMatrix + dampingMatrix * timeStep).inverse(); //??•Ö”c?˜¢Z—¹
 	inverseTermSparse = inverseTerm.sparseView();
-	RHS_E = timeStep * timeStep * massDampingSparseInv * kSparse ;
+	RHS_E = timeStep * timeStep * massDampingSparseInv * kSparse;
 	RHS_A = RHS_E * initLocalPos;
 
 	FEMLHS = LHS_I + LHS_A - LHS_B;
@@ -794,24 +788,24 @@ void Group::calLHSFEM() {
 	//A = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK;
 	//B = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * massDistribution;
 
-	float reference = 0.0f; // floatç±»å‹çš„å‚è€ƒå€¼
-	float epsilon = std::numeric_limits<float>::epsilon(); // floatç±»å‹çš„epsilon
+	float reference = 0.0f; // float?Œ^“IQl?
+	float epsilon = std::numeric_limits<float>::epsilon(); // float?Œ^“Iepsilon
 	LHSFEM = (massMatrix.sparseView() + timeStep * dampingMatrix.sparseView() + timeStep * timeStep * kSparseFEM);
 }
 void Group::calRHS() {
-	
+
 	//Fbind = Eigen::VectorXf::Zero(3 * verticesMap.size());
 	//A = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * initLocalPos;
 	//B = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * rotationMatrix.transpose() * primeVec;
 	//C = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * rotationMatrix.transpose() * massDistribution * primeVec;
 	//D = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * rotationMatrix.inverse() * Fbind;
 	//rotationTransSparse = rotationMatrix.transpose().sparseView();
-	
-	
-	
-	
+
+
+
+
 	RHS_D = RHS_G * Fbind;
-	FEMRHS = RHS_AsubBplusC + RHS_D; 
+	FEMRHS = RHS_AsubBplusC + RHS_D;
 
 }
 void Group::calRHSFEM()
@@ -825,10 +819,10 @@ void Group::calRInvLocalPos() {
 	for (const auto& vertexPair : verticesMap) {
 		const Vertex* vertex = vertexPair.second;
 		Eigen::Vector3f local_position(vertex->x, vertex->y, vertex->z);
-		// è®¡ç®—åˆå§‹ä½ç½®ä¸åˆå§‹é‡å¿ƒçš„å·®å€¼
+		// ?Z‰nˆÊ’u—^‰ndS“I·?
 		Eigen::Vector3f positiondifference = local_position - centerofMass;
 
-		// å°†å±€éƒ¨ä½ç½®å­˜å‚¨åœ¨initLocalPosä¸­ï¼Œæ³¨æ„indexéœ€è¦ä¹˜ä»¥3å› ä¸ºæ¯ä¸ªé¡¶ç‚¹æœ‰3ä¸ªåæ ‡å€¼
+		// «‹Ç•”ˆÊ’u‘¶?İinitLocalPos’†C’ˆÓindexù—v˜©ˆÈ3ˆö??˜¢?“_—L3˜¢¿??
 		curLocalPos.segment<3>(vertex->localIndex * 3) = positiondifference;
 	}
 	RInvPos = rotationMatrix.inverse() * curLocalPos;
@@ -839,12 +833,12 @@ void Group::calRInvLocalPos() {
 
 
 void Group::calDeltaX() {
-	
-	// è§£çº¿æ€§æ–¹ç¨‹Ax = b
+
+	// ‰ğ?«•û’öAx = b
 	deltaX = FEMLHS_Inv * FEMRHS;
 	//deltaX = FEMLHS.colPivHouseholderQr().solve(FEMRHS);
 
-	// å°† FEMLHS è½¬æ¢ä¸ºç¨€ç–çŸ©é˜µ
+	// « FEMLHS ???‹H‘`‹é?
 	//float threshold = 1e-18;
 	//Eigen::SparseMatrix<float> sparseFEMLHS = FEMLHS.sparseView(threshold);
 
@@ -856,37 +850,37 @@ void Group::calDeltaX() {
 }
 void Group::calDeltaXFEM() {
 
-	// è§£çº¿æ€§æ–¹ç¨‹Ax = b
+	// ‰ğ?«•û’öAx = b
 	deltaXFEM = LHSFEM.inverse() * RHSFEM;
 }
 void Group::calculateCurrentPositions() {
-	// éå†æ‰€æœ‰é¡¶ç‚¹
+	// •Õ?Š—L?“_
 	for (auto& vertexPair : verticesMap) {
 		Vertex* vertex = vertexPair.second;
 		int localidx;
 		localidx = vertex->localIndex;
 
-		// è·å–primeVecä¸­å¯¹åº”é¡¶ç‚¹çš„ä½ç½®
+		// ?æprimeVec’†???“_“IˆÊ’u
 		Eigen::Vector3f primePosition = primeVec.segment<3>(3 * localidx);
 
-		// è·å–deltaXä¸­å¯¹åº”é¡¶ç‚¹çš„ä½ç§»
+		// ?ædeltaX’†???“_“IˆÊˆÚ
 		Eigen::Vector3f displacement = deltaX.segment<3>(3 * localidx);
 
-		// è®¡ç®—å½“å‰ä½ç½®
+		// ?Z“–‘OˆÊ’u
 		Eigen::Vector3f currentPos = primePosition + displacement;
 		currentPosition.segment<3>(3 * localidx) = currentPos;
 
 	}
 }
 void Group::calculateCurrentPositionsFEM() {
-	// éå†æ‰€æœ‰é¡¶ç‚¹
+	// •Õ?Š—L?“_
 	for (auto& vertexPair : verticesMap) {
 		Vertex* vertex = vertexPair.second;
 		int localidx;
 		localidx = vertex->localIndex;
 
 
-		// è®¡ç®—å½“å‰ä½ç½®
+		// ?Z“–‘OˆÊ’u
 		Eigen::Vector3f currentPos = deltaXFEM.segment<3>(3 * localidx);
 		currentPositionFEM.segment<3>(3 * localidx) = currentPos;
 
@@ -896,22 +890,22 @@ void Group::calculateCurrentPositionsFEM() {
 //	for (auto& vertexPair : verticesMap) {
 //		Vertex* vertex = vertexPair.second;
 //
-//		// ä½¿ç”¨å±€éƒ¨ç´¢å¼•æ¥è·å–æ­£ç¡®çš„çŸ©é˜µå—å’ŒprimeVecéƒ¨åˆ†
+//		// g—p‹Ç•”õˆø—ˆ?æ³?“I‹é??˜aprimeVec•”•ª
 //		int localIndex = vertex->localIndex;
 //		Eigen::Matrix3f rotationBlock = rotationMatrix.block<3, 3>(3 * localIndex, 3 * localIndex);
 //		Eigen::Vector3f positionInPrimeVec = primeVec.segment<3>(3 * localIndex);
 //
 //		if (vertex->isFixed) {
-//			// å¯¹äºå›ºå®šç‚¹ï¼Œå°†ä½ç½®è®¾ç½®ä¸ºåˆå§‹ä½ç½®
+//			// ?˜°ŒÅ’è“_C«ˆÊ’u?’u?‰nˆÊ’u
 //			vertex->x = vertex->initx;
 //			vertex->y = vertex->inity;
 //			vertex->z = vertex->initz;
 //		}
 //		else {
-//			// ä½¿ç”¨æ—‹è½¬çŸ©é˜µå—ä¹˜ä»¥primeVecä¸­çš„ä½ç½®
+//			// g—pù?‹é??˜©ˆÈprimeVec’†“IˆÊ’u
 //			Eigen::Vector3f newPosition = rotationBlock * positionInPrimeVec;
 //
-//			// æ›´æ–°é¡¶ç‚¹ä½ç½®
+//			// XV?“_ˆÊ’u
 //			vertex->x = newPosition.x();
 //			vertex->y = newPosition.y();
 //			vertex->z = newPosition.z();
@@ -954,7 +948,7 @@ void Group::calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
 		// Compute the constraint force
 		force = k * posDifference;
 		float maxForce = 100000;
-		if (abs(force.x())  > maxForce)
+		if (abs(force.x()) > maxForce)
 		{
 			force.x() = force.x() / abs(force.x()) * maxForce;
 		}
@@ -970,7 +964,7 @@ void Group::calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
 		Fbind.segment<3>(3 * vertexThisGroup->localIndex) += force;
 		distances.segment<3>(3 * i) = (posThisGroup - posOtherGroup).cwiseAbs();
 	}
-	
+
 }
 
 void Group::calFbind(const Eigen::VectorXf& currentPositionThisGroup, const std::vector<Eigen::VectorXf>& allCurrentPositionsOtherGroups, float k) {
@@ -979,8 +973,8 @@ void Group::calFbind(const Eigen::VectorXf& currentPositionThisGroup, const std:
 	Eigen::Vector3f avgPosition;
 	Eigen::Vector3f posDifference;
 	Eigen::Vector3f force;
-	// å‡è®¾verticesMapæ˜¯å®šä¹‰äº†ç»„å†…é¡¶ç‚¹ç´¢å¼•æ˜ å°„çš„å˜é‡
-	Fbind = Eigen::VectorXf::Zero(currentPositionThisGroup.size()); // å‡è®¾æ¯ä¸ªé¡¶ç‚¹å ç”¨3ä¸ªä½ç½®
+	// ˜ï?verticesMap¥’è?—¹?“à?“_õˆø‰fË“I?—Ê
+	Fbind = Eigen::VectorXf::Zero(currentPositionThisGroup.size()); // ˜ï??˜¢?“_è—p3˜¢ˆÊ’u
 
 	for (int direction = 0; direction < 6; ++direction) {
 		int adjacentGroupIdx = adjacentGroupIDs[direction];
@@ -993,7 +987,7 @@ void Group::calFbind(const Eigen::VectorXf& currentPositionThisGroup, const std:
 				Vertex* vertexThisGroup = commonVerticesPair.first[i];
 				Vertex* vertexOtherGroup = commonVerticesPair.second[i];
 
-				// ç›´æ¥ä½¿ç”¨å¯¹åº”é¡¶ç‚¹çš„å½“å‰ä½ç½®
+				// ’¼Úg—p???“_“I“–‘OˆÊ’u
 				posThisGroup = currentPositionThisGroup.segment<3>(3 * vertexThisGroup->localIndex);
 				posOtherGroup = currentPositionOtherGroup.segment<3>(3 * vertexOtherGroup->localIndex);
 				avgPosition = (posThisGroup + posOtherGroup) / 2;
@@ -1011,18 +1005,18 @@ void Group::updatePosition() {
 	static float frameTime = 0;
 	frameTime += timeStep;
 	Eigen::Vector3f pos = Eigen::Vector3f::Zero();
-	// éå†æ‰€æœ‰é¡¶ç‚¹
+	// •Õ?Š—L?“_
 	for (auto& vertexPair : verticesMap) {
 		Vertex* vertex = vertexPair.second;
 		int localIndex = vertex->localIndex;
 
-		// ä»currentPositionä¸­è·å–å¯¹åº”é¡¶ç‚¹çš„ä½ç½®
+		// ˜¸currentPosition’†?æ???“_“IˆÊ’u
 		pos = currentPosition.segment<3>(3 * localIndex);
 		/*vertex->x = pos.x();
 		vertex->y = pos.y();
 		vertex->z = pos.z();*/
 		if (vertex->isFixed == true) {
-			// å¯¹äºå›ºå®šç‚¹ï¼Œå°†ä½ç½®è®¾ç½®ä¸ºåˆå§‹ä½ç½®
+			// ?˜°ŒÅ’è“_C«ˆÊ’u?’u?‰nˆÊ’u
 			/*vertex->x = vertex->x = vertex->initx - 0.25 * sin(0.4 * frameTime);
 			vertex->y = vertex->y = vertex->inity + 0.1 * sin(0.7 * frameTime);*/
 			vertex->x = vertex->initx;
@@ -1030,15 +1024,15 @@ void Group::updatePosition() {
 			vertex->z = vertex->initz;
 		}
 		else {
-			// ä½¿ç”¨æ—‹è½¬çŸ©é˜µå—ä¹˜ä»¥primeVecä¸­çš„ä½ç½®
-			
+			// g—pù?‹é??˜©ˆÈprimeVec’†“IˆÊ’u
+
 
 			vertex->x = pos.x();
 			vertex->y = pos.y();
 			vertex->z = pos.z();
 		}
 
-		/* æ›´æ–°é¡¶ç‚¹çš„ä½ç½®
+		/* XV?“_“IˆÊ’u
 		if (vertex->isFixed == true)
 		{
 			vertex->x += 0.01;
@@ -1047,24 +1041,24 @@ void Group::updatePosition() {
 }
 void Group::updatePositionFEM() {
 	Eigen::Vector3f pos = Eigen::Vector3f::Zero();
-	// éå†æ‰€æœ‰é¡¶ç‚¹
+	// •Õ?Š—L?“_
 	for (auto& vertexPair : verticesMap) {
 		Vertex* vertex = vertexPair.second;
 		int localIndex = vertex->localIndex;
 
-		// ä»currentPositionä¸­è·å–å¯¹åº”é¡¶ç‚¹çš„ä½ç½®
+		// ˜¸currentPosition’†?æ???“_“IˆÊ’u
 		pos = deltaXFEM.segment<3>(3 * localIndex);
 		/*vertex->x = pos.x();
 		vertex->y = pos.y();
 		vertex->z = pos.z();*/
 		if (vertex->isFixed) {
-			// å¯¹äºå›ºå®šç‚¹ï¼Œå°†ä½ç½®è®¾ç½®ä¸ºåˆå§‹ä½ç½®
+			// ?˜°ŒÅ’è“_C«ˆÊ’u?’u?‰nˆÊ’u
 			vertex->x = vertex->initx;
 			vertex->y = vertex->inity;
 			vertex->z = vertex->initz;
 		}
 		else {
-			// ä½¿ç”¨æ—‹è½¬çŸ©é˜µå—ä¹˜ä»¥primeVecä¸­çš„ä½ç½®
+			// g—pù?‹é??˜©ˆÈprimeVec’†“IˆÊ’u
 
 
 			vertex->x = pos.x();
@@ -1072,17 +1066,17 @@ void Group::updatePositionFEM() {
 			vertex->z = pos.z();
 		}
 
-		// æ›´æ–°é¡¶ç‚¹çš„ä½ç½®
+		// XV?“_“IˆÊ’u
 
 	}
 }
 void Group::updateVelocity() {
 	Eigen::Vector3f previousPos = Eigen::Vector3f::Zero();
 	Eigen::Vector3f currentPos = Eigen::Vector3f::Zero();
-	Eigen::Vector3f velocity =  Eigen::Vector3f::Zero();
+	Eigen::Vector3f velocity = Eigen::Vector3f::Zero();
 	Kinematics = 0.0;
-	
-	// éå†æ‰€æœ‰é¡¶ç‚¹ï¼Œæ›´æ–°é€Ÿåº¦å¹¶ä¿å­˜å½“å‰ä½ç½®
+
+	// •Õ?Š—L?“_CXV‘¬“x›ó•Û‘¶“–‘OˆÊ’u
 	for (auto& vertexPair : verticesMap) {
 		Vertex* vertex = vertexPair.second;
 		int localIndex = vertex->localIndex;
@@ -1092,10 +1086,10 @@ void Group::updateVelocity() {
 			previousPos.y() = vertex->y;
 			previousPos.z() = vertex->z;
 
-			// ä» previousPosition è·å–ä¸Šä¸€å¸§çš„ä½ç½®
+			// ˜¸ previousPosition ?æãˆê?“IˆÊ’u
 			currentPos = currentPosition.segment<3>(3 * localIndex);
 
-			// è®¡ç®—é€Ÿåº¦
+			// ?Z‘¬“x
 			velocity = (currentPos - previousPos) / timeStep;
 			groupVelocity.segment<3>(3 * localIndex) = velocity;
 
@@ -1103,16 +1097,16 @@ void Group::updateVelocity() {
 		}
 		/*std::cout << "\r";
 		std::cout << groupVelocity << std::endl;*/
-		// è·å–å½“å‰ä½ç½®
-		
-		// æ›´æ–° vertex çš„é€Ÿåº¦
-		// ä¾‹å¦‚ï¼švertex->velocity = velocity;
+		// ?æ“–‘OˆÊ’u
 
-		// ä¿å­˜å½“å‰ä½ç½®ä½œä¸ºä¸‹ä¸€å¸§çš„â€œä¸Šä¸€å¸§ä½ç½®â€
+		// XV vertex “I‘¬“x
+		// —á”@Fvertex->velocity = velocity;
+
+		// •Û‘¶“–‘OˆÊ’uì?‰ºˆê?“Igãˆê?ˆÊ’uh
 		//previousPosition.segment<3>(3 * localIndex) = currentPos;
 	}
 
-	//// æ›´æ–°currentPositionä¸ºæœ¬å¸§æœ€åçš„ä½ç½®
+	//// XVcurrentPosition?–{?Å@“IˆÊ’u
 	//for (auto& vertexPair : verticesMap) {
 	//	Vertex* vertex = vertexPair.second;
 	//	int localIndex = vertex->localIndex;
@@ -1125,519 +1119,34 @@ void Group::updateVelocityFEM() {
 	Eigen::Vector3f currentPos = Eigen::Vector3f::Zero();
 	Eigen::Vector3f velocity = Eigen::Vector3f::Zero();
 
-	// éå†æ‰€æœ‰é¡¶ç‚¹ï¼Œæ›´æ–°é€Ÿåº¦å¹¶ä¿å­˜å½“å‰ä½ç½®
+	// •Õ?Š—L?“_CXV‘¬“x›ó•Û‘¶“–‘OˆÊ’u
 	for (auto& vertexPair : verticesMap) {
 		Vertex* vertex = vertexPair.second;
 		int localIndex = vertex->localIndex;
 
-		// è·å–å½“å‰ä½ç½®
+		// ?æ“–‘OˆÊ’u
 		previousPos.x() = vertex->x;
 		previousPos.y() = vertex->y;
 		previousPos.z() = vertex->z;
 
-		// ä» previousPosition è·å–ä¸Šä¸€å¸§çš„ä½ç½®
+		// ˜¸ previousPosition ?æãˆê?“IˆÊ’u
 		currentPos = currentPositionFEM.segment<3>(3 * localIndex);
 
-		// è®¡ç®—é€Ÿåº¦
+		// ?Z‘¬“x
 		velocity = (currentPos - previousPos) / timeStep;
 		groupVelocityFEM.segment<3>(3 * localIndex) = velocity;
-		// æ›´æ–° vertex çš„é€Ÿåº¦
-		// ä¾‹å¦‚ï¼švertex->velocity = velocity;
+		// XV vertex “I‘¬“x
+		// —á”@Fvertex->velocity = velocity;
 
-		// ä¿å­˜å½“å‰ä½ç½®ä½œä¸ºä¸‹ä¸€å¸§çš„â€œä¸Šä¸€å¸§ä½ç½®â€
+		// •Û‘¶“–‘OˆÊ’uì?‰ºˆê?“Igãˆê?ˆÊ’uh
 		//previousPosition.segment<3>(3 * localIndex) = currentPos;
 	}
 
-	//// æ›´æ–°currentPositionä¸ºæœ¬å¸§æœ€åçš„ä½ç½®
+	//// XVcurrentPosition?–{?Å@“IˆÊ’u
 	//for (auto& vertexPair : verticesMap) {
 	//	Vertex* vertex = vertexPair.second;
 	//	int localIndex = vertex->localIndex;
 
 	//	currentPosition.segment<3>(3 * localIndex) = Eigen::Vector3f(vertex->x, vertex->y, vertex->z);
 	//}
-}
-
-
-std::unordered_set<std::string> boundaryEdgesSet;  // Set to store boundary edges
-
-void findBoundaryEdges(tetgenio& out) {
-	int indexOffset = out.firstnumber;  // Get the index offset (0 or 1)
-	for (int i = 0; i < out.numberoftrifaces; ++i) {
-		for (int j = 0; j < 3; ++j) {
-			int vertexIndex1 = out.trifacelist[i * 3 + j] - indexOffset;
-			int vertexIndex2 = out.trifacelist[i * 3 + ((j + 1) % 3)] - indexOffset;
-			std::string edgeKey = vertexIndex1 < vertexIndex2 ?
-				std::to_string(vertexIndex1) + "-" + std::to_string(vertexIndex2) :
-				std::to_string(vertexIndex2) + "-" + std::to_string(vertexIndex1);
-			boundaryEdgesSet.insert(edgeKey);
-		}
-	}
-}
-
-void divideIntoGroups(tetgenio& out, Object& object, int numX, int numY, int numZ) {
-	//findBoundaryEdges(out);  // Populate the boundaryEdgesSet
-
-	// Find min and max coordinates in all directions
-	float minX = out.pointlist[0], minY = out.pointlist[1], minZ = out.pointlist[2];
-	float maxX = minX, maxY = minY, maxZ = minZ;
-	for (int i = 0; i < out.numberofpoints; ++i) {
-		float x = out.pointlist[i * 3];
-		float y = out.pointlist[i * 3 + 1];
-		float z = out.pointlist[i * 3 + 2];
-		if (x < minX) minX = x; if (x > maxX) maxX = x;
-		if (y < minY) minY = y; if (y > maxY) maxY = y;
-		if (z < minZ) minZ = z; if (z > maxZ) maxZ = z;
-	}
-
-	// Calculate group ranges for each direction
-	float groupRangeX = (maxX - minX) / numX;
-	float groupRangeY = (maxY - minY) / numY;
-	float groupRangeZ = (maxZ - minZ) / numZ;
-
-	// Create vertices
-	std::vector<Vertex*> vertices;
-	for (int i = 0; i < out.numberofpoints; ++i) {
-		float x = out.pointlist[i * 3];
-		float y = out.pointlist[i * 3 + 1];
-		float z = out.pointlist[i * 3 + 2];
-		vertices.push_back(new Vertex(x, y, z, i));
-	}
-
-	// Resize groups vector
-	object.groups.resize(numX * numY * numZ);
-
-	// Create tetrahedra and assign to groups based on XYZ coordinates
-	for (int i = 0; i < out.numberoftetrahedra; ++i) {
-		Vertex* v1 = vertices[out.tetrahedronlist[i * 4] - 1];
-		Vertex* v2 = vertices[out.tetrahedronlist[i * 4 + 1] - 1];
-		Vertex* v3 = vertices[out.tetrahedronlist[i * 4 + 2] - 1];
-		Vertex* v4 = vertices[out.tetrahedronlist[i * 4 + 3] - 1];
-		Tetrahedron* tet = new Tetrahedron(v1, v2, v3, v4); // Pack vertices into tetrahedron
-
-		// Determine group based on average coordinates
-		float avgX = (v1->x + v2->x + v3->x + v4->x) / 4;
-		float avgY = (v1->y + v2->y + v3->y + v4->y) / 4;
-		float avgZ = (v1->z + v2->z + v3->z + v4->z) / 4;
-
-		int groupIndexX = std::min(static_cast<int>((avgX - minX) / groupRangeX), numX - 1);
-		int groupIndexY = std::min(static_cast<int>((avgY - minY) / groupRangeY), numY - 1);
-		int groupIndexZ = std::min(static_cast<int>((avgZ - minZ) / groupRangeZ), numZ - 1);
-
-		int groupIdx = groupIndexZ * numX * numY + groupIndexY * numX + groupIndexX;
-		object.groups[groupIdx].addTetrahedron(tet); // Pack tetrahedron into group
-		object.groups[groupIdx].groupIndex = groupIdx;
-
-		// Set up edges for each tetrahedron
-		static int edgeIndices[6][2] = { {0, 1}, {1, 2}, {2, 0}, {0, 3}, {1, 3}, {2, 3} };
-		for (int j = 0; j < 6; ++j) {
-			Vertex* vertex1 = tet->vertices[edgeIndices[j][0]];
-			Vertex* vertex2 = tet->vertices[edgeIndices[j][1]];
-			Edge* edge = new Edge(vertex1, vertex2);
-			std::string edgeKey = vertex1->index < vertex2->index ?
-				std::to_string(vertex1->index) + "-" + std::to_string(vertex2->index) :
-				std::to_string(vertex2->index) + "-" + std::to_string(vertex1->index);
-			edge->isBoundary = boundaryEdgesSet.count(edgeKey) > 0;
-			tet->edges[j] = edge;
-		}
-	}
-}
-
-float Tetrahedron::calMassTetra(float den) {
-	
-	//float volume;
-	Eigen::Vector3f AB(vertices[1]->x - vertices[0]->x, vertices[1]->y - vertices[0]->y, vertices[1]->z - vertices[0]->z);
-	Eigen::Vector3f AC(vertices[2]->x - vertices[0]->x, vertices[2]->y - vertices[0]->y, vertices[2]->z - vertices[0]->z);
-	Eigen::Vector3f AD(vertices[3]->x - vertices[0]->x, vertices[3]->y - vertices[0]->y, vertices[3]->z - vertices[0]->z);
-
-	// Calculate volume using the formula
-	volumeTetra = (AB.cross(AC)).dot(AD) / 6.0f;
-	volumeTetra = std::abs(volumeTetra);
-	massTetra = volumeTetra * den;
-	return massTetra;
-
-	
-}
-float Tetrahedron::calVolumeTetra() {
-
-	//float volume;
-	Eigen::Vector3f AB(vertices[1]->x - vertices[0]->x, vertices[1]->y - vertices[0]->y, vertices[1]->z - vertices[0]->z);
-	Eigen::Vector3f AC(vertices[2]->x - vertices[0]->x, vertices[2]->y - vertices[0]->y, vertices[2]->z - vertices[0]->z);
-	Eigen::Vector3f AD(vertices[3]->x - vertices[0]->x, vertices[3]->y - vertices[0]->y, vertices[3]->z - vertices[0]->z);
-
-	// Calculate volume using the formula
-	volumeTetra = (AB.cross(AC)).dot(AD) / 6.0f;
-	volumeTetra = std::abs(volumeTetra);
-	return volumeTetra;
-}
-
-void Object::assignLocalIndicesToAllGroups() { // local index generation
-	for (Group& group : groups) {
-		int currentLocalIndex = 0;
-		std::unordered_set<Vertex*> processedVertices; // ç”¨äºè·Ÿè¸ªå·²å¤„ç†çš„é¡¶ç‚¹
-
-		for (Tetrahedron* tetra : group.tetrahedra) {
-			for (int i = 0; i < 4; ++i) {
-				Vertex* vertex = tetra->vertices[i];
-
-				// æ£€æŸ¥é¡¶ç‚¹æ˜¯å¦å·²ç»å¤„ç†è¿‡
-				if (processedVertices.find(vertex) == processedVertices.end()) {
-					vertex->localIndex = currentLocalIndex++; // åˆ†é…æœ¬åœ°
-					processedVertices.insert(vertex); // æ ‡è®°ä¸ºå·²å¤„ç†
-				}
-			}
-		}
-	}
-}
-
-void Object::updateIndices() {
-	std::unordered_set<int> globalIndices;
-	std::unordered_map<int, Vertex*> indexToVertexMap; // æ—§ç´¢å¼•åˆ°æ–°é¡¶ç‚¹çš„æ˜ å°„
-	int maxIndex = 0;
-
-	// é¦–å…ˆéå†æ‰€æœ‰é¡¶ç‚¹ä»¥æ‰¾åˆ°æœ€å¤§ç´¢å¼•å€¼
-	for (Group& group : groups) {
-		for (Tetrahedron* tetra : group.tetrahedra) {
-			for (int i = 0; i < 4; ++i) {
-				Vertex* vertex = tetra->vertices[i];
-				maxIndex = std::max(maxIndex, vertex->index);
-			}
-		}
-	}
-
-	int nextAvailableIndex = maxIndex + 1;
-
-	// å†æ¬¡éå†æ‰€æœ‰é¡¶ç‚¹ä»¥æ›´æ–°ç´¢å¼•
-	for (Group& group : groups) {
-		std::unordered_set<int> localIndices; // æ¯ä¸ªç»„å†…çš„æœ¬åœ°ç´¢å¼•é›†åˆ
-
-		for (Tetrahedron* tetra : group.tetrahedra) {
-			for (int i = 0; i < 4; ++i) {
-				Vertex* vertex = tetra->vertices[i];
-
-				if (localIndices.find(vertex->index) == localIndices.end()) { //å¦‚æœåœ¨ localIndices é›†åˆä¸­æ‰¾ä¸åˆ° vertex->index çš„å€¼
-					localIndices.insert(vertex->index);
-
-					if (globalIndices.find(vertex->index) != globalIndices.end()) {
-						// å¦‚æœç´¢å¼•å·²åœ¨å…¨å±€é›†åˆä¸­ï¼Œåˆ›å»ºæ–°é¡¶ç‚¹å¹¶æ›´æ–°æ˜ å°„
-						Vertex* newVertex = new Vertex(vertex->x, vertex->y, vertex->z, nextAvailableIndex++);
-						indexToVertexMap[vertex->index] = newVertex;
-						tetra->vertices[i] = newVertex;
-						vertex = newVertex;
-					}
-					globalIndices.insert(vertex->index);
-				}
-				else if (indexToVertexMap.find(vertex->index) != indexToVertexMap.end()) {
-					// æ›´æ–°ä¸ºæ–°çš„é¡¶ç‚¹å¼•ç”¨
-					tetra->vertices[i] = indexToVertexMap[vertex->index];
-				}
-			}
-		}
-	}
-}
-
-void Object::generateUniqueVertices() { //æ‰§è¡Œè¿™ä¸ªå‡½æ•°ä»¥åï¼ŒverticesMapå°±ä¼šè£…æ»¡è¿™ä¸ªç»„çš„verticesï¼Œ ä¸é‡å¤
-	//std::vector<Vertex*> uniqueVertices;
-
-	for (Group& group : groups) {
-		group.verticesMap.clear(); // æ¸…ç©ºç°æœ‰çš„æ˜ å°„
-
-		for (Tetrahedron* tetra : group.tetrahedra) {
-			for (int i = 0; i < 4; ++i) {
-				Vertex* vertex = tetra->vertices[i];
-
-				// å¦‚æœé¡¶ç‚¹å°šæœªåœ¨verticesMapä¸­ï¼Œåˆ™æ·»åŠ 
-				if (group.verticesMap.find(vertex->index) == group.verticesMap.end()) {
-					group.verticesMap[vertex->index] = vertex;
-				}
-			}
-		}
-		group.initialize();
-	}
-
-}
-
-std::pair<std::vector<Vertex*>, std::vector<Vertex*>> Object::findCommonVertices1(const Group& group1, const Group& group2) { //å¯»æ‰¾å…±åŒç‚¹
-	std::vector<Vertex*> commonVerticesGroup1;
-	std::vector<Vertex*> commonVerticesGroup2;
-
-	// éå†group1çš„verticesMapä¸­çš„æ‰€æœ‰é¡¶ç‚¹
-	for (auto& mapEntry1 : group1.verticesMap) {
-		Vertex* vertex1 = mapEntry1.second;
-
-		// éå†group2çš„verticesMapä¸­çš„æ‰€æœ‰é¡¶ç‚¹
-		for (auto& mapEntry2 : group2.verticesMap) {
-			Vertex* vertex2 = mapEntry2.second;
-
-			// æ£€æŸ¥åæ ‡æ˜¯å¦ç›¸åŒ
-			if (vertex1->x == vertex2->x && vertex1->y == vertex2->y && vertex1->z == vertex2->z) {
-				commonVerticesGroup1.push_back(vertex1);
-				commonVerticesGroup2.push_back(vertex2);
-			}
-		}
-	}
-
-	return { commonVerticesGroup1, commonVerticesGroup2 };
-}
-
-void Object::findCommonVertices() {
-	// Assuming 'groups' is a member of Object class and contains all groups
-	for (Group& group : groups) {
-		// Initialize commonVerticesInDirections for the current group
-		//group.commonVerticesInDirections = std::vector<std::pair<std::vector<Vertex*>, std::vector<Vertex*>>>(6);
-
-		// Iterate through all possible directions
-		for (int direction = 0; direction < 6; ++direction) {
-			int adjacentGroupIdx = group.adjacentGroupIDs[direction];
-
-			// Check if there is an adjacent group in this direction
-			if (adjacentGroupIdx != -1) {
-				Group& adjacentGroup = groups[adjacentGroupIdx];
-
-				std::vector<Vertex*> commonVerticesCurrentGroup;
-				std::vector<Vertex*> commonVerticesAdjacentGroup;
-
-				// Find common vertices between group and adjacentGroup
-				for (auto& vertexCurrent : group.verticesMap) {
-					for (auto& vertexAdjacent : adjacentGroup.verticesMap) {
-						if (vertexCurrent.second->x == vertexAdjacent.second->x &&
-							vertexCurrent.second->y == vertexAdjacent.second->y &&
-							vertexCurrent.second->z == vertexAdjacent.second->z) {
-							commonVerticesCurrentGroup.push_back(vertexCurrent.second);
-							commonVerticesAdjacentGroup.push_back(vertexAdjacent.second);
-						}
-					}
-				}
-
-				// Store the common vertices in the appropriate direction
-				group.commonVerticesInDirections[direction] = { commonVerticesCurrentGroup, commonVerticesAdjacentGroup };
-			}
-		}
-	}
-}
-
-void Object::storeAdjacentGroupsCommonVertices(int groupIndex) {
-	// ç¡®ä¿æŒ‡å®šçš„ç»„ç´¢å¼•åœ¨æœ‰æ•ˆèŒƒå›´å†…
-	if (groupIndex < 0 || groupIndex >= groups.size()) {
-		std::cerr << "Invalid group index." << std::endl;
-		return;
-	}
-
-	// å­˜å‚¨å…±åŒé¡¶ç‚¹çš„ç»“æ„ï¼Œæ¯ä¸ªæ¡ç›®å¯¹åº”ä¸€ä¸ªæ–¹å‘çš„ç›¸é‚»ç»„
-	//std::vector<std::pair<std::vector<Vertex*>, std::vector<Vertex*>>> commonVerticesInDirections(6);
-
-	// è·å–å½“å‰ç»„
-	Group& currentGroup = groups[groupIndex];
-
-	// éå†æ‰€æœ‰6ä¸ªæ–¹å‘çš„ç›¸é‚»ç»„
-	for (int direction = 0; direction < 6; ++direction) {
-		int adjacentGroupIdx = currentGroup.adjacentGroupIDs[direction];
-
-		// æ£€æŸ¥æ˜¯å¦å­˜åœ¨ç›¸é‚»ç»„
-		if (adjacentGroupIdx != -1) {
-			Group& adjacentGroup = groups[adjacentGroupIdx];
-
-			// ä½¿ç”¨ findCommonVertices1 å‡½æ•°æ‰¾åˆ°å…±åŒé¡¶ç‚¹
-			std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonVertices = findCommonVertices1(currentGroup, adjacentGroup);
-
-			// å­˜å‚¨æ‰¾åˆ°çš„å…±åŒé¡¶ç‚¹
-			currentGroup.commonVerticesInDirections[direction] = commonVertices;
-		}
-	}
-}
-void Object::calDistance(std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonPoints) {
-	const auto& verticesGroup1 = commonPoints.first;
-	const auto& verticesGroup2 = commonPoints.second;
-
-	// ç¡®ä¿ä¸¤ç»„ç‚¹çš„æ•°é‡ç›¸ç­‰
-	if (verticesGroup1.size() != verticesGroup2.size()) {
-		// å¤„ç†é”™è¯¯æƒ…å†µæˆ–è¿”å›
-		return;
-	}
-
-	// éå†é¡¶ç‚¹å¯¹å¹¶è®¡ç®—è·ç¦»
-	for (size_t i = 0; i < verticesGroup1.size(); ++i) {
-		Vertex* vertex1 = verticesGroup1[i];
-		Vertex* vertex2 = verticesGroup2[i];
-
-		// è®¡ç®—ä¸¤ç‚¹ä¹‹é—´çš„æ¬§å‡ é‡Œå¾—è·ç¦»
-		double distance = std::sqrt(std::pow(vertex1->x - vertex2->x, 2) +
-			std::pow(vertex1->y - vertex2->y, 2) +
-			std::pow(vertex1->z - vertex2->z, 2));
-
-
-		std::cout << "Distance of: " << i << "is" << distance << std::endl;
-	}
-}
-
-void Object::writeVerticesToFile(const std::string& filename) {
-	std::ofstream outfile(filename, std::ios::out);
-	if (!outfile) {
-		std::cerr << "æ— æ³•æ‰“å¼€æ–‡ä»¶ï¼" << std::endl;
-		return;
-	}
-
-	std::unordered_set<int> writtenIndices;  // ç”¨äºå­˜å‚¨å·²å†™å…¥çš„é¡¶ç‚¹ç´¢å¼•
-
-	for (const auto& group : groups) {  // éå†æ‰€æœ‰ç»„
-		for (const auto& vertex : group.verticesVector) {  // éå†ç»„å†…æ‰€æœ‰é¡¶ç‚¹
-			if (vertex != nullptr && writtenIndices.find(vertex->index) == writtenIndices.end()) {
-				// å¦‚æœé¡¶ç‚¹ç´¢å¼•å°šæœªå†™å…¥ï¼Œåˆ™å†™å…¥æ–‡ä»¶
-				outfile << "Index: " << vertex->index
-					<< ", X: " << vertex->x
-					<< ", Y: " << vertex->y
-					<< ", Z: " << vertex->z << std::endl;
-				writtenIndices.insert(vertex->index);  // æ ‡è®°ç´¢å¼•ä¸ºå·²å†™å…¥
-			}
-		}
-	}
-
-	outfile.close();
-	std::cout << "é¡¶ç‚¹æ•°æ®å·²æˆåŠŸå†™å…¥æ–‡ä»¶: " << filename << std::endl;
-}
-void Object::PBDLOOP(int looptime) {
-	// 1. åˆå§‹åŒ–ï¼šå°†æ¯ä¸ªç»„çš„ Fbind ç½®é›¶
-
-		 //#pragma omp parallel for
-	float reference = 0.0f; // floatç±»å‹çš„å‚è€ƒå€¼
-	float epsilon = std::numeric_limits<float>::epsilon(); // floatç±»å‹çš„epsilon
-#pragma omp parallel for
-	for (int i = 0; i < groupNum; ++i) {
-		auto& g = groups[i];
-		g.Fbind = Eigen::VectorXf::Zero(3 * g.verticesMap.size()); // å‡è®¾ Group ç±»æœ‰ä¸€ä¸ªæ–¹æ³•æ¥æ¸…é™¤ Fbind
-		g.rotationTransSparse = g.rotationMatrix.transpose().sparseView(reference, epsilon);
-
-		g.RHS_F = g.RHS_E * g.rotationTransSparse;//RHSçš„éƒ¨åˆ†
-		g.RHS_B = g.RHS_F * g.primeVec; //46ms
-
-		//g.RHS_F_MassD = g.RHS_F * g.massDistributionSparse;
-
-		//auto fff = g.RHS_F.toDense();
-		//auto massssss = g.massDistributionSparse.toDense();
-
-		//Eigen::MatrixXf producttt = (10000*fff) * (10000*massssss);
-		//auto aa = g.RHS_F_MassD.toDense();
-
-		//g.RHS_C = g.RHS_F_MassD * g.primeVec; //54ms
-		g.RHS_G = timeStep * timeStep * g.massDampingSparseInv * g.rotationTransSparse;
-		g.RHS_AsubBplusC = g.RHS_A - g.RHS_B;// +g.RHS_C; //24ms
-
-	}
-
-	// 2. å¼€å§‹è¿­ä»£
-
-	for (int iter = 0; iter < looptime; ++iter) {
-		// æ¯ç»„è®¡ç®— RHS
-
-#pragma omp parallel for //500fps to 300, -optimization
-		for (int i = 0; i < groupNum; ++i) {
-			auto& g = groups[i];
-			g.calRHS();
-			g.calDeltaX();
-			g.calculateCurrentPositions();
-			//g.calFbind(allGroup, bindForce);
-
-		}
-		for (int groupIdx = 0; groupIdx < groups.size(); ++groupIdx) {
-			Group& currentGroup = groups[groupIdx];
-
-			// éå†æ‰€æœ‰6ä¸ªæ–¹å‘çš„ç›¸é‚»ç»„
-			for (int direction = 0; direction < 6; ++direction) {
-				int adjacentGroupIdx = currentGroup.adjacentGroupIDs[direction];
-
-				// æ£€æŸ¥æ˜¯å¦å­˜åœ¨ç›¸é‚»ç»„
-				if (adjacentGroupIdx != -1) {
-					Group& adjacentGroup = groups[adjacentGroupIdx];
-					const auto& commonVerticesPair = currentGroup.commonVerticesInDirections[direction];
-
-					// ä½¿ç”¨ calFbind1 è®¡ç®—çº¦æŸåŠ›
-					currentGroup.calFbind1(commonVerticesPair.first, commonVerticesPair.second,
-						currentGroup.currentPosition, adjacentGroup.currentPosition, bindForce);
-					if (direction == 0 || direction == 1) {
-						currentGroup.distancesX = Eigen::VectorXf::Zero(commonVerticesPair.first.size() * 3);
-
-						for (size_t i = 0; i < commonVerticesPair.first.size(); ++i) {
-							Vertex* vertexThisGroup = commonVerticesPair.first[i];
-							Vertex* vertexOtherGroup = commonVerticesPair.second[i];
-
-							// è·å–ä¸¤ä¸ªç»„ä¸­å¯¹åº”é¡¶ç‚¹çš„ä½ç½®
-							Eigen::Vector3f posThisGroup = currentGroup.currentPosition.segment<3>(3 * vertexThisGroup->localIndex);
-							Eigen::Vector3f posOtherGroup = adjacentGroup.currentPosition.segment<3>(3 * vertexOtherGroup->localIndex);
-
-							// è®¡ç®—ä¸¤ç»„é—´çš„ç»å¯¹ä½ç½®å·®å¼‚å¹¶å­˜å‚¨
-							currentGroup.distancesX.segment<3>(3 * i) = (posThisGroup - posOtherGroup);
-						}
-
-						// æ­¤å¤„å¯æ·»åŠ é¢å¤–çš„é€»è¾‘ä½¿ç”¨ `distances` å‘é‡
-					}
-				}
-
-			}
-		}
-	}
-	//std::cout << "Bind is" << std::endl << groups[0].Fbind(58) << std::endl;
-//#pragma omp parallel for
-
-	for (int i = 0; i < groupNum; ++i) {
-		auto& g = groups[i];
-		g.updateVelocity();
-		g.updatePosition();
-		/*g.groupVolume = 0.0f;
-		for (auto& tet : g.tetrahedra) {
-			float tetMass = tet->calMassTetra(1000);
-			g.groupVolume += tet->volumeTetra;
-		}*/
-		/*float bodyVolume = 0.0f;
-		bodyVolume += g.groupVolume;
-		std::cout << bodyVolume << std::endl;*/
-		//g.calRInvLocalPos();
-	}
-
-	//calDistance(commonPoints);
-	//calDistance(commonPoints1);
-	// è¿­ä»£å®Œæˆåæ›´æ–°ä½ç½®å’Œé€Ÿåº¦
-	//for (int i = 0; i < 3; ++i) {
-	//	// æ›´æ–°ä½ç½®ï¼Œè¿™é‡Œå¯èƒ½éœ€è¦ä¸€äº›é€»è¾‘æ¥è·å–æœ€åä¸€æ¬¡è¿­ä»£çš„ç»“æœ
-	//	groups[i].updateFinalPositions(); // å‡è®¾è¿™ä¸ªæ–¹æ³•ç”¨æœ€åä¸€æ¬¡è¿­ä»£çš„ç»“æœæ›´æ–°é¡¶ç‚¹ä½ç½®
-
-	//	// æ›´æ–°é€Ÿåº¦
-	//	groups[i].updateVelocities(timestep); // å‡è®¾è¿™ä¸ªæ–¹æ³•ç”¨ (ç°åœ¨ä½ç½® - ä¸Šä¸€å¸§ä½ç½®) / timestep è®¡ç®—é€Ÿåº¦
-	//}
-
-	// ... ç°åœ¨ï¼Œæ‰€æœ‰çš„ç»„éƒ½åº”è¯¥æœ‰äº†æ›´æ–°åçš„ä½ç½®å’Œé€Ÿåº¦ï¼Œå¯ä»¥ä¼ é€’ç»™ç»˜å›¾åŠŸèƒ½
-	// drawGroups(); // å‡è®¾æœ‰ä¸€ä¸ªæ–¹æ³•æ¥ç»˜åˆ¶æˆ–è¾“å‡ºæœ€æ–°çš„ç»„çŠ¶æ€
-}
-Group& Object::getGroup(int index) {
-	return groups[index];
-}
-
-void Object::storeAllGroups() {
-	allGroup.reserve(groupNum);
-	for (int i = 0; i < groupNum; ++i) {
-		Group& group = getGroup(i); // è·å–ç¬¬ i ä¸ª Group å¯¹è±¡çš„å¼•ç”¨
-		allGroup.push_back(group); // å°† Group å¯¹è±¡æ·»åŠ åˆ°é›†åˆä¸­
-	}
-}
-
-void Object::updateAdjacentGroupIndices(int numX, int numY, int numZ) {
-	for (int z = 0; z < numZ; ++z) {
-		for (int y = 0; y < numY; ++y) {
-			for (int x = 0; x < numX; ++x) {
-				int groupIdx = z * numX * numY + y * numX + x;
-				Group& currentGroup = groups[groupIdx];
-
-				// +xæ–¹å‘
-				if (x < numX - 1) currentGroup.adjacentGroupIDs[0] = groupIdx + 1;
-				// -xæ–¹å‘
-				if (x > 0) currentGroup.adjacentGroupIDs[1] = groupIdx - 1;
-				// +yæ–¹å‘
-				if (y < numY - 1) currentGroup.adjacentGroupIDs[2] = groupIdx + numX;
-				// -yæ–¹å‘
-				if (y > 0) currentGroup.adjacentGroupIDs[3] = groupIdx - numX;
-				// +zæ–¹å‘
-				if (z < numZ - 1) currentGroup.adjacentGroupIDs[4] = groupIdx + numX * numY;
-				// -zæ–¹å‘
-				if (z > 0) currentGroup.adjacentGroupIDs[5] = groupIdx - numX * numY;
-			}
-		}
-	}
 }
