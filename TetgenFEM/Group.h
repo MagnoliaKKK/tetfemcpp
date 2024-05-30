@@ -48,6 +48,7 @@ public:
 	Eigen::MatrixXf FEMLHS_Inv;
 	Eigen::VectorXf FEMRHS;
 	Eigen::VectorXf Fbind;
+	Eigen::VectorXf prevFbind;
 	Eigen::VectorXf deltaX;
 	Eigen::VectorXf deltaXFEM;
 	Eigen::SparseMatrix<float> rotationSparse;

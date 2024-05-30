@@ -165,8 +165,8 @@ int main() {
 	char args[] = "pq2.5a1";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
-	char argsNode[] = "./cubeX14000";
-	char argsEle[] = "./cubeX14000";
+	char argsNode[] = "./cubeX4000";
+	char argsEle[] = "./cubeX4000";
 	if (!in.load_node(argsNode)) {
 	    std::cerr << "Error loading .node file!" << std::endl;
 	    return 1;
@@ -382,10 +382,10 @@ int main() {
 		}*/
 
 
-		object.PBDLOOP(10);
+		object.PBDLOOP(20);
 
 		if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {//是否开启保存点坐标
-			std::ofstream file("VolumeLocal.txt", std::ios::out | std::ios::trunc);
+			std::ofstream file("GroupX2.txt", std::ios::out | std::ios::trunc);
 			if (!file.is_open()) {
 				std::cerr << "Failed to open file." << std::endl;
 				return 0;
@@ -562,7 +562,7 @@ int main() {
 			nbFrames = 0;
 			lastTime += 1.0;
 		}
-		printf("%d frame number\n", frame);
+		//printf("%d frame number\n", frame);
 		frame++;
 		//object.writeVerticesToFile("ourMethodResult.txt");
 		/*object.bodyVolume = 0.0f;
@@ -618,7 +618,7 @@ int main() {
 		}
 
 		// Output the center of mass
-		std::cout << "Center of Mass: (" << centerX << ", " << centerY << ", " << centerZ << ")" << std::endl;
+		//std::cout << "Center of Mass: (" << centerX << ", " << centerY << ", " << centerZ << ")" << std::endl;
 
 	}
 	

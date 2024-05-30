@@ -3,7 +3,8 @@
 void Group::initialize() {
 	groupVelocity = Eigen::VectorXf::Zero(3 * verticesMap.size());
 	groupVelocityFEM = Eigen::VectorXf::Zero(3 * verticesMap.size());
-	Fbind = Eigen::VectorXf(3 * verticesMap.size());
+	Fbind = Eigen::VectorXf::Zero(3 * verticesMap.size());
+	prevFbind = Eigen::VectorXf::Zero(3 * verticesMap.size());
 	currentPosition = Eigen::VectorXf::Zero(3 * verticesMap.size());
 	currentPositionFEM = Eigen::VectorXf::Zero(3 * verticesMap.size());
 	gravity = Eigen::VectorXf::Zero(3 * verticesMap.size());
@@ -738,12 +739,11 @@ void Group::calPrimeVec() {
 			gravity(i) = Gravity; // y方向上?置重力
 		}
 
-		// ?在初始?刻更新groupVelocity
 
-		gravityApplied = true; // ??重力已被?用，防止未来的更新
+		gravityApplied = true; // 
 	}
 	//groupVelocity += gravity * timeStep;
-	// 使用整个矩??算velocityUpdate
+	
 	//Eigen::VectorXf exfUpdate = timeStep * timeStep * massMatrix * gravity;
 	//Eigen::VectorXf exfUpdate = timeStep * timeStep *inverseTerm * massMatrix * gravity;
 	Eigen::VectorXf exfUpdate = timeStep * timeStep * inverseTerm * massMatrix * gravity;
@@ -753,16 +753,24 @@ void Group::calPrimeVec() {
 	for (auto& vertexPair : verticesVector) {
 		Vertex* vertex = vertexPair;
 		int localPi = vertex->localIndex; // 使用局部索引
+		if (vertexPair->isFixed == true)
+		{
+			primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = Eigen::Vector3f(vertex->initx, vertex->inity, vertex->initz);
+		}
+		else
+		{
+			Eigen::Vector3f currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
+			Eigen::Vector3f currentExfUpdate = exfUpdate.segment<3>(3 * localPi);
+			// ?算新的位置
+			Eigen::Vector3f newPosition = Eigen::Vector3f(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate + currentExfUpdate;
 
-		// ?取当前?点的速度更新部分
-		Eigen::Vector3f currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
-		Eigen::Vector3f currentExfUpdate = exfUpdate.segment<3>(3 * localPi);
-		// ?算新的位置
-		Eigen::Vector3f newPosition = Eigen::Vector3f(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate + currentExfUpdate;
-
-		// 更新primeVec
-		primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
+			// 更新primeVec
+			primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
+		}
+			// ?取当前?点的速度更新部分
+			
 	}
+		
 }
 
 void Group::calLHS() {
@@ -1076,7 +1084,7 @@ void Group::updateVelocity() {
 	Eigen::Vector3f velocity = Eigen::Vector3f::Zero();
 	Kinematics = 0.0;
 
-	// 遍?所有?点，更新速度并保存当前位置
+	
 	for (auto& vertexPair : verticesMap) {
 		Vertex* vertex = vertexPair.second;
 		int localIndex = vertex->localIndex;
@@ -1086,18 +1094,18 @@ void Group::updateVelocity() {
 			previousPos.y() = vertex->y;
 			previousPos.z() = vertex->z;
 
-			// 从 previousPosition ?取上一?的位置
+			
 			currentPos = currentPosition.segment<3>(3 * localIndex);
 
-			// ?算速度
+		
 			velocity = (currentPos - previousPos) / timeStep;
 			groupVelocity.segment<3>(3 * localIndex) = velocity;
 
-			Kinematics += 0.5 * vertex->vertexMass * velocity.norm();
+			//Kinematics += 0.5 * vertex->vertexMass * velocity.norm();
 		}
 		/*std::cout << "\r";
 		std::cout << groupVelocity << std::endl;*/
-		// ?取当前位置
+		
 
 		// 更新 vertex 的速度
 		// 例如：vertex->velocity = velocity;

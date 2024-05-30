@@ -329,7 +329,8 @@ void Object::PBDLOOP(int looptime) {
 #pragma omp parallel for
 	for (int i = 0; i < groupNum; ++i) {
 		auto& g = groups[i];
-		g.Fbind = Eigen::VectorXf::Zero(3 * g.verticesMap.size()); // 假设 Group 类有一个方法来清除 Fbind
+		g.Fbind = 0.75f * g.prevFbind;
+		//g.Fbind = Eigen::VectorXf::Zero(3 * g.verticesMap.size()); // 假设 Group 类有一个方法来清除 Fbind
 		g.rotationTransSparse = g.rotationMatrix.transpose().sparseView(reference, epsilon);
 
 		g.RHS_F = g.RHS_E * g.rotationTransSparse;//RHS的部分
@@ -407,6 +408,7 @@ void Object::PBDLOOP(int looptime) {
 		auto& g = groups[i];
 		g.updateVelocity();
 		g.updatePosition();
+		g.prevFbind = g.Fbind;
 		/*g.groupVolume = 0.0f;
 		for (auto& tet : g.tetrahedra) {
 			float tetMass = tet->calMassTetra(1000);
