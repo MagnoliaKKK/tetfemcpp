@@ -385,7 +385,7 @@ int main() {
 		object.PBDLOOP(20);
 
 		if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {//是否开启保存点坐标
-			std::ofstream file("GroupX2.txt", std::ios::out | std::ios::trunc);
+			std::ofstream file("14000Local.txt", std::ios::out | std::ios::trunc);
 			if (!file.is_open()) {
 				std::cerr << "Failed to open file." << std::endl;
 				return 0;
