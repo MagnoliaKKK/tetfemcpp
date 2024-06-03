@@ -23,50 +23,7 @@
 // Global variables to store zoom factor and transformation matrix
 
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
-//float youngs, youngs1, youngs2, youngs3, poisson, density;
-//int groupNum = 1, groupNumX, groupNumY, groupNumZ;
-//const float PI = 3.1415926535f; // This can be hardcoded as it won't change
-//float timeStep, dampingConst, Gravity, bindForce, bindVelocity;
 int wKey = 0;
-
-//void loadParams(const std::string& filename) {
-//	std::ifstream file(filename);
-//	if (!file.is_open()) {
-//		std::cerr << "Failed to open file for reading: " << filename << "\n";
-//		return;
-//	}
-//
-//	std::unordered_map<std::string, float*> floatParams = {
-//		{"youngs", &youngs}, {"youngs1", &youngs1}, {"youngs2", &youngs2},
-//		{"youngs3", &youngs3}, {"poisson", &poisson}, {"density", &density},
-//		{"timeStep", &timeStep}, {"dampingConst", &dampingConst},
-//		{"Gravity", &Gravity}, {"bindForce", &bindForce}, {"bindVelocity", &bindVelocity}
-//	};
-//
-//	std::unordered_map<std::string, int*> intParams = {
-//		{"groupNumX", &groupNumX}, {"groupNumY", &groupNumY}, {"groupNumZ", &groupNumZ}
-//	};
-//
-//	std::string line;
-//	while (std::getline(file, line)) {
-//		size_t pos = line.find('=');
-//		if (pos == std::string::npos) continue;
-//
-//		std::string key = line.substr(0, pos);
-//		std::string value = line.substr(pos + 1);
-//
-//		if (floatParams.find(key) != floatParams.end()) {
-//			*floatParams[key] = std::stof(value);
-//		}
-//		else if (intParams.find(key) != intParams.end()) {
-//			*intParams[key] = std::stoi(value);
-//		}
-//	}
-//
-//	file.close();
-//}
-
-
 
 void saveOBJ(const std::string& filename, std::vector<Group>& groups) {
 	std::ofstream objFile(filename);

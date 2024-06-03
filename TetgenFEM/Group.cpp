@@ -732,11 +732,8 @@ void Group::calPrimeVec() {
 	primeVec = Eigen::VectorXf::Zero(3 * verticesVector.size());
 
 	if (!gravityApplied) {
-
-
-		// 弶巒壔gravity岦検丆扅嵼y曽岦巤壛廳椡
-		for (int i = 1; i < 3 * verticesVector.size(); i += 3) {
-			gravity(i) = Gravity; // y曽岦忋?抲廳椡
+		for (int i = 0; i < 3 * verticesVector.size(); i += 3) {
+			gravity(i) = -Gravity; 
 		}
 
 
@@ -749,11 +746,10 @@ void Group::calPrimeVec() {
 	Eigen::VectorXf exfUpdate = timeStep * timeStep * inverseTerm * massMatrix * gravity;
 	Eigen::VectorXf velocityUpdate = inverseTerm * massMatrix * groupVelocity * timeStep;
 
-	// 峏怴primeVec榓?揰埵抲
 	for (auto& vertexPair : verticesVector) {
 		Vertex* vertex = vertexPair;
-		int localPi = vertex->localIndex; // 巊梡嬊晹嶕堷
-		if (vertexPair->isFixed == true)
+		int localPi = vertex->localIndex;
+	/*	if (vertexPair->isFixed == true)
 		{
 			primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = Eigen::Vector3f(vertex->initx, vertex->inity, vertex->initz);
 		}
@@ -761,13 +757,14 @@ void Group::calPrimeVec() {
 		{
 			Eigen::Vector3f currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
 			Eigen::Vector3f currentExfUpdate = exfUpdate.segment<3>(3 * localPi);
-			// ?嶼怴揑埵抲
 			Eigen::Vector3f newPosition = Eigen::Vector3f(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate + currentExfUpdate;
-
-			// 峏怴primeVec
 			primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
-		}
-			// ?庢摉慜?揰揑懍搙峏怴晹暘
+		}*/
+		Eigen::Vector3f currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
+		Eigen::Vector3f currentExfUpdate = exfUpdate.segment<3>(3 * localPi);
+		Eigen::Vector3f newPosition = Eigen::Vector3f(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate + currentExfUpdate;
+		primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
+			
 			
 	}
 		
@@ -972,7 +969,22 @@ void Group::calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
 		Fbind.segment<3>(3 * vertexThisGroup->localIndex) += force;
 		distances.segment<3>(3 * i) = (posThisGroup - posOtherGroup).cwiseAbs();
 	}
+	
+}
 
+void Group::calBindFixed() {
+	for (auto& vertexPair : verticesMap) {
+		Vertex* vertex = vertexPair.second;
+		if (vertex->isFixed) {
+			Eigen::Vector3f initPos(vertex->initx, vertex->inity, vertex->initz);
+			Eigen::Vector3f currentPos = currentPosition.segment<3>(3 * vertex->localIndex);
+			Eigen::Vector3f diff = currentPos - initPos;
+
+			// Compute the constraint force for fixed vertices
+			Eigen::Vector3f constraintForce = -100 * diff;
+			Fbind.segment<3>(3 * vertex->localIndex) += constraintForce;
+		}
+	}
 }
 
 void Group::calFbind(const Eigen::VectorXf& currentPositionThisGroup, const std::vector<Eigen::VectorXf>& allCurrentPositionsOtherGroups, float k) {
@@ -1009,44 +1021,8 @@ void Group::calFbind(const Eigen::VectorXf& currentPositionThisGroup, const std:
 }
 
 
-void Group::updatePosition() {
-	static float frameTime = 0;
-	frameTime += timeStep;
-	Eigen::Vector3f pos = Eigen::Vector3f::Zero();
-	// 曊?強桳?揰
-	for (auto& vertexPair : verticesMap) {
-		Vertex* vertex = vertexPair.second;
-		int localIndex = vertex->localIndex;
+//
 
-		// 樃currentPosition拞?庢???揰揑埵抲
-		pos = currentPosition.segment<3>(3 * localIndex);
-		/*vertex->x = pos.x();
-		vertex->y = pos.y();
-		vertex->z = pos.z();*/
-		if (vertex->isFixed == true) {
-			// ?槹屌掕揰丆彨埵抲?抲?弶巒埵抲
-			/*vertex->x = vertex->x = vertex->initx - 0.25 * sin(0.4 * frameTime);
-			vertex->y = vertex->y = vertex->inity + 0.1 * sin(0.7 * frameTime);*/
-			vertex->x = vertex->initx;
-			vertex->y = vertex->inity;
-			vertex->z = vertex->initz;
-		}
-		else {
-			// 巊梡慁?嬮??槱埲primeVec拞揑埵抲
-
-
-			vertex->x = pos.x();
-			vertex->y = pos.y();
-			vertex->z = pos.z();
-		}
-
-		/* 峏怴?揰揑埵抲
-		if (vertex->isFixed == true)
-		{
-			vertex->x += 0.01;
-		}*/
-	}
-}
 void Group::updatePositionFEM() {
 	Eigen::Vector3f pos = Eigen::Vector3f::Zero();
 	// 曊?強桳?揰
@@ -1078,6 +1054,49 @@ void Group::updatePositionFEM() {
 
 	}
 }
+void Group::updatePosition() {
+	static float frameTime = 0;
+	frameTime += timeStep;
+	Eigen::Vector3f pos = Eigen::Vector3f::Zero();
+	// 遍?所有?点
+	for (auto& vertexPair : verticesMap) {
+		Vertex* vertex = vertexPair.second;
+		int localIndex = vertex->localIndex;
+
+		// 从currentPosition中?取???点的位置
+		pos = currentPosition.segment<3>(3 * localIndex);
+
+		vertex->x = pos.x();
+		vertex->y = pos.y();
+		vertex->z = pos.z();
+		/*vertex->x = pos.x();
+		vertex->y = pos.y();
+		vertex->z = pos.z();*/
+		//if (vertex->isFixed == true) {
+		//	// ?于固定点，将位置?置?初始位置
+		//	/*vertex->x = vertex->x = vertex->initx - 0.25 * sin(0.4 * frameTime);
+		//	vertex->y = vertex->y = vertex->inity + 0.1 * sin(0.7 * frameTime);*/
+		//	vertex->x = vertex->initx;
+		//	vertex->y = vertex->inity;
+		//	vertex->z = vertex->initz;
+		//}
+		//else {
+		//	// 使用旋?矩??乘以primeVec中的位置
+
+
+		//	vertex->x = pos.x();
+		//	vertex->y = pos.y();
+		//	vertex->z = pos.z();
+		//}
+
+		/* 更新?点的位置
+		if (vertex->isFixed == true)
+		{
+			vertex->x += 0.01;
+		}*/
+	}
+}
+
 void Group::updateVelocity() {
 	Eigen::Vector3f previousPos = Eigen::Vector3f::Zero();
 	Eigen::Vector3f currentPos = Eigen::Vector3f::Zero();

@@ -1,4 +1,4 @@
-youngs=100000
+youngs=10000
 youngs1=10000
 youngs2=1000
 youngs3=100000

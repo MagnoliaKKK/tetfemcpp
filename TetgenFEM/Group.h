@@ -128,6 +128,7 @@ public:
 	void calRInvLocalPos();
 	void calGroupKFEM(float E, float nu);
 
+	void calBindFixed();
 
 	Group()
 		: centerofMass(Eigen::Vector3f::Zero()),  // Initialize Eigen vector

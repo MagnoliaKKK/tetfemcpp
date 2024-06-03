@@ -361,9 +361,11 @@ void Object::PBDLOOP(int looptime) {
 			g.calRHS();
 			g.calDeltaX();
 			g.calculateCurrentPositions();
+			g.calBindFixed();
 			//g.calFbind(allGroup, bindForce);
 
 		}
+
 		for (int groupIdx = 0; groupIdx < groups.size(); ++groupIdx) {
 			Group& currentGroup = groups[groupIdx];
 
@@ -399,8 +401,12 @@ void Object::PBDLOOP(int looptime) {
 				}
 
 			}
+
 		}
+		
 	}
+
+
 	//std::cout << "Bind is" << std::endl << groups[0].Fbind(58) << std::endl;
 //#pragma omp parallel for
 
