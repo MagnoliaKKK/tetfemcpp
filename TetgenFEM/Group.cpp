@@ -833,10 +833,10 @@ void Group::calPrimeVec() {
 		}
 	}
 	for (int localPi : maxYVertices) {
-		gravity(3 * localPi + 1) = -Gravity;
+		gravity(3 * localPi + 1) = -2 * Gravity;
 	}
 	for (int localPi : minYVertices) {
-		gravity(3 * localPi + 1) = Gravity;
+		gravity(3 * localPi + 1) = 2 * Gravity;
 	}
 	//groupVelocity += gravity * timeStep;
 	// 使用整个矩阵计算velocityUpdate
