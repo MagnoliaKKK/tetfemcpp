@@ -1,4 +1,4 @@
-youngs=10000
+youngs=100000
 youngs1=10000
 youngs2=1000
 youngs3=100000
@@ -10,5 +10,5 @@ groupNumZ=2
 timeStep=0.01
 dampingConst=180.0
 Gravity=-9.80
-bindForce=-50.0
+bindForce=-100.0
 bindVelocity=-0.0

@@ -114,7 +114,7 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	//readSTL("stls/bunnyFront.stl", in);
+	readSTL("stls/tube.stl", in);
 	//readOBJ("C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/ring.obj", in);
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
@@ -122,25 +122,25 @@ int main() {
 	char args[] = "pq2.5a1";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
-	char argsNode[] = "./cubeX4000";
-	char argsEle[] = "./cubeX4000";
-	if (!in.load_node(argsNode)) {
-	    std::cerr << "Error loading .node file!" << std::endl;
-	    return 1;
-	}
+	//char argsNode[] = "./cubeX4000";
+	//char argsEle[] = "./cubeX4000";
+	//if (!in.load_node(argsNode)) {
+	//    std::cerr << "Error loading .node file!" << std::endl;
+	//    return 1;
+	//}
 
-	// Load the ele file
-	if (!in.load_tet(argsEle)) {
-	    std::cerr << "Error loading .ele file!" << std::endl;
-	    return 1;
-	}
+	//// Load the ele file
+	//if (!in.load_tet(argsEle)) {
+	//    std::cerr << "Error loading .ele file!" << std::endl;
+	//    return 1;
+	//}
 
 	// Call TetGen to tetrahedralize the geometry
 	tetrahedralize(&behavior, &in, &out);
 	
 
 
-	out = in;
+	//out = in;
 
 	Object object;
 	groupNum = groupNumX * groupNumY * groupNumZ;
@@ -211,7 +211,7 @@ int main() {
 			// ｶﾔﾃｿｸ･ｵ羞ﾃsetFixedIfBelowThresholdｷｽｷｨ
 			Vertex* vertex = vertexPair.second;
 
-			vertex->setFixedIfBelowThreshold();
+			//vertex->setFixedIfBelowThreshold();
 		}
 
 	}
@@ -245,8 +245,8 @@ int main() {
 		object.groups[i].calCenterofMass();
 		object.groups[i].calInitCOM();//initial com
 		object.groups[i].calLocalPos(); // initial local positions
-		object.groups[i].calGroupK(youngs, poisson);	
-		//object.groups[i].calGroupKAni(youngs1, youngs2, youngs3, poisson);
+		//object.groups[i].calGroupK(youngs, poisson);	
+		object.groups[i].calGroupKAni(youngs1, youngs2, youngs3, poisson);
 		object.groups[i].setVertexMassesFromMassMatrix();//vertex mass
 		object.groups[i].calMassGroup();
 		object.groups[i].calMassDistributionMatrix();
