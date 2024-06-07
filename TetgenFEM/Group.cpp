@@ -503,53 +503,62 @@ void Group::calPrimeVec1(int w) {
 //		primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
 //	}
 //}
-void Group::calPrimeVecS(int wKey) {
-	// ?保primeVec已?初始化且?置?正?的尺寸
+void Group::calPrimeVecS(const std::vector<int>& topVertexLocalIndices, const std::vector<int>& bottomVertexLocalIndices) {
 	primeVec = Eigen::VectorXf::Zero(3 * verticesVector.size());
 
-	// 初始化一个力向量
-	Eigen::VectorXf appliedForce = Eigen::VectorXf::Zero(3 * verticesVector.size());
+	if (!gravityApplied) {
+		// Initialize gravity vector, apply gravity only in the y direction
+		gravity = Eigen::VectorXf::Zero(3 * verticesVector.size());
 
-	// 施加力的大小，可以根据??情况?整
-	float forceMagnitude = 10.0f;
+		for (int i = 0; i < 3 * verticesVector.size(); i += 3) {
+			gravity(i) = -0; // No gravity in the y direction initially
+		}
 
-	// 如果是第三?，根据wKey的???内所有?点施加力
-	if (this->groupIndex == 2) {
-		for (size_t i = 0; i < verticesVector.size(); ++i) {
-			int indexX = 3 * i; // x方向的索引
+		gravityApplied = true; // Mark gravity as applied to prevent future updates
+	}
 
-			// 根据???入wKey的?在x方向上施加力
-			if (wKey == 3) {
-				appliedForce(indexX) -= forceMagnitude; // 向左施加力
-			}
-			else if (wKey == 4) {
-				appliedForce(indexX) += forceMagnitude; // 向右施加力
-			}
-			// ?于wKey == 1或2，我?不在x方向上施加力
+	float meanX = 0.0f;
+	for (const auto& vertexPair : verticesVector) {
+		meanX += vertexPair->initx;
+	}
+	meanX /= verticesVector.size();
+
+	for (const auto& vertexPair : verticesVector) {
+		Vertex* vertex = vertexPair;
+		//if (vertex->initx < meanX) {
+		//	// Vertex is left of meanX
+		//	gravity(3 * vertex->localIndex) = -Gravity;
+		//}
+		//else {
+		//	// Vertex is right of meanX
+		//	gravity(3 * vertex->localIndex) = Gravity;
+		//}
+
+		// Check if vertex is in topVertexLocalIndices
+		if (std::find(topVertexLocalIndices.begin(), topVertexLocalIndices.end(), vertex->localIndex) != topVertexLocalIndices.end()) {
+			gravity(3 * vertex->localIndex + 1) = -Gravity; // Apply upward force in y direction
+		}
+
+		// Check if vertex is in bottomVertexLocalIndices
+		if (std::find(bottomVertexLocalIndices.begin(), bottomVertexLocalIndices.end(), vertex->localIndex) != bottomVertexLocalIndices.end()) {
+			gravity(3 * vertex->localIndex + 1) = Gravity; // Apply downward force in y direction
 		}
 	}
 
-	// 更新groupVelocity
-	groupVelocity += appliedForce * timeStep;
+	Eigen::VectorXf exfUpdate = timeStep * timeStep * inverseTerm * massMatrix * gravity;
+	Eigen::VectorXf velocityUpdate = inverseTerm * massMatrix * groupVelocity * timeStep;
 
-	// 使用整个矩??算velocityUpdate
-	Eigen::VectorXf velocityUpdate = inverseTermSparse * (massMatrix * groupVelocity) * timeStep;
-
-	// 更新primeVec和?点位置
 	for (auto& vertexPair : verticesVector) {
 		Vertex* vertex = vertexPair;
-		int localPi = vertex->localIndex; // 使用局部索引
-
-		// ?取当前?点的速度更新部分
+		int localPi = vertex->localIndex; // Use local index
 		Eigen::Vector3f currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
+		Eigen::Vector3f currentExfUpdate = exfUpdate.segment<3>(3 * localPi);
+		Eigen::Vector3f newPosition = Eigen::Vector3f(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate + currentExfUpdate;
 
-		// ?算新的位置
-		Eigen::Vector3f newPosition = Eigen::Vector3f(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate;
-
-		// 更新primeVec
 		primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
 	}
 }
+
 
 
 void Group::calPrimeVecT(int w) {
@@ -728,135 +737,48 @@ void Group::calPrimeVec(int w) {
 	}
 
 }
-//void Group::calPrimeVec() {
-//	primeVec = Eigen::VectorXf::Zero(3 * verticesVector.size());
-//
-//	if (!gravityApplied) {
-//		for (int i = 0; i < 3 * verticesVector.size(); i += 3) {
-//			gravity(i) = -Gravity; 
-//		}
-//
-//
-//		gravityApplied = true; // 
-//	}
-//	//groupVelocity += gravity * timeStep;
-//	
-//	//Eigen::VectorXf exfUpdate = timeStep * timeStep * massMatrix * gravity;
-//	//Eigen::VectorXf exfUpdate = timeStep * timeStep *inverseTerm * massMatrix * gravity;
-//	Eigen::VectorXf exfUpdate = timeStep * timeStep * inverseTerm * massMatrix * gravity;
-//	Eigen::VectorXf velocityUpdate = inverseTerm * massMatrix * groupVelocity * timeStep;
-//
-//	for (auto& vertexPair : verticesVector) {
-//		Vertex* vertex = vertexPair;
-//		int localPi = vertex->localIndex;
-//	/*	if (vertexPair->isFixed == true)
-//		{
-//			primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = Eigen::Vector3f(vertex->initx, vertex->inity, vertex->initz);
-//		}
-//		else
-//		{
-//			Eigen::Vector3f currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
-//			Eigen::Vector3f currentExfUpdate = exfUpdate.segment<3>(3 * localPi);
-//			Eigen::Vector3f newPosition = Eigen::Vector3f(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate + currentExfUpdate;
-//			primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
-//		}*/
-//		Eigen::Vector3f currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
-//		Eigen::Vector3f currentExfUpdate = exfUpdate.segment<3>(3 * localPi);
-//		Eigen::Vector3f newPosition = Eigen::Vector3f(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate + currentExfUpdate;
-//		primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
-//			
-//			
-//	}
-//		
-//}
 void Group::calPrimeVec() {
 	primeVec = Eigen::VectorXf::Zero(3 * verticesVector.size());
 
-	/*float sumX = 0.0f;
-	for (const auto& vertexPair : verticesVector) {
-		Vertex* vertex = vertexPair;
-		sumX += vertex->x;
-	}
-	float meanX = sumX / verticesVector.size();*/
 	if (!gravityApplied) {
-
-
-		// 初始化gravity向量，只在y方向施加重力
 		for (int i = 0; i < 3 * verticesVector.size(); i += 3) {
-			gravity(i) = -Gravity; // y方向上设置重力
-			gravity(i) = -0; // y方向上设置重力
-			//int indexX = 3 * vertex->localIndex;
-
+			gravity(i) = -Gravity; 
 		}
 
-		// 仅在初始时刻更新groupVelocity
 
-		gravityApplied = true; // 标记重力已被应用，防止未来的更新
-	}
-
-	float maxY = std::numeric_limits<float>::lowest();
-	float minY = std::numeric_limits<float>::max();
-	std::vector<int> maxYVertices;
-	std::vector<int> minYVertices;
-	float meanX = 0.0f;
-	for (const auto& vertexPair : verticesVector) {
-		meanX += vertexPair->initx;
-	}
-	meanX /= verticesVector.size();
-
-	for (const auto& vertexPair : verticesVector) {
-		Vertex* vertex = vertexPair;
-		if (vertex->y > maxY) {
-			maxY = vertex->y;
-			maxYVertices.clear();
-			maxYVertices.push_back(vertex->localIndex);
-		}
-		else if (vertex->y == maxY) {
-			maxYVertices.push_back(vertex->localIndex);
-		}
-
-		if (vertex->y < minY) {
-			minY = vertex->y;
-			minYVertices.clear();
-			minYVertices.push_back(vertex->localIndex);
-		}
-		else if (vertex->y == minY) {
-			minYVertices.push_back(vertex->localIndex);
-		}
-		if (vertex->initx < meanX) {
-			// Vertex is left of the meanX
-			gravity(3 * vertex->localIndex) = -Gravity;
-		}
-		else {
-			// Vertex is right of the meanX
-			gravity(3 * vertex->localIndex) = Gravity;
-		}
-	}
-	for (int localPi : maxYVertices) {
-		gravity(3 * localPi + 1) = -2 * Gravity;
-	}
-	for (int localPi : minYVertices) {
-		gravity(3 * localPi + 1) = 2 * Gravity;
+		gravityApplied = true; // 
 	}
 	//groupVelocity += gravity * timeStep;
-	// 使用整个矩阵计算velocityUpdate
+	
 	//Eigen::VectorXf exfUpdate = timeStep * timeStep * massMatrix * gravity;
 	//Eigen::VectorXf exfUpdate = timeStep * timeStep *inverseTerm * massMatrix * gravity;
 	Eigen::VectorXf exfUpdate = timeStep * timeStep * inverseTerm * massMatrix * gravity;
 	Eigen::VectorXf velocityUpdate = inverseTerm * massMatrix * groupVelocity * timeStep;
-	// 更新primeVec和顶点位置
+
 	for (auto& vertexPair : verticesVector) {
 		Vertex* vertex = vertexPair;
-		int localPi = vertex->localIndex; // 使用局部索引
-		// 获取当前顶点的速度更新部分
+		int localPi = vertex->localIndex;
+	/*	if (vertexPair->isFixed == true)
+		{
+			primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = Eigen::Vector3f(vertex->initx, vertex->inity, vertex->initz);
+		}
+		else
+		{
+			Eigen::Vector3f currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
+			Eigen::Vector3f currentExfUpdate = exfUpdate.segment<3>(3 * localPi);
+			Eigen::Vector3f newPosition = Eigen::Vector3f(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate + currentExfUpdate;
+			primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
+		}*/
 		Eigen::Vector3f currentVelocityUpdate = velocityUpdate.segment<3>(3 * localPi);
 		Eigen::Vector3f currentExfUpdate = exfUpdate.segment<3>(3 * localPi);
-		// 计算新的位置
 		Eigen::Vector3f newPosition = Eigen::Vector3f(vertex->x, vertex->y, vertex->z) + currentVelocityUpdate + currentExfUpdate;
-		// 更新primeVec
 		primeVec.segment<3>(3 * static_cast<Eigen::Index>(localPi)) = newPosition;
+			
+			
 	}
+		
 }
+
 void Group::calLHS() {
 	//A = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK;
 	//B = timeStep * timeStep * (massMatrix + timeStep * dampingMatrix).inverse() * groupK * massDistribution;

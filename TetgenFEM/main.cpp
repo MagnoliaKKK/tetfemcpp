@@ -107,6 +107,19 @@ void writeOBJ(const Object& object, const std::string& filename) {
 	std::cout << "OBJ file has been written.\n";
 }
 
+void findTopAndBottomVertices(const std::vector<Group>& groups, std::vector<int>& topVertexLocalIndices, std::vector<int>& bottomVertexLocalIndices) {
+	for (const Group& g : groups) {
+		for (const auto& vertexPair : g.verticesMap) {
+			Vertex* vertex = vertexPair.second;
+			if (vertex->inity > 0.38) {
+				topVertexLocalIndices.push_back(vertex->localIndex);
+			}
+			if (vertex->inity < -0.38) {
+				bottomVertexLocalIndices.push_back(vertex->localIndex);
+			}
+		}
+	}
+}
 
 int main() {
 
@@ -114,12 +127,12 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/tube.stl", in);
+	readSTL("stls/cube.stl", in);
 	//readOBJ("C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/ring.obj", in);
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq2.5a1";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
+	char args[] = "pq1.5a0.01";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
 	//char argsNode[] = "./cubeX4000";
@@ -216,7 +229,13 @@ int main() {
 
 	}
 	
-	
+	std::vector<int> topVertexLocalIndices;
+	std::vector<int> bottomVertexLocalIndices;
+
+	findTopAndBottomVertices(object.groups, topVertexLocalIndices, bottomVertexLocalIndices);
+
+	// Now topVertexLocalIndices and bottomVertexLocalIndices contain the local indices of the top and bottom vertices, respectively.
+
 	
 	/////////ｾｾﾍｷｷ｢ｹﾌｶｨｷｨ
 	//float maxY = -std::numeric_limits<float>::infinity(); // ｳｼｻｯﾎｪｼｫﾐ｡ﾖｵ
@@ -318,11 +337,11 @@ int main() {
 #pragma omp parallel for
 		for (int i = 0; i < groupNum; i++) {
 			//object.groups[i].calGroupKFEM(youngs, poisson);
-			object.groups[i].calPrimeVec();
+			//object.groups[i].calPrimeVec();
 
 			//object.groups[i].calPrimeVec2(wKey);
 			//object.groups[i].calPrimeVec(wKey);
-			//object.groups[i].calPrimeVecS(wKey);
+			object.groups[i].calPrimeVecS(topVertexLocalIndices, bottomVertexLocalIndices);
 			//object.groups[i].calPrimeVecT(wKey);
 			/*object.groups[i].calLHSFEM();
 			object.groups[i].calRHSFEM();
@@ -395,49 +414,49 @@ int main() {
 		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) { //ﾐｴｵ羞ﾄｱ・ﾅ｣ｬｻｭﾗ?
 			Group& group = object.getGroup(groupIdx);
 
-			////ｻｭｲｻﾖﾘｸｴｵﾄｰ豎ｾ
-			//std::vector<Vertex*> uniqueVertices = group.getUniqueVertices();
-			//for (size_t i = 0; i < uniqueVertices.size(); ++i) {
-			//	Vertex* vertex = uniqueVertices[i];
-			//	char buffer[5]; // ｷﾖﾅ葫羯ｻｴﾄｻｺｳ衂・
-			//	sprintf_s(buffer, "%d", vertex->index); // ｽｫintﾗｪｻｻﾎｪchar*
-			//	glColor3f(1, 0.0f, 0.0f);
-			//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
-			//	XPrintString(buffer);
-			//}
+			//ｻｭｲｻﾖﾘｸｴｵﾄｰ豎ｾ
+			std::vector<Vertex*> uniqueVertices = group.getUniqueVertices();
+			for (size_t i = 0; i < uniqueVertices.size(); ++i) {
+				Vertex* vertex = uniqueVertices[i];
+				char buffer[5]; // ｷﾖﾅ葫羯ｻｴﾄｻｺｳ衂・
+				sprintf_s(buffer, "%d", vertex->index); // ｽｫintﾗｪｻｻﾎｪchar*
+				glColor3f(1, 0.0f, 0.0f);
+				glRasterPos3f(vertex->x, vertex->y, vertex->z);
+				XPrintString(buffer);
+			}
 
 
 			//ｻｭﾖﾘｸｴｵﾄｰ豎ｾ
 
 
-			//for (Tetrahedron* tetra : group.tetrahedra) { // ｱ鯊晙鰒ﾐｵﾄﾃｿｸﾄﾃ賣・
-			//	for (int i = 0; i < 4; ++i) { // ｱ鯊撝ﾄﾃ賣蠏ﾄﾃｿｸ･ｵ・
-			//		Vertex* vertex = tetra->vertices[i];
-			//		char buffer[5]; // ｷﾖﾅ葫羯ｻｴﾄｻｺｳ衂・
-			//		sprintf_s(buffer, "%d", vertex->index); // ｽｫintﾗｪｻｻﾎｪchar*
-			//		//if (groupIdx == 0) {
-			//		//	glColor3f(1, 0.0f, 0.0f);
-			//		//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
-			//		//	XPrintString(buffer);
-			//		//}
-			//			
-			//		//if(groupIdx == 1)
-			//		//{
-			//		//	glColor3f(0, 1, 0.0f);
-			//		//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
-			//		//	XPrintString(buffer);
-			//		//}
-			//		//	
+			for (Tetrahedron* tetra : group.tetrahedra) { // ｱ鯊晙鰒ﾐｵﾄﾃｿｸﾄﾃ賣・
+				for (int i = 0; i < 4; ++i) { // ｱ鯊撝ﾄﾃ賣蠏ﾄﾃｿｸ･ｵ・
+					Vertex* vertex = tetra->vertices[i];
+					char buffer[5]; // ｷﾖﾅ葫羯ｻｴﾄｻｺｳ衂・
+					sprintf_s(buffer, "%d", vertex->index); // ｽｫintﾗｪｻｻﾎｪchar*
+					//if (groupIdx == 0) {
+					//	glColor3f(1, 0.0f, 0.0f);
+					//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
+					//	XPrintString(buffer);
+					//}
+						
+					//if(groupIdx == 1)
+					//{
+					//	glColor3f(0, 1, 0.0f);
+					//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
+					//	XPrintString(buffer);
+					//}
+					//	
 
-			//		//std::default_random_engine generator(vertex->index);//ﾋ貊摠ｷ｢ﾉ憘ｬﾓﾃﾓﾚﾗﾖｷ鈼ｫﾒﾆｷﾀﾖﾘｵ
-			//		//std::uniform_real_distribution<float> distribution(0, 0.05);
-			//		//float random_number = distribution(generator);
-			//		glColor3f(1, 0.0f, 0.0f);
-			//		glRasterPos3f(vertex->x + 0, vertex->y + 0, vertex->z + 0);
-			//		XPrintString(buffer);
-			//		
-			//	}
-			//}
+					//std::default_random_engine generator(vertex->index);//ﾋ貊摠ｷ｢ﾉ憘ｬﾓﾃﾓﾚﾗﾖｷ鈼ｫﾒﾆｷﾀﾖﾘｵ
+					//std::uniform_real_distribution<float> distribution(0, 0.05);
+					//float random_number = distribution(generator);
+					glColor3f(1, 0.0f, 0.0f);
+					glRasterPos3f(vertex->x + 0, vertex->y + 0, vertex->z + 0);
+					XPrintString(buffer);
+					
+				}
+			}
 
 		}
 		//for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {

@@ -98,7 +98,7 @@ public:
 	void calPrimeVec(int w);
 	void calPrimeVec1(int w);
 	void calPrimeVecT(int w);
-	void calPrimeVecS(int w);
+	void calPrimeVecS(const std::vector<int>& topVertexLocalIndices, const std::vector<int>& bottomVertexLocalIndices);
 	void calDampingMatrix();
 	void calInitCOM();
 	void calRotationMatrix();
