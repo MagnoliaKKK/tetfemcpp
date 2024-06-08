@@ -112,10 +112,10 @@ void findTopAndBottomVertices(const std::vector<Group>& groups, std::vector<int>
 		for (const auto& vertexPair : g.verticesMap) {
 			Vertex* vertex = vertexPair.second;
 			if (vertex->inity > 0.38) {
-				topVertexLocalIndices.push_back(vertex->localIndex);
+				topVertexLocalIndices.push_back(vertex->index);
 			}
 			if (vertex->inity < -0.38) {
-				bottomVertexLocalIndices.push_back(vertex->localIndex);
+				bottomVertexLocalIndices.push_back(vertex->index);
 			}
 		}
 	}
@@ -415,15 +415,15 @@ int main() {
 			Group& group = object.getGroup(groupIdx);
 
 			//ｻｭｲｻﾖﾘｸｴｵﾄｰ豎ｾ
-			std::vector<Vertex*> uniqueVertices = group.getUniqueVertices();
-			for (size_t i = 0; i < uniqueVertices.size(); ++i) {
-				Vertex* vertex = uniqueVertices[i];
-				char buffer[5]; // ｷﾖﾅ葫羯ｻｴﾄｻｺｳ衂・
-				sprintf_s(buffer, "%d", vertex->index); // ｽｫintﾗｪｻｻﾎｪchar*
-				glColor3f(1, 0.0f, 0.0f);
-				glRasterPos3f(vertex->x, vertex->y, vertex->z);
-				XPrintString(buffer);
-			}
+			//std::vector<Vertex*> uniqueVertices = group.getUniqueVertices();
+			//for (size_t i = 0; i < uniqueVertices.size(); ++i) {
+			//	Vertex* vertex = uniqueVertices[i];
+			//	char buffer[5]; // ｷﾖﾅ葫羯ｻｴﾄｻｺｳ衂・
+			//	sprintf_s(buffer, "%d", vertex->index); // ｽｫintﾗｪｻｻﾎｪchar*
+			//	glColor3f(1, 0.0f, 0.0f);
+			//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
+			//	XPrintString(buffer);
+			//}
 
 
 			//ｻｭﾖﾘｸｴｵﾄｰ豎ｾ

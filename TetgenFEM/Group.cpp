@@ -535,12 +535,12 @@ void Group::calPrimeVecS(const std::vector<int>& topVertexLocalIndices, const st
 		//}
 
 		// Check if vertex is in topVertexLocalIndices
-		if (std::find(topVertexLocalIndices.begin(), topVertexLocalIndices.end(), vertex->localIndex) != topVertexLocalIndices.end()) {
+		if (std::find(topVertexLocalIndices.begin(), topVertexLocalIndices.end(), vertex->index) != topVertexLocalIndices.end()) {
 			gravity(3 * vertex->localIndex + 1) = -Gravity; // Apply upward force in y direction
 		}
 
 		// Check if vertex is in bottomVertexLocalIndices
-		if (std::find(bottomVertexLocalIndices.begin(), bottomVertexLocalIndices.end(), vertex->localIndex) != bottomVertexLocalIndices.end()) {
+		if (std::find(bottomVertexLocalIndices.begin(), bottomVertexLocalIndices.end(), vertex->index) != bottomVertexLocalIndices.end()) {
 			gravity(3 * vertex->localIndex + 1) = Gravity; // Apply downward force in y direction
 		}
 	}
