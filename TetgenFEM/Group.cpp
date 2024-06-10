@@ -525,14 +525,14 @@ void Group::calPrimeVecS(const std::vector<int>& topVertexLocalIndices, const st
 
 	for (const auto& vertexPair : verticesVector) {
 		Vertex* vertex = vertexPair;
-		//if (vertex->initx < meanX) {
-		//	// Vertex is left of meanX
-		//	gravity(3 * vertex->localIndex) = -Gravity;
-		//}
-		//else {
-		//	// Vertex is right of meanX
-		//	gravity(3 * vertex->localIndex) = Gravity;
-		//}
+		if (vertex->initx < meanX) {
+			// Vertex is left of meanX
+			gravity(3 * vertex->localIndex) = -0.5 * Gravity;
+		}
+		else {
+			// Vertex is right of meanX
+			gravity(3 * vertex->localIndex) = 0.5 * Gravity;
+		}
 
 		// Check if vertex is in topVertexLocalIndices
 		if (std::find(topVertexLocalIndices.begin(), topVertexLocalIndices.end(), vertex->index) != topVertexLocalIndices.end()) {
@@ -742,7 +742,11 @@ void Group::calPrimeVec() {
 
 	if (!gravityApplied) {
 		for (int i = 0; i < 3 * verticesVector.size(); i += 3) {
-			gravity(i) = -Gravity; 
+			//gravity(i) = -Gravity; 
+			float rotatedGravityX = -Gravity * sqrt(2) / 2;
+			float rotatedGravityY = -Gravity * sqrt(2) / 2;
+			gravity(i) = rotatedGravityX;
+			gravity(i + 1) = rotatedGravityY;
 		}
 
 

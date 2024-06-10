@@ -111,11 +111,39 @@ void findTopAndBottomVertices(const std::vector<Group>& groups, std::vector<int>
 	for (const Group& g : groups) {
 		for (const auto& vertexPair : g.verticesMap) {
 			Vertex* vertex = vertexPair.second;
-			if (vertex->inity > 0.38) {
+			if (vertex->inity > 0.53) {
 				topVertexLocalIndices.push_back(vertex->index);
 			}
-			if (vertex->inity < -0.38) {
+			if (vertex->inity < -0.53) {
 				bottomVertexLocalIndices.push_back(vertex->index);
+			}
+		}
+	}
+}
+void findUpperAndLowerVertices(const std::vector<Group>& groups, std::vector<int>& upperVertices, std::vector<int>& lowerVertices) {
+	double sumInity = 0.0;
+	int count = 0;
+
+	// First pass: calculate the average inity
+	for (const Group& g : groups) {
+		for (const auto& vertexPair : g.verticesMap) {
+			Vertex* vertex = vertexPair.second;
+			sumInity += vertex->inity;
+			count++;
+		}
+	}
+
+	double averageInity = sumInity / count;
+
+	// Second pass: classify vertices based on average inity
+	for (const Group& g : groups) {
+		for (const auto& vertexPair : g.verticesMap) {
+			Vertex* vertex = vertexPair.second;
+			if (vertex->inity > averageInity) {
+				upperVertices.push_back(vertex->index);
+			}
+			else {
+				lowerVertices.push_back(vertex->index);
 			}
 		}
 	}
@@ -132,7 +160,7 @@ int main() {
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.5a0.01";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
+	char args[] = "pq2.5a0.001";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
 	//char argsNode[] = "./cubeX4000";
@@ -224,7 +252,7 @@ int main() {
 			// ｶﾔﾃｿｸ･ｵ羞ﾃsetFixedIfBelowThresholdｷｽｷｨ
 			Vertex* vertex = vertexPair.second;
 
-			//vertex->setFixedIfBelowThreshold();
+			vertex->setFixedIfBelowThreshold();
 		}
 
 	}
@@ -337,11 +365,11 @@ int main() {
 #pragma omp parallel for
 		for (int i = 0; i < groupNum; i++) {
 			//object.groups[i].calGroupKFEM(youngs, poisson);
-			//object.groups[i].calPrimeVec();
-
+			object.groups[i].calPrimeVec();
+			//object.groups[i].calPrimeVecS(topVertexLocalIndices, bottomVertexLocalIndices);
 			//object.groups[i].calPrimeVec2(wKey);
 			//object.groups[i].calPrimeVec(wKey);
-			object.groups[i].calPrimeVecS(topVertexLocalIndices, bottomVertexLocalIndices);
+			
 			//object.groups[i].calPrimeVecT(wKey);
 			/*object.groups[i].calLHSFEM();
 			object.groups[i].calRHSFEM();
@@ -429,34 +457,34 @@ int main() {
 			//ｻｭﾖﾘｸｴｵﾄｰ豎ｾ
 
 
-			for (Tetrahedron* tetra : group.tetrahedra) { // ｱ鯊晙鰒ﾐｵﾄﾃｿｸﾄﾃ賣・
-				for (int i = 0; i < 4; ++i) { // ｱ鯊撝ﾄﾃ賣蠏ﾄﾃｿｸ･ｵ・
-					Vertex* vertex = tetra->vertices[i];
-					char buffer[5]; // ｷﾖﾅ葫羯ｻｴﾄｻｺｳ衂・
-					sprintf_s(buffer, "%d", vertex->index); // ｽｫintﾗｪｻｻﾎｪchar*
-					//if (groupIdx == 0) {
-					//	glColor3f(1, 0.0f, 0.0f);
-					//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
-					//	XPrintString(buffer);
-					//}
-						
-					//if(groupIdx == 1)
-					//{
-					//	glColor3f(0, 1, 0.0f);
-					//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
-					//	XPrintString(buffer);
-					//}
-					//	
+			//for (Tetrahedron* tetra : group.tetrahedra) { // ｱ鯊晙鰒ﾐｵﾄﾃｿｸﾄﾃ賣・
+			//	for (int i = 0; i < 4; ++i) { // ｱ鯊撝ﾄﾃ賣蠏ﾄﾃｿｸ･ｵ・
+			//		Vertex* vertex = tetra->vertices[i];
+			//		char buffer[5]; // ｷﾖﾅ葫羯ｻｴﾄｻｺｳ衂・
+			//		sprintf_s(buffer, "%d", vertex->index); // ｽｫintﾗｪｻｻﾎｪchar*
+			//		//if (groupIdx == 0) {
+			//		//	glColor3f(1, 0.0f, 0.0f);
+			//		//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
+			//		//	XPrintString(buffer);
+			//		//}
+			//			
+			//		//if(groupIdx == 1)
+			//		//{
+			//		//	glColor3f(0, 1, 0.0f);
+			//		//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
+			//		//	XPrintString(buffer);
+			//		//}
+			//		//	
 
-					//std::default_random_engine generator(vertex->index);//ﾋ貊摠ｷ｢ﾉ憘ｬﾓﾃﾓﾚﾗﾖｷ鈼ｫﾒﾆｷﾀﾖﾘｵ
-					//std::uniform_real_distribution<float> distribution(0, 0.05);
-					//float random_number = distribution(generator);
-					glColor3f(1, 0.0f, 0.0f);
-					glRasterPos3f(vertex->x + 0, vertex->y + 0, vertex->z + 0);
-					XPrintString(buffer);
-					
-				}
-			}
+			//		//std::default_random_engine generator(vertex->index);//ﾋ貊摠ｷ｢ﾉ憘ｬﾓﾃﾓﾚﾗﾖｷ鈼ｫﾒﾆｷﾀﾖﾘｵ
+			//		//std::uniform_real_distribution<float> distribution(0, 0.05);
+			//		//float random_number = distribution(generator);
+			//		glColor3f(1, 0.0f, 0.0f);
+			//		glRasterPos3f(vertex->x + 0, vertex->y + 0, vertex->z + 0);
+			//		XPrintString(buffer);
+			//		
+			//	}
+			//}
 
 		}
 		//for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
