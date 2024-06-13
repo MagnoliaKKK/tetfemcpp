@@ -742,11 +742,11 @@ void Group::calPrimeVec() {
 
 	if (!gravityApplied) {
 		for (int i = 0; i < 3 * verticesVector.size(); i += 3) {
-			//gravity(i) = -Gravity; 
-			float rotatedGravityX = -Gravity * sqrt(2) / 2;
+			gravity(i) = -3.0 * Gravity; 
+			/*float rotatedGravityX = -Gravity * sqrt(2) / 2;
 			float rotatedGravityY = -Gravity * sqrt(2) / 2;
 			gravity(i) = rotatedGravityX;
-			gravity(i + 1) = rotatedGravityY;
+			gravity(i + 1) = rotatedGravityY;*/
 		}
 
 

@@ -155,7 +155,7 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/cube.stl", in);
+	readSTL("stls/ring.stl", in);
 	//readOBJ("C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/ring.obj", in);
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
@@ -191,8 +191,8 @@ int main() {
 	object.groupNumZ = groupNumZ;
 	divideIntoGroups(out, object, groupNumX, groupNumY, groupNumZ); //convert tetgen to our data structure
 
-	//out.save_nodes("tube");
-	//out.save_elements("tube");
+	/*out.save_nodes("cube");
+	out.save_elements("cube");*/
 	//writeOBJ(object, "ring.obj");
 
 
@@ -292,8 +292,8 @@ int main() {
 		object.groups[i].calCenterofMass();
 		object.groups[i].calInitCOM();//initial com
 		object.groups[i].calLocalPos(); // initial local positions
-		//object.groups[i].calGroupK(youngs, poisson);	
-		object.groups[i].calGroupKAni(youngs1, youngs2, youngs3, poisson);
+		object.groups[i].calGroupK(youngs, poisson);	
+		//object.groups[i].calGroupKAni(youngs1, youngs2, youngs3, poisson);
 		object.groups[i].setVertexMassesFromMassMatrix();//vertex mass
 		object.groups[i].calMassGroup();
 		object.groups[i].calMassDistributionMatrix();
@@ -389,7 +389,7 @@ int main() {
 		object.PBDLOOP(20);
 
 		if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {//是否开启保存点坐标
-			std::ofstream file("14000Local.txt", std::ios::out | std::ios::trunc);
+			std::ofstream file("Local4000New.txt", std::ios::out | std::ios::trunc);
 			if (!file.is_open()) {
 				std::cerr << "Failed to open file." << std::endl;
 				return 0;
@@ -569,7 +569,7 @@ int main() {
 		//printf("%d frame number\n", frame);
 		frame++;
 		//object.writeVerticesToFile("ourMethodResult.txt");
-		/*object.bodyVolume = 0.0f;
+		object.bodyVolume = 0.0f;
 		for (int i = 0; i < groupNum; i++)
 		{
 			object.groups[i].groupVolume = 0.0f;
@@ -581,9 +581,9 @@ int main() {
 				object.groups[i].groupVolume += tets->calVolumeTetra();
 			}
 			object.bodyVolume += object.groups[i].groupVolume;
-		}*/
+		}
 		
-		//std::cout << object.bodyVolume << std::endl;
+		std::cout << object.bodyVolume << std::endl;
 		
 	
 		/*double totalKE = 0.0;
