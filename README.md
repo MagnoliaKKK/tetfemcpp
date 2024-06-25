@@ -6,14 +6,14 @@ For example, a Stanford Armadillo with right hand fixed and then dropped down by
 
 We show better accuracy than an other corotated method, Operator Splitting, although they are quite fast.
 
-**![VegaStretch](https://github.com/MagnoliaKKK/tetfemcpp/assets/62364444/d7e5ac2a-74e7-4696-9f89-27745b069ecf)
+<img src="https://github.com/MagnoliaKKK/tetfemcpp/assets/62364444/d7e5ac2a-74e7-4696-9f89-27745b069ecf" alt="VegaStretch" width="300"/>
 
-**![LocalStretch](https://github.com/MagnoliaKKK/tetfemcpp/assets/62364444/03cf29e7-0547-49bf-8637-0e848ff6f197)
+<img src="https://github.com/MagnoliaKKK/tetfemcpp/assets/62364444/03cf29e7-0547-49bf-8637-0e848ff6f197" alt="LocalStretch" width="300"/>
 
-**![OPStretch](https://github.com/MagnoliaKKK/tetfemcpp/assets/62364444/14a8c8bb-f665-46d3-b879-c06e3609b5c6)
+<img src="https://github.com/MagnoliaKKK/tetfemcpp/assets/62364444/14a8c8bb-f665-46d3-b879-c06e3609b5c6" alt="OPStretch" width="300"/>
 
 
 
-The image compares dragging a beam with a fixed left side. The top is VegaFEM, the middle is our method and the bottom is Operator Splitting.
+The image compares dragging a beam with a fixed left side. The left is VegaFEM, the middle is our method and the right is Operator Splitting.
 
 Our method can also simulate anisotropic materials by re-formulating the stiffness matrix.
