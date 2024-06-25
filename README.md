@@ -5,6 +5,7 @@ For example, a Stanford Armadillo with right hand fixed and then dropped down by
 ![banner](https://github.com/MagnoliaKKK/tetfemcpp/assets/62364444/71263d49-657b-4ecb-ae39-48f4e41389c3)
 
 We show better accuracy than an other corotated method, Operator Splitting, although they are quite fast.
+
 <img width="170" alt="image" src="https://github.com/MagnoliaKKK/tetfemcpp/assets/62364444/bba1d197-2899-44d1-8658-7568148c5af4">
 
 
