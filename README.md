@@ -14,7 +14,7 @@ We show better accuracy than an other corotated method, Operator Splitting, alth
 
 
 
-The image compares dragging a beam with a fixed left side. The left is VegaFEM, the middle is our method and the right is Operator Splitting.
+The image compares dragging a beam with a fixed left side. The beige one is VegaFEM, the blue one is our method and the grey blue is Operator Splitting.
 
 Our method can also simulate anisotropic materials by re-formulating the stiffness matrix.
 
