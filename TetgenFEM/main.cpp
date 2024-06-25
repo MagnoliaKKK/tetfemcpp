@@ -155,7 +155,7 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/ring.stl", in);
+	readSTL("stls/bunnyHDLow.stl", in);
 	//readOBJ("C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/ring.obj", in);
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
@@ -191,8 +191,8 @@ int main() {
 	object.groupNumZ = groupNumZ;
 	divideIntoGroups(out, object, groupNumX, groupNumY, groupNumZ); //convert tetgen to our data structure
 
-	/*out.save_nodes("cube");
-	out.save_elements("cube");*/
+	//out.save_nodes("ringY");
+	//out.save_elements("ringY");
 	//writeOBJ(object, "ring.obj");
 
 
@@ -389,7 +389,7 @@ int main() {
 		object.PBDLOOP(20);
 
 		if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {//是否开启保存点坐标
-			std::ofstream file("Local4000New.txt", std::ios::out | std::ios::trunc);
+			std::ofstream file("ringY4.txt", std::ios::out | std::ios::trunc);
 			if (!file.is_open()) {
 				std::cerr << "Failed to open file." << std::endl;
 				return 0;

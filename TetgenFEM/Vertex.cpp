@@ -10,7 +10,7 @@ Vertex::Vertex(float x, float y, float z, int index)
 {}
 
 void Vertex::setFixedIfBelowThreshold() {
-    if (initx < -0.64 /* || inity > 0.3 || initx > -0.15 || initx > 0.62 */) {
+    if (inity > 0.75/*initx < -0.64*/ /* ||  || initx > -0.15 || initx > 0.62 */) {
         isFixed = true;
     }
 }
