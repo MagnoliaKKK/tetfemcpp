@@ -6,11 +6,11 @@ For example, a Stanford Armadillo with right hand fixed and then dropped down by
 
 We show better accuracy than an other corotated method, Operator Splitting, although they are quite fast.
 
-![VegaStretch](https://github.com/MagnoliaKKK/tetfemcpp/assets/62364444/d7e5ac2a-74e7-4696-9f89-27745b069ecf)
+**![VegaStretch](https://github.com/MagnoliaKKK/tetfemcpp/assets/62364444/d7e5ac2a-74e7-4696-9f89-27745b069ecf)
 
-![LocalStretch](https://github.com/MagnoliaKKK/tetfemcpp/assets/62364444/03cf29e7-0547-49bf-8637-0e848ff6f197)
+**![LocalStretch](https://github.com/MagnoliaKKK/tetfemcpp/assets/62364444/03cf29e7-0547-49bf-8637-0e848ff6f197)
 
-![OPStretch](https://github.com/MagnoliaKKK/tetfemcpp/assets/62364444/14a8c8bb-f665-46d3-b879-c06e3609b5c6)
+**![OPStretch](https://github.com/MagnoliaKKK/tetfemcpp/assets/62364444/14a8c8bb-f665-46d3-b879-c06e3609b5c6)
 
 
 
