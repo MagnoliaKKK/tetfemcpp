@@ -44,7 +44,7 @@ Eigen::MatrixXf Tetrahedron::createElementKAni(float E1, float E2, float E3, flo
 	mdelta3 << 1, x1, y1, 1, x2, y2, 1, x4, y4;
 	mdelta4 << 1, x1, y1, 1, x2, y2, 1, x3, y3;
 
-	// ?ŽZ beta, gamma ˜a delta ?
+	// beta gamma delta
 	float beta1 = -mbeta1.determinant();
 	float beta2 = mbeta2.determinant();
 	float beta3 = -mbeta3.determinant();
@@ -60,7 +60,7 @@ Eigen::MatrixXf Tetrahedron::createElementKAni(float E1, float E2, float E3, flo
 	float delta3 = -mdelta3.determinant();
 	float delta4 = mdelta4.determinant();
 
-	// ’è? B ‹é?
+	//B matrix
 	Eigen::MatrixXf B(6, 12);
 
 	B << beta1, 0, 0, beta2, 0, 0, beta3, 0, 0, beta4, 0, 0,
@@ -72,8 +72,7 @@ Eigen::MatrixXf Tetrahedron::createElementKAni(float E1, float E2, float E3, flo
 
 	B /= (6 * V);
 
-	// ’è?Þ—¿‘®«‹é? D
-	// ”‘¼”ä
+	
 	Eigen::MatrixXf D = Eigen::MatrixXf::Zero(6, 6);
 
 	Eigen::Matrix3f A1;
@@ -83,7 +82,7 @@ Eigen::MatrixXf Tetrahedron::createElementKAni(float E1, float E2, float E3, flo
 
 	A1 /= (nu + 1) * (1 - 2 * nu);
 
-	// Calculate the orthotropic matrix 'B' based on the uploaded image
+	
 	Eigen::Matrix3f B1;
 	B1 << std::sqrt(E1 * E2) / 2, 0, 0,
 		0, std::sqrt(E2 * E3) / 2, 0,
@@ -96,14 +95,14 @@ Eigen::MatrixXf Tetrahedron::createElementKAni(float E1, float E2, float E3, flo
 	D.topLeftCorner<3, 3>() = A1;
 	D.bottomRightCorner<3, 3>() = B1;
 
-	// ?ŽZ?“x‹é? k
+	// element K
 	Eigen::MatrixXf k = V * (B.transpose() * D * B);
 
 	elementK = k;
 	return k;
 }
 Eigen::MatrixXf Tetrahedron::createElementK(float E, float nu, const Eigen::Vector3f& groupCenterOfMass) {
-	// ’è??“_¿?
+
 	float x1 = vertices[0]->x - groupCenterOfMass.x();
 	float y1 = vertices[0]->y - groupCenterOfMass.y();
 	float z1 = vertices[0]->z - groupCenterOfMass.z();
@@ -117,17 +116,17 @@ Eigen::MatrixXf Tetrahedron::createElementK(float E, float nu, const Eigen::Vect
 	float y4 = vertices[3]->y - groupCenterOfMass.y();
 	float z4 = vertices[3]->z - groupCenterOfMass.z();
 
-	// ?Œš‘Ì??ŽZ‹é? A
+
 	Eigen::Matrix4d A;
 	A << x1, y1, z1, 1,
 		x2, y2, z2, 1,
 		x3, y3, z3, 1,
 		x4, y4, z4, 1;
 
-	// ?ŽZŽl–Ê‘Ì“I‘Ì?
+	
 	float V = std::abs(A.determinant() / 6);
 
-	// ’è? mbeta, mgamma, mdelta ‹é?
+	
 	Eigen::Matrix3f mbeta1, mbeta2, mbeta3, mbeta4, mgamma1, mgamma2, mgamma3, mgamma4, mdelta1, mdelta2, mdelta3, mdelta4;
 
 
@@ -146,7 +145,7 @@ Eigen::MatrixXf Tetrahedron::createElementK(float E, float nu, const Eigen::Vect
 	mdelta3 << 1, x1, y1, 1, x2, y2, 1, x4, y4;
 	mdelta4 << 1, x1, y1, 1, x2, y2, 1, x3, y3;
 
-	// ?ŽZ beta, gamma ˜a delta ?
+	
 	float beta1 = -mbeta1.determinant();
 	float beta2 = mbeta2.determinant();
 	float beta3 = -mbeta3.determinant();
@@ -162,7 +161,7 @@ Eigen::MatrixXf Tetrahedron::createElementK(float E, float nu, const Eigen::Vect
 	float delta3 = -mdelta3.determinant();
 	float delta4 = mdelta4.determinant();
 
-	// ’è? B ‹é?
+	
 	Eigen::MatrixXf B(6, 12);
 
 	B << beta1, 0, 0, beta2, 0, 0, beta3, 0, 0, beta4, 0, 0,
@@ -174,8 +173,7 @@ Eigen::MatrixXf Tetrahedron::createElementK(float E, float nu, const Eigen::Vect
 
 	B /= (6 * V);
 
-	// ’è?Þ—¿‘®«‹é? D
-	// ”‘¼”ä
+	
 	Eigen::MatrixXf D = Eigen::MatrixXf::Zero(6, 6);
 
 	D << 1 - nu, nu, nu, 0, 0, 0,
@@ -187,7 +185,7 @@ Eigen::MatrixXf Tetrahedron::createElementK(float E, float nu, const Eigen::Vect
 
 	D *= (E / ((1 + nu) * (1 - 2 * nu)));
 
-	// ?ŽZ?“x‹é? k
+	
 	Eigen::MatrixXf k = V * (B.transpose() * D * B);
 
 	elementK = k;
@@ -195,7 +193,7 @@ Eigen::MatrixXf Tetrahedron::createElementK(float E, float nu, const Eigen::Vect
 }
 
 Eigen::MatrixXf Tetrahedron::createElementKFEM(float E, float nu) {
-	// ’è??“_¿?
+	
 	float x1 = vertices[0]->x;
 	float y1 = vertices[0]->y;
 	float z1 = vertices[0]->z;
@@ -209,17 +207,17 @@ Eigen::MatrixXf Tetrahedron::createElementKFEM(float E, float nu) {
 	float y4 = vertices[3]->y;
 	float z4 = vertices[3]->z;
 
-	// ?Œš‘Ì??ŽZ‹é? A
+
 	Eigen::Matrix4d A;
 	A << x1, y1, z1, 1,
 		x2, y2, z2, 1,
 		x3, y3, z3, 1,
 		x4, y4, z4, 1;
 
-	// ?ŽZŽl–Ê‘Ì“I‘Ì?
+	
 	float V = std::abs(A.determinant() / 6);
 
-	// ’è? mbeta, mgamma, mdelta ‹é?
+	
 	Eigen::Matrix3f mbeta1, mbeta2, mbeta3, mbeta4, mgamma1, mgamma2, mgamma3, mgamma4, mdelta1, mdelta2, mdelta3, mdelta4;
 
 
@@ -238,7 +236,7 @@ Eigen::MatrixXf Tetrahedron::createElementKFEM(float E, float nu) {
 	mdelta3 << 1, x1, y1, 1, x2, y2, 1, x4, y4;
 	mdelta4 << 1, x1, y1, 1, x2, y2, 1, x3, y3;
 
-	// ?ŽZ beta, gamma ˜a delta ?
+	
 	float beta1 = -mbeta1.determinant();
 	float beta2 = mbeta2.determinant();
 	float beta3 = -mbeta3.determinant();
@@ -254,7 +252,7 @@ Eigen::MatrixXf Tetrahedron::createElementKFEM(float E, float nu) {
 	float delta3 = -mdelta3.determinant();
 	float delta4 = mdelta4.determinant();
 
-	// ’è? B ‹é?
+	
 	Eigen::MatrixXf B(6, 12);
 
 	B << beta1, 0, 0, beta2, 0, 0, beta3, 0, 0, beta4, 0, 0,
@@ -266,8 +264,7 @@ Eigen::MatrixXf Tetrahedron::createElementKFEM(float E, float nu) {
 
 	B /= (6 * V);
 
-	// ’è?Þ—¿‘®«‹é? D
-	// ”‘¼”ä
+	
 	Eigen::MatrixXf D = Eigen::MatrixXf::Zero(6, 6);
 
 	D << 1 - nu, nu, nu, 0, 0, 0,
@@ -279,7 +276,7 @@ Eigen::MatrixXf Tetrahedron::createElementKFEM(float E, float nu) {
 
 	D *= (E / ((1 + nu) * (1 - 2 * nu)));
 
-	// ?ŽZ?“x‹é? k
+	
 	Eigen::MatrixXf k = V * (B.transpose() * D * B);
 
 	elementKFEM = k;

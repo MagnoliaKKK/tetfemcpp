@@ -321,7 +321,7 @@ void Object::writeVerticesToFile(const std::string& filename) {
 	std::cout << "顶点数据已成功写入文件: " << filename << std::endl;
 }
 void Object::PBDLOOP(int looptime) {
-	// 1. 初始化：将每个组的 Fbind 置零
+
 
 		 //#pragma omp parallel for
 	float reference = 0.0f; // float类型的参考值
@@ -350,10 +350,10 @@ void Object::PBDLOOP(int looptime) {
 
 	}
 
-	// 2. 开始迭代
+	
 
 	for (int iter = 0; iter < looptime; ++iter) {
-		// 每组计算 RHS
+		
 
 #pragma omp parallel for //500fps to 300, -optimization
 		for (int i = 0; i < groupNum; ++i) {
@@ -369,16 +369,16 @@ void Object::PBDLOOP(int looptime) {
 		for (int groupIdx = 0; groupIdx < groups.size(); ++groupIdx) {
 			Group& currentGroup = groups[groupIdx];
 
-			// 遍历所有6个方向的相邻组
+		
 			for (int direction = 0; direction < 6; ++direction) {
 				int adjacentGroupIdx = currentGroup.adjacentGroupIDs[direction];
 
-				// 检查是否存在相邻组
+				
 				if (adjacentGroupIdx != -1) {
 					Group& adjacentGroup = groups[adjacentGroupIdx];
 					const auto& commonVerticesPair = currentGroup.commonVerticesInDirections[direction];
 
-					// 使用 calFbind1 计算约束力
+					//Calculate bind force
 					currentGroup.calFbind1(commonVerticesPair.first, commonVerticesPair.second,
 						currentGroup.currentPosition, adjacentGroup.currentPosition, bindForce);
 					if (direction == 0 || direction == 1) {
@@ -388,15 +388,15 @@ void Object::PBDLOOP(int looptime) {
 							Vertex* vertexThisGroup = commonVerticesPair.first[i];
 							Vertex* vertexOtherGroup = commonVerticesPair.second[i];
 
-							// 获取两个组中对应顶点的位置
+							// Get the common points coordinates
 							Eigen::Vector3f posThisGroup = currentGroup.currentPosition.segment<3>(3 * vertexThisGroup->localIndex);
 							Eigen::Vector3f posOtherGroup = adjacentGroup.currentPosition.segment<3>(3 * vertexOtherGroup->localIndex);
 
-							// 计算两组间的绝对位置差异并存储
+							
 							currentGroup.distancesX.segment<3>(3 * i) = (posThisGroup - posOtherGroup);
 						}
 
-						// 此处可添加额外的逻辑使用 `distances` 向量
+						
 					}
 				}
 

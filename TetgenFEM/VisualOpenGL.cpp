@@ -139,11 +139,11 @@ void drawAxis(float length) {
 	glPopMatrix();
 }
 void drawAxis1(float length, const Eigen::Matrix3f& rotationMatrix) {
-	glPushMatrix();  // 保存当前的模型视图矩諄E
-	glTranslatef(-length * 3, -length * 3, 0);  // 将坐眮E嵩阋贫酱翱诘挠蚁陆?
-	Eigen::Matrix4f matrix4f = Eigen::Matrix4f::Identity(); // 创建一竵Ex4单位矩諄E
+	glPushMatrix();  
+	glTranslatef(-length * 3, -length * 3, 0);  
+	Eigen::Matrix4f matrix4f = Eigen::Matrix4f::Identity(); 
 	matrix4f.block<3, 3>(0, 0) = rotationMatrix;
-	glMultMatrixf(matrix4f.data());//旋转坐眮E丒
+	glMultMatrixf(matrix4f.data());
 
 	glBegin(GL_LINES);
 	// X axis in red
@@ -160,16 +160,16 @@ void drawAxis1(float length, const Eigen::Matrix3f& rotationMatrix) {
 	glVertex3f(0.0f, 0.0f, length);
 	glEnd();
 
-	glPopMatrix();  // 恢复之前保存的模型视图矩諄E
+	glPopMatrix(); 
 }
 float getRotationAngleZ(const Eigen::Matrix3f& rotationmatrix) {
-	// 使用 atan2 函数来计算角度
+	
 	float angle = std::atan2(rotationmatrix(1, 0), rotationmatrix(0, 0));
 
-	// 将角度从弧度转换为度数，如果需要的话
+	
 	angle = angle * (180.0 / 3.1415926535f);
 
-	return angle; // 返回弧度值
+	return angle; 
 }
 
 

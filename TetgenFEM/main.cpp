@@ -81,7 +81,7 @@ void writeOBJ(const Object& object, const std::string& filename) {
 
 	for (const auto& group : object.groups) {
 		for (const auto& tetrahedron : group.tetrahedra) {
-			// 写入顶点
+			// vertex
 			for (int i = 0; i < 4; ++i) {
 				Vertex* vertex = tetrahedron->vertices[i];
 				if (vertexIndexMap.find(vertex) == vertexIndexMap.end()) {
@@ -90,8 +90,8 @@ void writeOBJ(const Object& object, const std::string& filename) {
 				}
 			}
 
-			// 写入面
-			// 四面体的四个面的索引组合（根据你的四面体顶点组织可能需要调整）
+			// writing faces
+			// indices of four faces
 			int indices[4][3] = { {0, 1, 2}, {0, 1, 3}, {1, 2, 3}, {0, 2, 3} };
 			for (int i = 0; i < 4; ++i) {
 				file << "f";
@@ -196,13 +196,13 @@ int main() {
 	//writeOBJ(object, "ring.obj");
 
 
-	object.updateIndices(); // ﾃｿｸ羚ﾖﾅ萪ｻｸﾀﾁ｢index｣ｬﾖﾘｸｴｵﾄｸﾄﾐﾂｵﾄindex
-	object.assignLocalIndicesToAllGroups(); //ｷﾖﾅ膈ocal index
-	object.generateUniqueVertices();//ｲ揵￤niqueVertices
+	object.updateIndices(); 
+	object.assignLocalIndicesToAllGroups(); 
+	object.generateUniqueVertices();
 	
 	object.updateAdjacentGroupIndices(groupNumX, groupNumY, groupNumZ);
 	for (int i = 0; i < groupNum; ++i) {
-		// ｶﾔﾃｿｸ魴ﾃ storeAdjacentGroupsCommonVertices ｺｯﾊ
+	
 		object.storeAdjacentGroupsCommonVertices(i);
 	}
 	
@@ -247,12 +247,12 @@ int main() {
 	//object.commonPoints3 = object.findCommonVertices1(object.groups[3], object.groups[4]);
 	//std::pair<std::vector<Vertex*>, std::vector<Vertex*>> commonVertices2 = object.findCommonVertices1(object.groups[0], object.groups[1]);
 	for (Group& g : object.groups) {
-		 //ｱ鯊ⅷroupﾖﾐｵﾄﾃｿｸertex
+		
 		for (const auto& vertexPair : g.verticesMap) {
-			// ｶﾔﾃｿｸ･ｵ羞ﾃsetFixedIfBelowThresholdｷｽｷｨ
+			
 			Vertex* vertex = vertexPair.second;
 
-			vertex->setFixedIfBelowThreshold();
+			vertex->setFixedIfBelowThreshold();//Set fixed points based on position (usually a surface)
 		}
 
 	}
@@ -265,10 +265,10 @@ int main() {
 	// Now topVertexLocalIndices and bottomVertexLocalIndices contain the local indices of the top and bottom vertices, respectively.
 
 	
-	/////////ｾｾﾍｷｷ｢ｹﾌｶｨｷｨ
-	//float maxY = -std::numeric_limits<float>::infinity(); // ｳｼｻｯﾎｪｼｫﾐ｡ﾖｵ
+	//Fix by several vertices
+	//float maxY = -std::numeric_limits<float>::infinity();
 	//Vertex* vertexWithMaxY = nullptr;
-	//// ｲ鰈ﾒ y ﾖｵﾗ鋗ﾄｶ･ｵ・
+	
 	//for (Group& g : object.groups) {
 	//	for (const auto& vertexPair : g.verticesMap) {
 	//		Vertex* vertex = vertexPair.second;
@@ -278,9 +278,9 @@ int main() {
 	//		}
 	//	}
 	//}
-	//// ｽｫ y ﾖｵﾗ鋗ﾄｶ･ｵ翹靜ｪｹﾌｶｨｵ・
+	
 	//if (vertexWithMaxY != nullptr) {
-	//	vertexWithMaxY->isFixed = true; // ｼﾙﾉ勒ﾐﾒｻｸｽｷｨ setFixed ﾀｴﾉ靹ﾃｶ･ｵ羞ﾄｹﾌｶｨﾗｴﾌｬ
+	//	vertexWithMaxY->isFixed = true;
 	//	
 	//}
 	/////////
@@ -297,7 +297,7 @@ int main() {
 		object.groups[i].setVertexMassesFromMassMatrix();//vertex mass
 		object.groups[i].calMassGroup();
 		object.groups[i].calMassDistributionMatrix();
-		//object.groups[i].inverseTerm = (object.groups[i].massMatrix + object.groups[i].dampingMatrix * 0.01f).inverse(); //ﾋｳﾋｳｱ羃ﾑﾕ篋翆ﾋ
+		//object.groups[i].inverseTerm = (object.groups[i].massMatrix + object.groups[i].dampingMatrix * 0.01f).inverse(); 
 		//object.groups[i].inverseTermSparse = object.groups[i].inverseTerm.sparseView();
 		object.groups[i].calLHS();
 	}
@@ -305,15 +305,15 @@ int main() {
 	//for calculate frame rate
 	double lastTime = glfwGetTime();
 	int nbFrames = 0;
-	glfwSwapInterval(0); //ｴｹﾖｱﾍｬｲｽ
+	glfwSwapInterval(0);
 
 
-	//------------------- 保存点坐标用
+	//------------------- save coordinates
 	std::vector<Vertex*> objectUniqueVertices;
 
 	for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
 		Group& group = object.getGroup(groupIdx);
-		auto& verticesMap = group.verticesMap; // 假设每个组都有一个名为 verticesMap 的成员
+		auto& verticesMap = group.verticesMap; 
 
 		for (const auto& pair : verticesMap) {
 			bool found = false;
@@ -331,7 +331,7 @@ int main() {
 
 	std::sort(objectUniqueVertices.begin(), objectUniqueVertices.end(), [](const Vertex* a, const Vertex* b) {
 		return a->index < b->index;
-		});//按索引从小到大排序
+		});//index from min to max
 
 	
 
@@ -339,8 +339,7 @@ int main() {
 	while (!glfwWindowShouldClose(window)) {
 
 		//object.commonPoints1 = object.findCommonVertices(object.groups[1], object.groups[2]);
-		//ｹﾌｶｨｵ翹靹ﾃ
-
+		
 
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
 			wKey = 1;
@@ -360,7 +359,7 @@ int main() {
 		}
 		else
 			wKey = 0;
-		//std::cout << wKey << std::endl;// ｵｱ W ｱｻｰｴﾏﾂﾊｱｵﾄﾂﾟｼｭ
+		//std::cout << wKey << std::endl;
 		//double aa = object.groups[0].tetrahedra[0]->calMassTetra(density);
 #pragma omp parallel for
 		for (int i = 0; i < groupNum; i++) {
@@ -388,7 +387,7 @@ int main() {
 
 		object.PBDLOOP(20);
 
-		if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {//是否开启保存点坐标
+		if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
 			std::ofstream file("ringY4.txt", std::ios::out | std::ios::trunc);
 			if (!file.is_open()) {
 				std::cerr << "Failed to open file." << std::endl;
@@ -408,7 +407,7 @@ int main() {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//drawAxis1(0.3f, object.groups[0].rotate_matrix);
-		// ｻ贍ﾆﾗ・・
+		
 		drawAxis(0.3f);
 		//std::cout << getRotationAngleZ(object.groups[0].rotate_matrix) << std::endl;;
 		// Enable wireframe mode
@@ -422,9 +421,9 @@ int main() {
 
 
 		// Draw vertices
-		// ﾉ靹ﾃｵ羞ﾄｴ｡ﾎｪ10ﾏﾘ
+	
 		glPointSize(5.0f);
-		// ｻ贍ﾆｰﾗﾉｫｵ・
+		
 		glColor3f(1.0f, 1.0f, 1.0f);
 		glBegin(GL_POINTS);
 		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
@@ -439,14 +438,14 @@ int main() {
 		glEnd();
 
 
-		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) { //ﾐｴｵ羞ﾄｱ・ﾅ｣ｬｻｭﾗ?
+		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) { 
 			Group& group = object.getGroup(groupIdx);
 
 			//ｻｭｲｻﾖﾘｸｴｵﾄｰ豎ｾ
 			//std::vector<Vertex*> uniqueVertices = group.getUniqueVertices();
 			//for (size_t i = 0; i < uniqueVertices.size(); ++i) {
 			//	Vertex* vertex = uniqueVertices[i];
-			//	char buffer[5]; // ｷﾖﾅ葫羯ｻｴﾄｻｺｳ衂・
+			//	char buffer[5]; m
 			//	sprintf_s(buffer, "%d", vertex->index); // ｽｫintﾗｪｻｻﾎｪchar*
 			//	glColor3f(1, 0.0f, 0.0f);
 			//	glRasterPos3f(vertex->x, vertex->y, vertex->z);
@@ -454,13 +453,13 @@ int main() {
 			//}
 
 
-			//ｻｭﾖﾘｸｴｵﾄｰ豎ｾ
+			
 
 
-			//for (Tetrahedron* tetra : group.tetrahedra) { // ｱ鯊晙鰒ﾐｵﾄﾃｿｸﾄﾃ賣・
-			//	for (int i = 0; i < 4; ++i) { // ｱ鯊撝ﾄﾃ賣蠏ﾄﾃｿｸ･ｵ・
+			//for (Tetrahedron* tetra : group.tetrahedra) { 
+			//	for (int i = 0; i < 4; ++i) { 
 			//		Vertex* vertex = tetra->vertices[i];
-			//		char buffer[5]; // ｷﾖﾅ葫羯ｻｴﾄｻｺｳ衂・
+			//		char buffer[5]; 
 			//		sprintf_s(buffer, "%d", vertex->index); // ｽｫintﾗｪｻｻﾎｪchar*
 			//		//if (groupIdx == 0) {
 			//		//	glColor3f(1, 0.0f, 0.0f);
@@ -476,7 +475,7 @@ int main() {
 			//		//}
 			//		//	
 
-			//		//std::default_random_engine generator(vertex->index);//ﾋ貊摠ｷ｢ﾉ憘ｬﾓﾃﾓﾚﾗﾖｷ鈼ｫﾒﾆｷﾀﾖﾘｵ
+			//		//std::default_random_engine generator(vertex->index);
 			//		//std::uniform_real_distribution<float> distribution(0, 0.05);
 			//		//float random_number = distribution(generator);
 			//		glColor3f(1, 0.0f, 0.0f);
@@ -490,21 +489,21 @@ int main() {
 		//for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
 		//	Group& group = object.getGroup(groupIdx);
 
-		//	// ﾊｹﾓﾃﾗ鰒ﾐﾒﾑｾｭｼﾆﾋ羲ﾃｵﾄﾖﾊﾐﾄ
+		//	
 		//	Eigen::Vector3f& center = group.centerofMass;
 
-		//	// ｽｫﾗ鰺ﾗｪｻｻﾎｪﾗﾖｷ逸ｮ
+		//	
 		//	char groupNumber[10];
 		//	sprintf_s(groupNumber, "%d", groupIdx);
 
-		//	// ﾎｪﾗ魍犲ﾅﾉ靹ﾃﾑﾕﾉｫ
-		//	glColor3f(1.0f, 1.0f, 0.0f); // ｰﾗﾉｫﾓﾃﾓﾚﾎﾄｱｾ
+		//	
+		//	glColor3f(1.0f, 1.0f, 0.0f);
 
-		//	// ﾉ靹ﾃﾗ魍犲ﾅｵﾄﾎｻﾖﾃｲ｢ｻ贍ﾆ
+		//	
 		//	glRasterPos3f(center[0] + 1, center[1], center[2]);
 		//	XPrintString(groupNumber);
 
-		//	// ... [ｻ贍ﾆｱﾟﾔｵｺﾍｶ･ｵ羞ﾄﾆ萼犇惲・ ...
+		//	
 		//}
 
 		// Draw edges
@@ -561,7 +560,7 @@ int main() {
 		//calculate frame rate
 		double currentTime = glfwGetTime();
 		nbFrames++;
-		if (currentTime - lastTime >= 1.0) { // ﾈ郢鄧ﾈ･ﾁﾋﾖﾁﾉﾙ1ﾃ・
+		if (currentTime - lastTime >= 1.0) { 
 			printf("%d frames/sec\n", nbFrames);
 			nbFrames = 0;
 			lastTime += 1.0;
@@ -583,7 +582,7 @@ int main() {
 			object.bodyVolume += object.groups[i].groupVolume;
 		}
 		
-		std::cout << object.bodyVolume << std::endl;
+		//std::cout << object.bodyVolume << std::endl;
 		
 	
 		/*double totalKE = 0.0;
