@@ -17,3 +17,8 @@ We show better accuracy than an other corotated method, Operator Splitting, alth
 The image compares dragging a beam with a fixed left side. The left is VegaFEM, the middle is our method and the right is Operator Splitting.
 
 Our method can also simulate anisotropic materials by re-formulating the stiffness matrix.
+
+For more details, you can refer to:
+[vrsj_localFEM.pdf](https://github.com/user-attachments/files/15973518/vrsj_localFEM.pdf)
+
+Thanks for seeing my research!
