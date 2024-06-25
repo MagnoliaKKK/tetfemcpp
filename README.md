@@ -6,7 +6,12 @@ For example, a Stanford Armadillo with right hand fixed and then dropped down by
 
 We show better accuracy than an other corotated method, Operator Splitting, although they are quite fast.
 
-<img width="170" alt="image" src="https://github.com/MagnoliaKKK/tetfemcpp/assets/62364444/bba1d197-2899-44d1-8658-7568148c5af4">
+![VegaStretch](https://github.com/MagnoliaKKK/tetfemcpp/assets/62364444/d7e5ac2a-74e7-4696-9f89-27745b069ecf)
+
+![LocalStretch](https://github.com/MagnoliaKKK/tetfemcpp/assets/62364444/03cf29e7-0547-49bf-8637-0e848ff6f197)
+
+![OPStretch](https://github.com/MagnoliaKKK/tetfemcpp/assets/62364444/14a8c8bb-f665-46d3-b879-c06e3609b5c6)
+
 
 
 The image compares dragging a beam with a fixed left side. The top is VegaFEM, the middle is our method and the bottom is Operator Splitting.
