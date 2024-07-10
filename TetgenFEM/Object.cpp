@@ -392,8 +392,21 @@ void Object::PBDLOOP(int looptime) {
 							Eigen::Vector3f posThisGroup = currentGroup.currentPosition.segment<3>(3 * vertexThisGroup->localIndex);
 							Eigen::Vector3f posOtherGroup = adjacentGroup.currentPosition.segment<3>(3 * vertexOtherGroup->localIndex);
 
+							if (iter == looptime - 1)
+							{
+								currentGroup.distancesX.segment<3>(3 * i) = (posThisGroup - posOtherGroup);
+								float totalNorm = 0.0f;
+								int numVertices = currentGroup.distancesX.size() / 3;
+
+								for (int i = 0; i < numVertices; ++i) {
+									totalNorm += currentGroup.distancesX.segment<3>(3 * i).norm();
+								}
+
+								float averageNorm = totalNorm / numVertices;
+								std::cout << "Average norm of distancesX for group " << groupIdx << " in direction " << direction << ": " << averageNorm << std::endl;
+							}
+
 							
-							currentGroup.distancesX.segment<3>(3 * i) = (posThisGroup - posOtherGroup);
 						}
 
 						

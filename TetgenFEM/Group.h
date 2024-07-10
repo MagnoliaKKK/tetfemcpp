@@ -28,7 +28,7 @@ public:
 	std::unordered_map<int, Vertex*> verticesMap;
 	std::vector<Vertex*> verticesVector;
 	Eigen::Vector3f centerofMass;
-	float groupMass;//??的?量
+	float groupMass;
 	Eigen::MatrixXf massMatrix;//group mass matrix
 	Eigen::MatrixXf massDistribution;
 	Eigen::MatrixXf groupK;//group stiffness matrix
@@ -38,7 +38,7 @@ public:
 	Eigen::VectorXf groupVelocityFEM;
 	Eigen::VectorXf groupExf;
 	Eigen::MatrixXf rotationMatrix;
-	Eigen::Matrix3f rotate_matrix;//3*3的旋?矩?，?展成?的旋?矩?
+	Eigen::Matrix3f rotate_matrix;
 	Eigen::VectorXf gravity;
 	Eigen::MatrixXf dampingMatrix;
 	Eigen::MatrixXf inverseTerm;
@@ -62,9 +62,9 @@ public:
 	Eigen::SparseMatrix<float> inverseTermSparse;
 	Eigen::VectorXf currentPosition;//?算bindf用的位置信息，不用做位置更新
 	Eigen::VectorXf currentPositionFEM;
-	Eigen::VectorXf distancesX; //X方向的??距?
+	Eigen::VectorXf distancesX; 
 	std::array<int, 6> adjacentGroupIDs;
-	int groupIndex;//??的?号
+	int groupIndex;
 	std::vector<std::pair<std::vector<Vertex*>, std::vector<Vertex*>>> commonVerticesInDirections;//各个相??的共同点
 
 	Eigen::MatrixXf LHS_I;
