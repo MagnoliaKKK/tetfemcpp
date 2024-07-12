@@ -381,36 +381,21 @@ void Object::PBDLOOP(int looptime) {
 					//Calculate bind force
 					currentGroup.calFbind1(commonVerticesPair.first, commonVerticesPair.second,
 						currentGroup.currentPosition, adjacentGroup.currentPosition, bindForce);
-					if (direction == 0 || direction == 1) {
-						currentGroup.distancesX = Eigen::VectorXf::Zero(commonVerticesPair.first.size() * 3);
+					//if (direction == 0 || direction == 1) {
+					//	currentGroup.distancesX = Eigen::VectorXf::Zero(commonVerticesPair.first.size() * 3);
 
-						for (size_t i = 0; i < commonVerticesPair.first.size(); ++i) {
-							Vertex* vertexThisGroup = commonVerticesPair.first[i];
-							Vertex* vertexOtherGroup = commonVerticesPair.second[i];
+					//	for (size_t i = 0; i < commonVerticesPair.first.size(); ++i) {
+					//		Vertex* vertexThisGroup = commonVerticesPair.first[i];
+					//		Vertex* vertexOtherGroup = commonVerticesPair.second[i];
 
-							// Get the common points coordinates
-							Eigen::Vector3f posThisGroup = currentGroup.currentPosition.segment<3>(3 * vertexThisGroup->localIndex);
-							Eigen::Vector3f posOtherGroup = adjacentGroup.currentPosition.segment<3>(3 * vertexOtherGroup->localIndex);
+					//		// Get the common points coordinates
+					//		Eigen::Vector3f posThisGroup = currentGroup.currentPosition.segment<3>(3 * vertexThisGroup->localIndex);
+					//		Eigen::Vector3f posOtherGroup = adjacentGroup.currentPosition.segment<3>(3 * vertexOtherGroup->localIndex);
 
-							if (iter == looptime - 1)
-							{
-								currentGroup.distancesX.segment<3>(3 * i) = (posThisGroup - posOtherGroup);
-								float totalNorm = 0.0f;
-								int numVertices = currentGroup.distancesX.size() / 3;
+					//	}
 
-								for (int i = 0; i < numVertices; ++i) {
-									totalNorm += currentGroup.distancesX.segment<3>(3 * i).norm();
-								}
-
-								float averageNorm = totalNorm / numVertices;
-								std::cout << "Average norm of distancesX for group " << groupIdx << " in direction " << direction << ": " << averageNorm << std::endl;
-							}
-
-							
-						}
-
-						
-					}
+					//	
+					//}
 				}
 
 			}
@@ -418,11 +403,47 @@ void Object::PBDLOOP(int looptime) {
 		}
 		
 	}
-
-
-	//std::cout << "Bind is" << std::endl << groups[0].Fbind(58) << std::endl;
+	
 //#pragma omp parallel for
+	for (int groupIdx = 0; groupIdx < groups.size(); ++groupIdx) {
+		Group& currentGroup = groups[groupIdx];
 
+
+		for (int direction = 0; direction < 6; ++direction) {
+			int adjacentGroupIdx = currentGroup.adjacentGroupIDs[direction];
+
+
+			if (adjacentGroupIdx != -1) {
+				Group& adjacentGroup = groups[adjacentGroupIdx];
+				const auto& commonVerticesPair = currentGroup.commonVerticesInDirections[direction];
+
+				if (direction == 0 || direction == 1) {
+					currentGroup.distancesX = Eigen::VectorXf::Zero(commonVerticesPair.first.size() * 3);
+					float totalNorm = 0.0f;
+					int numVertices = currentGroup.distancesX.size() / 3;
+					for (size_t i = 0; i < commonVerticesPair.first.size(); ++i) {
+						Vertex* vertexThisGroup = commonVerticesPair.first[i];
+						Vertex* vertexOtherGroup = commonVerticesPair.second[i];
+
+						// Get the common points coordinates
+						Eigen::Vector3f posThisGroup = currentGroup.currentPosition.segment<3>(3 * vertexThisGroup->localIndex);
+						Eigen::Vector3f posOtherGroup = adjacentGroup.currentPosition.segment<3>(3 * vertexOtherGroup->localIndex);
+						currentGroup.distancesX.segment<3>(3 * i) = (posThisGroup - posOtherGroup);
+						
+						for (int i = 0; i < numVertices; ++i) {
+							totalNorm += currentGroup.distancesX.segment<3>(3 * i).norm();
+						}
+
+					}
+
+					float averageNorm = totalNorm / numVertices;
+					std::cout << "Average norm of distancesX for group " << groupIdx << " in direction " << direction << ": " << averageNorm << std::endl;
+				}
+			}
+
+		}
+
+	}
 	for (int i = 0; i < groupNum; ++i) {
 		auto& g = groups[i];
 		g.updateVelocity();
