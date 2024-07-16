@@ -416,13 +416,8 @@ void Object::PBDLOOP(int looptime) {
 			}
 
 		}
-		
+
 	}
-
-
-	//std::cout << "Bind is" << std::endl << groups[0].Fbind(58) << std::endl;
-//#pragma omp parallel for
-
 	for (int i = 0; i < groupNum; ++i) {
 		auto& g = groups[i];
 		g.updateVelocity();
