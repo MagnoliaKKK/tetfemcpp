@@ -163,8 +163,8 @@ int main() {
 	char args[] = "pq2.5a0.001";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
-	char argsNode[] = "./cubeX4000";
-	char argsEle[] = "./cubeX4000";
+	char argsNode[] = "./armadillo_4k";
+	char argsEle[] = "./armadillo_4k";
 	if (!in.load_node(argsNode)) {
 	    std::cerr << "Error loading .node file!" << std::endl;
 	    return 1;
@@ -249,10 +249,11 @@ int main() {
 	for (Group& g : object.groups) {
 		
 		for (const auto& vertexPair : g.verticesMap) {
-			
+			// ｶﾔﾃｿｸ･ｵ羞ﾃsetFixedIfBelowThresholdｷｽｷｨ
 			Vertex* vertex = vertexPair.second;
-
-			vertex->setFixedIfBelowThreshold();//Set fixed points based on position (usually a surface)
+			if (vertex->x > 0.91189f && vertex->y > 1.1693f)
+				vertex->isFixed = true;
+			//vertex->setFixedIfBelowThreshold();
 		}
 
 	}
@@ -385,7 +386,7 @@ int main() {
 		}*/
 
 
-		object.PBDLOOP(10);
+		object.PBDLOOP(5);
 
 		if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
 			std::ofstream file("ringY4.txt", std::ios::out | std::ios::trunc);
@@ -568,7 +569,7 @@ int main() {
 		//printf("%d frame number\n", frame);
 		frame++;
 		//object.writeVerticesToFile("ourMethodResult.txt");
-		object.bodyVolume = 0.0f;
+		/*object.bodyVolume = 0.0f;
 		for (int i = 0; i < groupNum; i++)
 		{
 			object.groups[i].groupVolume = 0.0f;
@@ -580,7 +581,7 @@ int main() {
 				object.groups[i].groupVolume += tets->calVolumeTetra();
 			}
 			object.bodyVolume += object.groups[i].groupVolume;
-		}
+		}*/
 		
 		//std::cout << object.bodyVolume << std::endl;
 		
