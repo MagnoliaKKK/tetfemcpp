@@ -155,7 +155,7 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/ring.stl", in);
+	//readSTL("stls/ring.stl", in);
 	//readOBJ("C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/cube.obj", in);
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
@@ -163,25 +163,25 @@ int main() {
 	char args[] = "pq1.414a0.001";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
-	//char argsNode[] = "./armadillo_4k";
-	//char argsEle[] = "./armadillo_4k";
-	//if (!in.load_node(argsNode)) {
-	//    std::cerr << "Error loading .node file!" << std::endl;
-	//    return 1;
-	//}
+	char argsNode[] = "./armadillo_4k";
+	char argsEle[] = "./armadillo_4k";
+	if (!in.load_node(argsNode)) {
+	    std::cerr << "Error loading .node file!" << std::endl;
+	    return 1;
+	}
 
-	//// Load the ele file
-	//if (!in.load_tet(argsEle)) {
-	//    std::cerr << "Error loading .ele file!" << std::endl;
-	//    return 1;
-	//}
+	// Load the ele file
+	if (!in.load_tet(argsEle)) {
+	    std::cerr << "Error loading .ele file!" << std::endl;
+	    return 1;
+	}
 
 	// Call TetGen to tetrahedralize the geometry
 	tetrahedralize(&behavior, &in, &out);
 	
 
 
-	//out = in;
+	out = in;
 
 	Object object;
 	groupNum = groupNumX * groupNumY * groupNumZ;
@@ -251,9 +251,9 @@ int main() {
 		for (const auto& vertexPair : g.verticesMap) {
 			// ｶﾔﾃｿｸ･ｵ羞ﾃsetFixedIfBelowThresholdｷｽｷｨ
 			Vertex* vertex = vertexPair.second;
-			/*if (vertex->x > 0.91189f && vertex->y > 1.1693f)
-				vertex->isFixed = true;*/
-			vertex->setFixedIfBelowThreshold();
+			if (vertex->x > 0.91189f && vertex->y > 1.1693f)
+				vertex->isFixed = true;
+			//vertex->setFixedIfBelowThreshold();
 		}
 
 	}
@@ -386,7 +386,7 @@ int main() {
 		}*/
 
 
-		object.PBDLOOP(32);
+		object.PBDLOOP(52);
 
 		if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
 			std::ofstream file("ringY22.txt", std::ios::out | std::ios::trunc);
@@ -406,7 +406,7 @@ int main() {
 
 		// Render here
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+		glEnable(GL_DEPTH_TEST);
 		//drawAxis1(0.3f, object.groups[0].rotate_matrix);
 		
 		drawAxis(0.3f);
@@ -424,6 +424,7 @@ int main() {
 		// Draw vertices
 	
 		glPointSize(5.0f);
+
 		
 		glColor3f(1.0f, 1.0f, 1.0f);
 		glBegin(GL_POINTS);
@@ -506,12 +507,60 @@ int main() {
 
 		//	
 		//}
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
+		glBegin(GL_TRIANGLES);
+		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
+			Group& group = object.getGroup(groupIdx);
+			for (Tetrahedron* tet : group.tetrahedra) {
+				Vertex* vertex0 = tet->vertices[0];
+				Vertex* vertex1 = tet->vertices[1];
+				Vertex* vertex2 = tet->vertices[2];
+				Vertex* vertex3 = tet->vertices[3];
+
+				// 使用HSV转换为RGB创建每个组的唯一颜色
+				float hue = (360.0f * groupIdx) / groupNum;
+				float saturation = 1.0f;
+				float value = 1.0f;
+
+				// 转换HSV为RGB
+				float red, green, blue;
+				hsvToRgb(hue, saturation, value, red, green, blue);
+
+				// 设置颜色并绘制四个三角形面
+				glColor3f(red, green, blue);
+				glVertex3f(vertex0->x, vertex0->y, vertex0->z);
+				glVertex3f(vertex1->x, vertex1->y, vertex1->z);
+				glVertex3f(vertex2->x, vertex2->y, vertex2->z);
+
+				glVertex3f(vertex0->x, vertex0->y, vertex0->z);
+				glVertex3f(vertex1->x, vertex1->y, vertex1->z);
+				glVertex3f(vertex3->x, vertex3->y, vertex3->z);
+
+				glVertex3f(vertex0->x, vertex0->y, vertex0->z);
+				glVertex3f(vertex2->x, vertex2->y, vertex2->z);
+				glVertex3f(vertex3->x, vertex3->y, vertex3->z);
+
+				glVertex3f(vertex1->x, vertex1->y, vertex1->z);
+				glVertex3f(vertex2->x, vertex2->y, vertex2->z);
+				glVertex3f(vertex3->x, vertex3->y, vertex3->z);
+			}
+		}
+
+
+		// 恢复线框模式
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+
+
+
+		glEnd();
 		// Draw edges
+		glLineWidth(2.5f);  // 设置线宽为 3.0
 		glBegin(GL_LINES);
 
 		for (int groupIdx = 0; groupIdx < groupNum; ++groupIdx) {
-			float hhh;
+			//float hhh;
 			Group& group = object.getGroup(groupIdx);
 			for (Tetrahedron* tet : group.tetrahedra) {
 				for (int edgeIdx = 0; edgeIdx < 6; ++edgeIdx) {  // Loop through each edge in the tetrahedron
@@ -522,7 +571,7 @@ int main() {
 
 					//Use HSV to RGB conversion to create a unique color for each group
 					float hue = (360.0f * groupIdx) / groupNum;  // Distribute hues evenly across the spectrum
-					hhh = hue;
+					//hhh = hue;
 					float saturation = 1.0f;  // Full saturation
 					float value = 1.0f;      // Full brightness
 
@@ -532,22 +581,28 @@ int main() {
 
 					// If it's a boundary edge, you may want to adjust the color or keep as is
 					// For example, make the color brighter if it's a boundary edge
-					if (isSurfaceEdge) {
+					if (isSurfaceEdge == false) {
+						/*red = std::min(1.0f, red);
+						green = std::min(1.0f, green);
+						blue = std::min(1.0f, blue);*/
 						red = std::min(1.0f, red + 0.3f);
 						green = std::min(1.0f, green + 0.3f);
 						blue = std::min(1.0f, blue + 0.3f);
+						float darkenFactor = 0.75f; // 调整这个系数以控制颜色深浅
+						red *= darkenFactor;
+						green *= darkenFactor;
+						blue *= darkenFactor;
+
+						drawEdge(vertex1, vertex2, red, green, blue);
 					}
 
-					drawEdge(vertex1, vertex2, red, green, blue);
+					
 				}
 			}
 		}
-
-
-
-
-
 		glEnd();
+
+		
 		//saveOBJ("43224.obj", object.groups);
 
 		glPopMatrix();

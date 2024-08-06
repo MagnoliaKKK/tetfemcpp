@@ -73,8 +73,8 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
 	float right = zoomFactor * aspectRatio;
 	float bottom = -zoomFactor;
 	float top = zoomFactor;
-	float nearVal = -1.0f;
-	float farVal = 1.0f;
+	float nearVal = -3.0f;
+	float farVal = 3.0f;
 
 	Eigen::Matrix4f projectionMatrix;
 	projectionMatrix <<
