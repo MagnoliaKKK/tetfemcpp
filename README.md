@@ -12,11 +12,8 @@ We show better accuracy than an other corotated method, Operator Splitting, alth
 
 <img src="https://github.com/MagnoliaKKK/tetfemcpp/assets/62364444/14a8c8bb-f665-46d3-b879-c06e3609b5c6" alt="OPStretch" width="300"/>
 
-
-
 The image compares dragging a beam with a fixed left side. The beige one is VegaFEM, the blue one is our method and the grey blue is Operator Splitting.
 
 Our method can also simulate anisotropic materials by re-formulating the stiffness matrix.
-
 
 Thanks for seeing my research!
