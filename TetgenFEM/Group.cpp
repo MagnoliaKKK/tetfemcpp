@@ -996,8 +996,7 @@ void Group::calculateCurrentPositionsFEM() {
 void Group::calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
 	const std::vector<Vertex*>& commonVerticesGroup2,
 	const Eigen::VectorXf& currentPositionGroup1,
-	const Eigen::VectorXf& currentPositionGroup2,
-	float k) {
+	const Eigen::VectorXf& currentPositionGroup2, const Eigen::VectorXf& velGroup1, const Eigen::VectorXf& velGroup2, float k) {
 	// Initialize Fbind, with a length three times the number of vertices in the group
 	//Fbind = Eigen::VectorXf::Zero(verticesMap.size() * 3);
 	Eigen::Vector3f posThisGroup;
@@ -1010,7 +1009,24 @@ void Group::calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
 	posOtherGroup = Eigen::Vector3f::Zero();
 	avgPosition = Eigen::Vector3f::Zero();
 	posDifference = Eigen::Vector3f::Zero();
+	Eigen::Vector3f velThisGroup;
+	Eigen::Vector3f velOtherGroup;
+	Eigen::Vector3f velDiff;
+	velThisGroup = Eigen::Vector3f::Zero();
+	velOtherGroup = Eigen::Vector3f::Zero();
+	velDiff = Eigen::Vector3f::Zero();
 	force = Eigen::Vector3f::Zero();
+
+	float totalMass = 0.0f;
+	size_t numVertices = commonVerticesGroup1.size();
+	for (size_t i = 0; i < numVertices; ++i) {
+		Vertex* vertexThisGroup = commonVerticesGroup1[i];
+		Vertex* vertexOtherGroup = commonVerticesGroup2[i];
+
+		// Add the mass of this shared vertex to the total mass
+		totalMass += vertexThisGroup->vertexMass;
+	}
+	float m_eff = totalMass / numVertices;
 	// Iterate through all common vertices
 	for (size_t i = 0; i < commonVerticesGroup1.size(); ++i) {
 		// Get the common vertex in this group and the other group
@@ -1022,10 +1038,16 @@ void Group::calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
 		Eigen::Vector3f posOtherGroup(vertexOtherGroup->x, vertexOtherGroup->y, vertexOtherGroup->z);*/
 		posThisGroup = currentPositionGroup1.segment<3>(3 * vertexThisGroup->localIndex);
 		posOtherGroup = currentPositionGroup2.segment<3>(3 * vertexOtherGroup->localIndex);
+		velThisGroup = velGroup1.segment<3>(3 * vertexThisGroup->localIndex);
+		velOtherGroup = velGroup2.segment<3>(3 * vertexOtherGroup->localIndex);
 		avgPosition = (posThisGroup + posOtherGroup) / 2;
+		velDiff = velThisGroup - velOtherGroup;
 		// Compute the position difference between the current vertex and the other group's vertex
 		posDifference = posThisGroup - avgPosition;
+
 		// Compute the constraint force
+		//force = 0.01 * (2 * m_eff / (timeStep * timeStep)) * posDifference;
+		//force = k * posDifference + 1 * velDiff;
 		force = k * posDifference;
 		float maxForce = 100000;
 		if (abs(force.x()) > maxForce)
@@ -1042,6 +1064,7 @@ void Group::calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
 		}
 		// Place the constraint force in Fbind at the appropriate position using the local index
 		Fbind.segment<3>(3 * vertexThisGroup->localIndex) += force;
+		//Fbind.segment<3>(3 * vertexThisGroup->localIndex) = force;
 		distances.segment<3>(3 * i) = (posThisGroup - posOtherGroup).cwiseAbs();
 	}
 	
