@@ -207,12 +207,12 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	//readSTL("stls/armadillo_4k.stl", in);
-	readOBJ("C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/armadillo_4k.obj", in);
+	readSTL("stls/cloth.stl", in);
+	//readOBJ("C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/armadillo_4k.obj", in);
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.414a1";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
+	char args[] = "pq34a10";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
 	//char argsNode[] = "./cubetest";
@@ -243,8 +243,8 @@ int main() {
 	object.groupNumZ = groupNumZ;
 	divideIntoGroups(out, object, groupNumX, groupNumY, groupNumZ); //convert tetgen to our data structure
 
-	out.save_nodes("armadillo4ktest");
-	out.save_elements("armadillo4ktest");
+	/*out.save_nodes("armadillo4ktest");
+	out.save_elements("armadillo4ktest");*/
 	//writeOBJ(object, "armadillo_test.obj");
 
 
@@ -438,7 +438,7 @@ int main() {
 		}*/
 
 
-		object.PBDLOOP(10);
+		object.PBDLOOP(3);
 
 		if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
 			std::ofstream file("ringY22.txt", std::ios::out | std::ios::trunc);
