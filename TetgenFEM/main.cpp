@@ -172,6 +172,35 @@ void findTopAndBottomVertices(const std::vector<Group>& groups, std::vector<int>
 		}
 	}
 }
+void findMaxAndMinYVertices(const std::vector<Group>& groups, int& maxYVertexIndex, int& minYVertexIndex) {
+	bool isFirstVertex = true;
+	double maxY = 0.0;
+	double minY = 0.0;
+
+	for (const Group& g : groups) {
+		for (const auto& vertexPair : g.verticesMap) {
+			Vertex* vertex = vertexPair.second;
+
+			if (isFirstVertex) {
+				// Initialize maxY and minY with the first vertex's y-coordinate
+				maxY = minY = vertex->inity;
+				maxYVertexIndex = minYVertexIndex = vertex->index;
+				isFirstVertex = false;
+			}
+			else {
+				if (vertex->inity > maxY) {
+					maxY = vertex->inity;
+					maxYVertexIndex = vertex->index;
+				}
+				if (vertex->inity < minY) {
+					minY = vertex->inity;
+					minYVertexIndex = vertex->index;
+				}
+			}
+		}
+	}
+}
+
 void findUpperAndLowerVertices(const std::vector<Group>& groups, std::vector<int>& upperVertices, std::vector<int>& lowerVertices) {
 	double sumInity = 0.0;
 	int count = 0;
@@ -207,12 +236,12 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/cloth.stl", in);
+	readSTL("stls/bunnyfront.stl", in);
 	//readOBJ("C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/armadillo_4k.obj", in);
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq34a10";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
+	char args[] = "pq3a0.1";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
 	//char argsNode[] = "./cubetest";
@@ -314,6 +343,9 @@ int main() {
 	std::vector<int> bottomVertexLocalIndices;
 
 	findTopAndBottomVertices(object.groups, topVertexLocalIndices, bottomVertexLocalIndices);
+	int maxYIndex, minYIndex;
+	findMaxAndMinYVertices(object.groups, maxYIndex, minYIndex);
+
 
 	// Now topVertexLocalIndices and bottomVertexLocalIndices contain the local indices of the top and bottom vertices, respectively.
 
