@@ -1,15 +1,15 @@
-youngs=100000000
+youngs=1000000
 youngs1=100000
 youngs2=100000
 youngs3=100000
-poisson=0.33
+poisson=0.3
 density=1000
-groupNumX=2
+groupNumX=5
 groupNumY=5
 groupNumZ=5
-timeStep=0.005
-dampingConst=0.0
-Gravity=500000.0
-bindForce=-1000
+timeStep=0.01
+dampingConst=100.0
+Gravity=500.0
+bindForce=-100
 bindVelocity=-0.0
 		
