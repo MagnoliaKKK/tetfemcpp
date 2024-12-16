@@ -806,7 +806,7 @@ void Group::calPrimeVec() {
 
 	if (!gravityApplied) {
 		for (int i = 0; i < 3 * verticesVector.size(); i += 3) {
-			gravity(i + 2) = Gravity;
+			gravity(i + 1) = Gravity;
 			/*float rotatedGravityX = -Gravity * sqrt(2) / 2;
 			float rotatedGravityY = -Gravity * sqrt(2) / 2;
 			gravity(i) = rotatedGravityX;
@@ -1117,7 +1117,7 @@ void Group::calBindFixed() {
 			Eigen::Vector3f diff = currentPos - initPos;
 
 			// Compute the constraint force for fixed vertices
-			Eigen::Vector3f constraintForce = -100 * diff;
+			Eigen::Vector3f constraintForce = -1000000 * diff;
 			Fbind.segment<3>(3 * vertex->localIndex) += constraintForce;
 		}
 	}

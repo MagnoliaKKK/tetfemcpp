@@ -236,33 +236,33 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/armadillo_4k.stl", in);
+	//readSTL("stls/cubeLong.stl", in);
 	//readOBJ("C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/armadillo_4k.obj", in);
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq10a1";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
+	char args[] = "pq1.15a0.001";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
-	//char argsNode[] = "./armadillo_4k";
-	//char argsEle[] = "./armadillo_4k";
-	//if (!in.load_node(argsNode)) {
-	//    std::cerr << "Error loading .node file!" << std::endl;
-	//    return 1;
-	//}
+	char argsNode[] = "./Beam.1.updated";
+	char argsEle[] = "./Beam.1.updated";
+	if (!in.load_node(argsNode)) {
+	    std::cerr << "Error loading .node file!" << std::endl;
+	    return 1;
+	}
 
-	//// Load the ele file
-	//if (!in.load_tet(argsEle)) {
-	//    std::cerr << "Error loading .ele file!" << std::endl;
-	//    return 1;
-	//}
+	// Load the ele file
+	if (!in.load_tet(argsEle)) {
+	    std::cerr << "Error loading .ele file!" << std::endl;
+	    return 1;
+	}
 
 	// Call TetGen to tetrahedralize the geometry
 	tetrahedralize(&behavior, &in, &out);
 	
 
 
-	//out = in;
+	out = in;
 
 	Object object;
 	groupNum = groupNumX * groupNumY * groupNumZ;
@@ -470,7 +470,7 @@ int main() {
 		}*/
 
 
-		object.PBDLOOP(20);
+		object.PBDLOOP(5);
 
 		if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
 			std::ofstream file("ringY22.txt", std::ios::out | std::ios::trunc);
