@@ -236,33 +236,33 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	//readSTL("stls/cubeLong.stl", in);
-	//readOBJ("C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/armadillo_4k.obj", in);
+	readSTL("stls/bunnyHDLow.stl", in);
+	//readOBJ("C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/octopus.obj", in);
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.15a0.001";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
+	char args[] = "pq1.1/0a0.00002";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
-	char argsNode[] = "./Beam.1.updated";
-	char argsEle[] = "./Beam.1.updated";
-	if (!in.load_node(argsNode)) {
-	    std::cerr << "Error loading .node file!" << std::endl;
-	    return 1;
-	}
+	//char argsNode[] = "./Beam.1";
+	//char argsEle[] = "./Beam.1";
+	//if (!in.load_node(argsNode)) {
+	//    std::cerr << "Error loading .node file!" << std::endl;
+	//    return 1;
+	//}
 
-	// Load the ele file
-	if (!in.load_tet(argsEle)) {
-	    std::cerr << "Error loading .ele file!" << std::endl;
-	    return 1;
-	}
+	//// Load the ele file
+	//if (!in.load_tet(argsEle)) {
+	//    std::cerr << "Error loading .ele file!" << std::endl;
+	//    return 1;
+	//}
 
 	// Call TetGen to tetrahedralize the geometry
 	tetrahedralize(&behavior, &in, &out);
 	
 
 
-	out = in;
+	//out = in;
 
 	Object object;
 	groupNum = groupNumX * groupNumY * groupNumZ;
@@ -272,9 +272,10 @@ int main() {
 	object.groupNumZ = groupNumZ;
 	divideIntoGroups(out, object, groupNumX, groupNumY, groupNumZ); //convert tetgen to our data structure
 
-	/*out.save_nodes("armadillo4ktest");
-	out.save_elements("armadillo4ktest");*/
-	//writeOBJ(object, "armadillo_test.obj");
+	/*out.save_nodes("beam.1.1");
+	out.save_elements("Beam.1.1");*/
+	//writeSTL(object, "vbdbeam.stl");
+	//writeOBJ(object, "beam.1.obj");
 
 
 	object.updateIndices(); 
@@ -470,7 +471,7 @@ int main() {
 		}*/
 
 
-		object.PBDLOOP(5);
+		object.PBDLOOP(15);
 
 		if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
 			std::ofstream file("ringY22.txt", std::ios::out | std::ios::trunc);
