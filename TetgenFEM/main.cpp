@@ -236,7 +236,7 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/bunnyHDLow.stl", in);
+	readSTL("stls/bunnyFront.stl", in);
 	//readOBJ("C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/octopus.obj", in);
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
@@ -471,7 +471,7 @@ int main() {
 		}*/
 
 
-		object.PBDLOOP(15);
+		object.PBDLOOP(20);
 
 		if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
 			std::ofstream file("ringY22.txt", std::ios::out | std::ios::trunc);
