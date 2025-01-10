@@ -805,12 +805,19 @@ void Group::calPrimeVec() {
 	primeVec = Eigen::VectorXf::Zero(3 * verticesVector.size());
 
 	if (!gravityApplied) {
-		for (int i = 0; i < 3 * verticesVector.size(); i += 3) {
-			gravity(i + 1) = Gravity;
-			/*float rotatedGravityX = -Gravity * sqrt(2) / 2;
-			float rotatedGravityY = -Gravity * sqrt(2) / 2;
-			gravity(i) = rotatedGravityX;
-			gravity(i + 1) = rotatedGravityY;*/
+		//for (int i = 0; i < 3 * verticesVector.size(); i += 3) {
+		//	gravity(i + 1) = Gravity;
+		//	/*float rotatedGravityX = -Gravity * sqrt(2) / 2;
+		//	float rotatedGravityY = -Gravity * sqrt(2) / 2;
+		//	gravity(i) = rotatedGravityX;
+		//	gravity(i + 1) = rotatedGravityY;*/
+		//}
+		for (auto& vertexPair : verticesVector) {
+			Vertex* vertex = vertexPair;
+			if (vertex->inity < -0.545)
+			{
+				gravity(vertex->localIndex * 3 + 1) = -Gravity;
+			}
 		}
 		gravityApplied = true; // 
 	}
@@ -1117,7 +1124,7 @@ void Group::calBindFixed() {
 			Eigen::Vector3f diff = currentPos - initPos;
 
 			// Compute the constraint force for fixed vertices
-			Eigen::Vector3f constraintForce = -10 * diff;
+			Eigen::Vector3f constraintForce = -0 * diff;
 			Fbind.segment<3>(3 * vertex->localIndex) += constraintForce;
 		}
 	}
@@ -1208,14 +1215,14 @@ void Group::updatePosition() {
 		/*vertex->x = pos.x();
 		vertex->y = pos.y();
 		vertex->z = pos.z();*/
-		if (vertex->inity < -0.55) {
-			// ?ﾓﾚｹﾌｶｨｵ罐ｬｽｫﾎｻﾖﾃ?ﾖﾃ?ｳｼﾎｻﾖﾃ
-			vertex->y = vertex->inity - 0.5;
-			//vertex->y = vertex->y = vertex->inity + 0.1 * sin(0.7 * frameTime);
-			/*vertex->x = vertex->initx;
-			vertex->y = vertex->inity;
-			vertex->z = vertex->initz;*/
-		}
+		//if (vertex->inity < -0.55) {
+		//	// ?ﾓﾚｹﾌｶｨｵ罐ｬｽｫﾎｻﾖﾃ?ﾖﾃ?ｳｼﾎｻﾖﾃ
+		//	vertex->y = vertex->inity - 0.75;
+		//	//vertex->y = vertex->y = vertex->inity + 0.1 * sin(0.7 * frameTime);
+		//	/*vertex->x = vertex->initx;
+		//	vertex->y = vertex->inity;
+		//	vertex->z = vertex->initz;*/
+		//}
 		//else {
 		//	// ﾊｹﾓﾃﾐ?ｾﾘ??ｳﾋﾒﾔprimeVecﾖﾐｵﾄﾎｻﾖﾃ
 

@@ -236,12 +236,12 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/bunnyFront.stl", in);
+	readSTL("stls/tube.stl", in);
 	//readOBJ("C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/octopus.obj", in);
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq1.1/0a0.00002";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
+	char args[] = "pq1.1/0a0.001";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
 	//char argsNode[] = "./Beam.1";
@@ -471,7 +471,7 @@ int main() {
 		}*/
 
 
-		object.PBDLOOP(20);
+		object.PBDLOOP(5);
 
 		if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
 			std::ofstream file("ringY22.txt", std::ios::out | std::ios::trunc);
