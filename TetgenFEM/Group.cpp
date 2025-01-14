@@ -817,6 +817,12 @@ void Group::calPrimeVec() {
 			if (vertex->inity < -0.545)
 			{
 				gravity(vertex->localIndex * 3 + 1) = -Gravity;
+				//gravity(vertex->localIndex * 3) = -Gravity;
+			}
+			if (vertex->inity > 0.53)
+			{
+				gravity(vertex->localIndex * 3 + 1) = Gravity;
+				//gravity(vertex->localIndex * 3) = -Gravity;
 			}
 		}
 		gravityApplied = true; // 
@@ -1124,7 +1130,7 @@ void Group::calBindFixed() {
 			Eigen::Vector3f diff = currentPos - initPos;
 
 			// Compute the constraint force for fixed vertices
-			Eigen::Vector3f constraintForce = -0 * diff;
+			Eigen::Vector3f constraintForce = -20 * diff;
 			Fbind.segment<3>(3 * vertex->localIndex) += constraintForce;
 		}
 	}
