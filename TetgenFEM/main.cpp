@@ -335,7 +335,7 @@ int main() {
 			Vertex* vertex = vertexPair.second;
 			/*if (vertex->x > 0.91189f && vertex->y > 1.1693f)
 				vertex->isFixed = true;*/
-			//vertex->setFixedIfBelowThreshold();
+			vertex->setFixedIfBelowThreshold();
 		}
 
 	}

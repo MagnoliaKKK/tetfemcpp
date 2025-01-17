@@ -812,19 +812,19 @@ void Group::calPrimeVec() {
 		//	gravity(i) = rotatedGravityX;
 		//	gravity(i + 1) = rotatedGravityY;*/
 		//}
-		for (auto& vertexPair : verticesVector) {
-			Vertex* vertex = vertexPair;
-			if (vertex->inity < -0.545)
-			{
-				gravity(vertex->localIndex * 3 + 1) = -Gravity;
-				//gravity(vertex->localIndex * 3) = -Gravity;
-			}
-			if (vertex->inity > 0.53)
-			{
-				gravity(vertex->localIndex * 3 + 1) = Gravity;
-				//gravity(vertex->localIndex * 3) = -Gravity;
-			}
-		}
+		//for (auto& vertexPair : verticesVector) {
+		//	Vertex* vertex = vertexPair;
+		//	if (vertex->inity < -0.545)
+		//	{
+		//		gravity(vertex->localIndex * 3 + 1) = -Gravity;
+		//		//gravity(vertex->localIndex * 3) = -Gravity;
+		//	}
+		//	if (vertex->inity > 0.53)
+		//	{
+		//		gravity(vertex->localIndex * 3 + 1) = Gravity;
+		//		//gravity(vertex->localIndex * 3) = -Gravity;
+		//	}
+		//}
 		gravityApplied = true; // 
 	}
 	
@@ -1221,22 +1221,30 @@ void Group::updatePosition() {
 		/*vertex->x = pos.x();
 		vertex->y = pos.y();
 		vertex->z = pos.z();*/
-		//if (vertex->inity < -0.55) {
+		//if (vertex->inity < -0.545) {
 		//	// ?ﾓﾚｹﾌｶｨｵ罐ｬｽｫﾎｻﾖﾃ?ﾖﾃ?ｳｼﾎｻﾖﾃ
-		//	vertex->y = vertex->inity - 0.75;
+		//	vertex->y = vertex->inity;
 		//	//vertex->y = vertex->y = vertex->inity + 0.1 * sin(0.7 * frameTime);
 		//	/*vertex->x = vertex->initx;
 		//	vertex->y = vertex->inity;
 		//	vertex->z = vertex->initz;*/
 		//}
-		//else {
-		//	// ﾊｹﾓﾃﾐ?ｾﾘ??ｳﾋﾒﾔprimeVecﾖﾐｵﾄﾎｻﾖﾃ
+		if (vertex->inity > 0.5) {
+			// ?ﾓﾚｹﾌｶｨｵ罐ｬｽｫﾎｻﾖﾃ?ﾖﾃ?ｳｼﾎｻﾖﾃ
+			vertex->y = vertex->inity - 0.0005 * frameTime;
+			//vertex->y = vertex->y = vertex->inity + 0.1 * sin(0.7 * frameTime);
+			/*vertex->x = vertex->initx;
+			vertex->y = vertex->inity;
+			vertex->z = vertex->initz;*/
+		}
+		else {
+			// ﾊｹﾓﾃﾐ?ｾﾘ??ｳﾋﾒﾔprimeVecﾖﾐｵﾄﾎｻﾖﾃ
 
 
-		//	vertex->x = pos.x();
-		//	vertex->y = pos.y();
-		//	vertex->z = pos.z();
-		//}
+			vertex->x = pos.x();
+			vertex->y = pos.y();
+			vertex->z = pos.z();
+		}
 
 		/* ｸ・ﾂ?ｵ羞ﾄﾎｻﾖﾃ
 		if (vertex->isFixed == true)
