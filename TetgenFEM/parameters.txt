@@ -8,8 +8,8 @@ groupNumX=5
 groupNumY=10
 groupNumZ=5
 timeStep=0.01
-dampingConst=100.0
-Gravity=-600.0
-bindForce= -50.0
+dampingConst=100000.0
+Gravity=-10000.0
+bindForce= -100.0
 bindVelocity=-0.0
-		
+	

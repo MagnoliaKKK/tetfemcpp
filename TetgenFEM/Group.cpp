@@ -821,7 +821,7 @@ void Group::calPrimeVec() {
 		//	}
 		//	if (vertex->inity > 0.53)
 		//	{
-		//		gravity(vertex->localIndex * 3 + 1) = Gravity;
+		//		gravity(vertex->localIndex * 3 + 1) = +Gravity;
 		//		//gravity(vertex->localIndex * 3) = -Gravity;
 		//	}
 		//}
@@ -1204,7 +1204,7 @@ void Group::updatePositionFEM() {
 	}
 }
 void Group::updatePosition() {
-	static float frameTime = 0;
+	float frameTime = 0;
 	frameTime += timeStep;
 	Eigen::Vector3f pos = Eigen::Vector3f::Zero();
 	// ｱ・ﾋﾐ?ｵ・
@@ -1221,22 +1221,17 @@ void Group::updatePosition() {
 		/*vertex->x = pos.x();
 		vertex->y = pos.y();
 		vertex->z = pos.z();*/
-		//if (vertex->inity < -0.545) {
-		//	// ?ﾓﾚｹﾌｶｨｵ罐ｬｽｫﾎｻﾖﾃ?ﾖﾃ?ｳｼﾎｻﾖﾃ
-		//	vertex->y = vertex->inity;
-		//	//vertex->y = vertex->y = vertex->inity + 0.1 * sin(0.7 * frameTime);
-		//	/*vertex->x = vertex->initx;
-		//	vertex->y = vertex->inity;
-		//	vertex->z = vertex->initz;*/
-		//}
-		if (vertex->inity > 0.5) {
-			// ?ﾓﾚｹﾌｶｨｵ罐ｬｽｫﾎｻﾖﾃ?ﾖﾃ?ｳｼﾎｻﾖﾃ
-			vertex->y = vertex->inity - 0.0005 * frameTime;
-			//vertex->y = vertex->y = vertex->inity + 0.1 * sin(0.7 * frameTime);
-			/*vertex->x = vertex->initx;
-			vertex->y = vertex->inity;
-			vertex->z = vertex->initz;*/
+		if (vertex->inity > 0.52) {
+			vertex->y = vertex->inity - (13 * frameTime);
+			vertex->x = pos.x();
+			vertex->z = pos.z();
 		}
+		else if (vertex->inity < -0.52)
+		{
+			vertex->y = vertex->inity + (9 * frameTime);
+			/*vertex->x = pos.x();
+			vertex->z = pos.z();*/
+		} 	
 		else {
 			// ﾊｹﾓﾃﾐ?ｾﾘ??ｳﾋﾒﾔprimeVecﾖﾐｵﾄﾎｻﾖﾃ
 
