@@ -236,12 +236,12 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/tubeThin_0.5.stl", in);
+	readSTL("stls/tendon.stl", in);
 	//readOBJ("C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/octopus.obj", in);
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq2a0.000005";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
+	char args[] = "pq2a0.00005";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
 	//char argsNode[] = "./Beam.1";
@@ -335,7 +335,7 @@ int main() {
 			Vertex* vertex = vertexPair.second;
 			/*if (vertex->x > 0.91189f && vertex->y > 1.1693f)
 				vertex->isFixed = true;*/
-			//vertex->setFixedIfBelowThreshold();
+			vertex->setFixedIfBelowThreshold();
 		}
 
 	}

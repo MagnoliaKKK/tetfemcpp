@@ -803,29 +803,35 @@ void Group::calPrimeVec2(int w) {
 //}
 void Group::calPrimeVec() {
 	primeVec = Eigen::VectorXf::Zero(3 * verticesVector.size());
+	static int frameCount = 0;
+	frameCount++;
 
 	if (!gravityApplied) {
-		//for (int i = 0; i < 3 * verticesVector.size(); i += 3) {
-		//	gravity(i + 1) = Gravity;
-		//	/*float rotatedGravityX = -Gravity * sqrt(2) / 2;
-		//	float rotatedGravityY = -Gravity * sqrt(2) / 2;
-		//	gravity(i) = rotatedGravityX;
-		//	gravity(i + 1) = rotatedGravityY;*/
-		//}
-		//for (auto& vertexPair : verticesVector) {
-		//	Vertex* vertex = vertexPair;
-		//	if (vertex->inity < -0.545)
-		//	{
-		//		gravity(vertex->localIndex * 3 + 1) = -Gravity;
-		//		//gravity(vertex->localIndex * 3) = -Gravity;
-		//	}
-		//	if (vertex->inity > 0.53)
-		//	{
-		//		gravity(vertex->localIndex * 3 + 1) = +Gravity;
-		//		//gravity(vertex->localIndex * 3) = -Gravity;
-		//	}
-		//}
+		for (int i = 0; i < 3 * verticesVector.size(); i += 3) {
+			//gravity(i) = -Gravity;
+			/*float rotatedGravityX = -Gravity * sqrt(2) / 2;
+			float rotatedGravityY = -Gravity * sqrt(2) / 2;
+			gravity(i) = rotatedGravityX;
+			gravity(i + 1) = rotatedGravityY;*/
+		}
+		for (auto& vertexPair : verticesVector) {
+			Vertex* vertex = vertexPair;
+			if (vertex->initx > -0.02 && vertex->initx < 0.02)
+			{
+				gravity(vertex->localIndex * 3 + 1) = -Gravity;
+				//gravity(vertex->localIndex * 3) = -Gravity;
+			}
+			//if (vertex->inity > 0.53)
+			//{
+			//	gravity(vertex->localIndex * 3 + 1) = +Gravity;
+			//	//gravity(vertex->localIndex * 3) = -Gravity;
+			//}
+		}
 		gravityApplied = true; // 
+	} // 撤去力，将重力设为零
+	if (frameCount > 100000) {
+		gravity.setZero(); // 撤去力，将重力设为零
+
 	}
 	
 	//groupVelocity += gravity * timeStep;
@@ -1130,7 +1136,7 @@ void Group::calBindFixed() {
 			Eigen::Vector3f diff = currentPos - initPos;
 
 			// Compute the constraint force for fixed vertices
-			Eigen::Vector3f constraintForce = -20 * diff;
+			Eigen::Vector3f constraintForce = -100 * diff;
 			Fbind.segment<3>(3 * vertex->localIndex) += constraintForce;
 		}
 	}
@@ -1221,25 +1227,25 @@ void Group::updatePosition() {
 		/*vertex->x = pos.x();
 		vertex->y = pos.y();
 		vertex->z = pos.z();*/
-		if (vertex->inity > 0.52) {
-			vertex->y = vertex->inity - (13 * frameTime);
+	/*	if (vertex->initx > -0.01 && vertex->initx < 0.01) {
+			vertex->y = vertex->inity + (45 * frameTime);
 			vertex->x = pos.x();
 			vertex->z = pos.z();
-		}
-		else if (vertex->inity < -0.52)
-		{
-			vertex->y = vertex->inity + (9 * frameTime);
-			/*vertex->x = pos.x();
-			vertex->z = pos.z();*/
-		} 	
-		else {
-			// ﾊｹﾓﾃﾐ?ｾﾘ??ｳﾋﾒﾔprimeVecﾖﾐｵﾄﾎｻﾖﾃ
+		}*/
+		//else if (vertex->inity < -0.52)
+		//{
+		//	vertex->y = vertex->inity + (9 * frameTime);
+		//	/*vertex->x = pos.x();
+		//	vertex->z = pos.z();*/
+		//} 	
+		//else {
+		//	// ﾊｹﾓﾃﾐ?ｾﾘ??ｳﾋﾒﾔprimeVecﾖﾐｵﾄﾎｻﾖﾃ
 
 
-			vertex->x = pos.x();
-			vertex->y = pos.y();
-			vertex->z = pos.z();
-		}
+		//	vertex->x = pos.x();
+		//	vertex->y = pos.y();
+		//	vertex->z = pos.z();
+		//}
 
 		/* ｸ・ﾂ?ｵ羞ﾄﾎｻﾖﾃ
 		if (vertex->isFixed == true)
