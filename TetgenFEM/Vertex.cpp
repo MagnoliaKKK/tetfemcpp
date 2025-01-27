@@ -10,7 +10,7 @@ Vertex::Vertex(float x, float y, float z, int index)
 {}
 
 void Vertex::setFixedIfBelowThreshold() {
-    if (initx < -0.61 || initx > 0.61) {
+    if (initx < -0.97) {
         isFixed = true;
     }
 }
@@ -19,3 +19,4 @@ void Vertex::setFixedIfBelowThreshold() {
 //cloth (initx < -0.6 && inity < -0.25) || (initx > 0.6 && inity < -0.25)
 //armadillo Žè‹r initx < -1.1 && inity > 0.63) || (initx > 1.1 && inity > 0.63) || inity < -0.42
 //bunny x<-0.5
+//CLOTH initx < -0.61 || initx > 0.61

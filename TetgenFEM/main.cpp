@@ -236,12 +236,12 @@ int main() {
 
 	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1
-	readSTL("stls/tendon.stl", in);
-	//readOBJ("C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/octopus.obj", in);
+	//readSTL("stls/vbdbeam.stl", in);
+	readOBJ("C:/Users/76739/Desktop/tetfemcpp/TetgenFEM/vbdbeam.obj", in);
 	// Configure TetGen behavior
 	tetgenbehavior behavior;
 	//char args[] = "pq1.414a0.1";
-	char args[] = "pq2a0.00005";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
+	char args[] = "pq2a0.005";  // pq1.414a0.1 minratio 1/ mindihedral -q maxvolume -a switches='pq1.1/15a0.003' "pq1.1/15a0.0005 pq1.15a0.0001"
 	behavior.parse_commandline(args);
 
 	//char argsNode[] = "./Beam.1";
@@ -272,10 +272,10 @@ int main() {
 	object.groupNumZ = groupNumZ;
 	divideIntoGroups(out, object, groupNumX, groupNumY, groupNumZ); //convert tetgen to our data structure
 
-	/*out.save_nodes("beam.1.1");
-	out.save_elements("Beam.1.1");*/
+	out.save_nodes("vbdbeam");
+	out.save_elements("vbdbeam");
 	//writeSTL(object, "vbdbeam.stl");
-	//writeOBJ(object, "beam.1.obj");
+	//writeOBJ(object, "vbdbeam.obj");
 
 
 	object.updateIndices(); 
@@ -471,10 +471,10 @@ int main() {
 		}*/
 
 
-		object.PBDLOOP(10);
+		object.PBDLOOP(5);
 
 		if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
-			std::ofstream file("ringY22.txt", std::ios::out | std::ios::trunc);
+			std::ofstream file("vbdcomp_our.txt", std::ios::out | std::ios::trunc);
 			if (!file.is_open()) {
 				std::cerr << "Failed to open file." << std::endl;
 				return 0;
