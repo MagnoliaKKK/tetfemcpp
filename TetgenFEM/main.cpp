@@ -371,23 +371,23 @@ int main() {
 	}
 	
 	// 使用新的方法固定左上10%的点
-	object.fixTopLeft10PercentVertices();
+	//object.fixTopLeft10PercentVertices();
 	
 	// 额外测试：手动固定前几个顶点
-	int testFixedCount = 0;
-	for (Group& g : object.groups) {
-		for (const auto& vertexPair : g.verticesMap) {
-			Vertex* vertex = vertexPair.second;
-			if (testFixedCount < 5) { // 固定前5个顶点用于测试
-				vertex->isFixed = true;
-				std::cout << "TEST: Manually fixed vertex " << vertex->index 
-					<< " at (" << vertex->initx << ", " << vertex->inity << ", " << vertex->initz << ")" << std::endl;
-				testFixedCount++;
-			}
-		}
-		if (testFixedCount >= 5) break;
-	}
-	
+	//int testFixedCount = 0;
+	//for (Group& g : object.groups) {
+	//	for (const auto& vertexPair : g.verticesMap) {
+	//		Vertex* vertex = vertexPair.second;
+	//		if (testFixedCount < 5) { // 固定前5个顶点用于测试
+	//			vertex->isFixed = true;
+	//			std::cout << "TEST: Manually fixed vertex " << vertex->index 
+	//				<< " at (" << vertex->initx << ", " << vertex->inity << ", " << vertex->initz << ")" << std::endl;
+	//			testFixedCount++;
+	//		}
+	//	}
+	//	if (testFixedCount >= 5) break;
+	//}
+	//
 	std::vector<int> topVertexLocalIndices;
 	std::vector<int> bottomVertexLocalIndices;
 

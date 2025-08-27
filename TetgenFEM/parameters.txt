@@ -17,5 +17,5 @@ stlFile=stls/ring.stl
 tetgenArgs=pq2a0.0005
 nodeFile=armadillo_4k.node
 eleFile=armadillo_4k.ele
-useDirectLoading=true
+useDirectLoading=false
 	
