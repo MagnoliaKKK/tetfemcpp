@@ -1186,7 +1186,7 @@ void Group::calFbind1(const std::vector<Vertex*>& commonVerticesGroup1,
 		
 		// Apply constraint force to this group's vertex
 		// (邻组在它自己的 calFbind1 调用里会写入反向力)
-		Fbind.segment<3>(3 * vtx_j->localIndex) +=forceJ;
+		Fbind.segment<3>(3 * vtx_j->localIndex) =forceJ;
 	}
 }
 
