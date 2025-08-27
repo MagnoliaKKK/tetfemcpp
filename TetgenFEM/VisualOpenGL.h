@@ -5,6 +5,9 @@
 #include <Eigen/Geometry>
 #include "Object.h"
 
+// Forward declaration
+class Ground;
+
 
 
 extern Eigen::Quaternionf rotation;
@@ -20,3 +23,4 @@ void XPrintString(const char* s);
 void initFontData();
 void hsvToRgb(float h, float s, float v, float& r, float& g, float& b);
 float getRotationAngleZ(const Eigen::Matrix3f& rotationmatrix);
+void drawGround(const std::vector<Ground>& grounds);

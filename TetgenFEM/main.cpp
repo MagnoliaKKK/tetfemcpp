@@ -15,6 +15,7 @@
 #include "Object.h"
 #include "Vertex.h"
 #include "Edge.h"
+#include "CollisionDetection.h"
 
 
 
@@ -24,6 +25,7 @@
 
 Eigen::Matrix4f transformationMatrix = Eigen::Matrix4f::Identity();
 int wKey = 0;
+CollisionDetection collisionSystem; // Global collision detection system
 
 void saveOBJ(const std::string& filename, std::vector<Group>& groups) {
 	std::ofstream objFile(filename);
@@ -322,6 +324,9 @@ int main() {
 	}
 
 
+	// Initialize collision detection system
+	collisionSystem.addGround(Ground(Eigen::Vector3f(0, -1.5f, 0), Eigen::Vector3f(0, 1.0f, 0), 0.4f, 0.6f));
+
 	// Initialize the GLFW library
 	if (!glfwInit()) {
 		return -1;
@@ -434,6 +439,7 @@ int main() {
 	//for calculate frame rate
 	double lastTime = glfwGetTime();
 	int nbFrames = 0;
+	float deltaTime = 0.016f; // ~60 FPS
 	glfwSwapInterval(0);
 
 
@@ -469,6 +475,9 @@ int main() {
 
 		//object.commonPoints1 = object.findCommonVertices(object.groups[1], object.groups[2]);
 		
+		// Apply gravity and collision detection
+		collisionSystem.applyGravity(object, deltaTime);
+		collisionSystem.detectCollisions(object);
 
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
 			wKey = 1;
@@ -515,6 +524,11 @@ int main() {
 
 
 		object.PBDLOOP(10);
+		
+		// Solve collision constraints after PBD loop
+		collisionSystem.solveConstraints(object, 3);
+		collisionSystem.applyCollisionResponse(object, deltaTime);
+		collisionSystem.clearConstraints();
 
 		if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
 			std::ofstream file("vbdcomp_our.txt", std::ios::out | std::ios::trunc);
@@ -536,6 +550,9 @@ int main() {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glEnable(GL_DEPTH_TEST);
 		//drawAxis1(0.3f, object.groups[0].rotate_matrix);
+		
+		// Draw ground before applying transformations
+		drawGround(collisionSystem.getGrounds());
 		
 		drawAxis(0.3f);
 		//std::cout << getRotationAngleZ(object.groups[0].rotate_matrix) << std::endl;;
