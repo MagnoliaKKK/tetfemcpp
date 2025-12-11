@@ -533,9 +533,9 @@ void Object::fixTopLeft10PercentVertices() {
 	float rangeX = maxX - minX;
 	float rangeY = maxY - minY;
 	float rangeZ = maxZ - minZ;
-	float leftThresholdX = minX + rangeX * 0.1f;  // 左边10%
-	float topThresholdY = maxY - rangeY * 0.1f;   // 上边10%
-	float frontThresholdZ = maxZ - rangeZ * 0.1f; // 前面10%
+	float leftThresholdX = minX + rangeX * 0.0f;  // 左边10%
+	float topThresholdY = maxY - rangeY * 0.0f;   // 上边10%
+	float frontThresholdZ = maxZ - rangeZ * 0.0f; // 前面10%
 	
 	// 固定满足条件的顶点
 	int fixedCount = 0;

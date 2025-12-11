@@ -164,6 +164,7 @@
     <ClCompile Include="Tetrahedron.cpp" />
     <ClCompile Include="Vertex.cpp" />
     <ClCompile Include="VisualOpenGL.cpp" />
+    <ClCompile Include="CollisionDetection.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Edge.h" />
@@ -176,6 +177,7 @@
     <ClInclude Include="Tetrahedron.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="VisualOpenGL.h" />
+    <ClInclude Include="CollisionDetection.h" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="eigen-3.4.0\Eigen.natvis" />

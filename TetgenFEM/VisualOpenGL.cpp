@@ -1,4 +1,5 @@
 #include "VisualOpenGL.h"
+#include "CollisionDetection.h"
 #include <Windows.h>
 
 
@@ -11,7 +12,7 @@ Eigen::Quaternionf rotation = Eigen::Quaternionf::Identity();
 #define MAX_CHAR    128
 GLuint TextFont;
 
-//Ó¢ÎÄ¡¢Êı×Ö
+//Ó¢ï¿½Ä¡ï¿½ï¿½ï¿½ï¿½ï¿½
 void XPrintString(const char* s)
 {
 
@@ -22,7 +23,7 @@ void XPrintString(const char* s)
 
 
 
-//ÆôÓÃÎÄ×Ö£¬²»Ö§³Öºº×Ö¡¢unicode
+//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö£ï¿½ï¿½ï¿½Ö§ï¿½Öºï¿½ï¿½Ö¡ï¿½unicode
 void initFontData()
 {
 	TextFont = glGenLists(MAX_CHAR);
@@ -117,8 +118,8 @@ void drawEdge(Vertex* vertex1, Vertex* vertex2, float r, float g, float b) {
 	);
 }
 void drawAxis(float length) {
-	glPushMatrix();  // ±£´æµ±Ç°µÄÄ£ĞÍÊÓÍ¼¾ØÕE
-	glTranslatef(-length * 3, -length * 3, 0);  // ½«×ø±EáÔ­µãÒÆ¶¯µ½´°¿ÚµÄÓÒÏÂ½?
+	glPushMatrix();  // ï¿½ï¿½ï¿½æµ±Ç°ï¿½ï¿½Ä£ï¿½ï¿½ï¿½ï¿½Í¼ï¿½ï¿½ÕE
+	glTranslatef(-length * 3, -length * 3, 0);  // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Eï¿½Ô­ï¿½ï¿½ï¿½Æ¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Úµï¿½ï¿½ï¿½ï¿½Â½?
 	
 
 	glBegin(GL_LINES);
@@ -189,4 +190,65 @@ void hsvToRgb(float h, float s, float v, float& r, float& g, float& b) {
 	case 4: r = t, g = p, b = v; break;
 	case 5: r = v, g = p, b = q; break;
 	}
+}
+
+// Function to draw ground planes
+void drawGround(const std::vector<Ground>& grounds) {
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	
+	for (const auto& ground : grounds) {
+		// Set ground color (semi-transparent gray)
+		glColor4f(0.7f, 0.7f, 0.7f, 0.7f);
+		
+		// Calculate ground plane vertices (large quad)
+		float size = 5.0f; // Ground plane size
+		Eigen::Vector3f center = ground.position;
+		Eigen::Vector3f normal = ground.normal;
+		
+		// Create two vectors perpendicular to normal
+		Eigen::Vector3f right, forward;
+		if (std::abs(normal.dot(Eigen::Vector3f::UnitY())) < 0.9f) {
+			right = normal.cross(Eigen::Vector3f::UnitY()).normalized();
+		} else {
+			right = normal.cross(Eigen::Vector3f::UnitX()).normalized();
+		}
+		forward = right.cross(normal).normalized();
+		
+		// Calculate quad vertices
+		Eigen::Vector3f v1 = center + (-right - forward) * size;
+		Eigen::Vector3f v2 = center + (right - forward) * size;
+		Eigen::Vector3f v3 = center + (right + forward) * size;
+		Eigen::Vector3f v4 = center + (-right + forward) * size;
+		
+		// Draw ground plane
+		glBegin(GL_QUADS);
+		glNormal3f(normal.x(), normal.y(), normal.z());
+		glVertex3f(v1.x(), v1.y(), v1.z());
+		glVertex3f(v2.x(), v2.y(), v2.z());
+		glVertex3f(v3.x(), v3.y(), v3.z());
+		glVertex3f(v4.x(), v4.y(), v4.z());
+		glEnd();
+		
+		// Draw grid lines on ground
+		glColor3f(0.5f, 0.5f, 0.5f);
+		glBegin(GL_LINES);
+		for (int i = -10; i <= 10; ++i) {
+			float offset = i * 0.5f;
+			// Grid lines in right direction
+			Eigen::Vector3f start1 = center + right * offset + forward * (-size);
+			Eigen::Vector3f end1 = center + right * offset + forward * size;
+			glVertex3f(start1.x(), start1.y(), start1.z());
+			glVertex3f(end1.x(), end1.y(), end1.z());
+			
+			// Grid lines in forward direction
+			Eigen::Vector3f start2 = center + forward * offset + right * (-size);
+			Eigen::Vector3f end2 = center + forward * offset + right * size;
+			glVertex3f(start2.x(), start2.y(), start2.z());
+			glVertex3f(end2.x(), end2.y(), end2.z());
+		}
+		glEnd();
+	}
+	
+	glDisable(GL_BLEND);
 }
